@@ -25,12 +25,21 @@ import Fastify from 'fastify';
 import chokidar from 'chokidar';
 import { scan, getWatchTargets } from '@huhaa/scanner';
 
-const VERSION = '0.1.0';
 const PHASE = 'P6';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // server/src -> server -> packages -> service
 const SERVICE_ROOT = path.resolve(__dirname, '..', '..', '..');
+const PACKAGE_JSON = path.resolve(SERVICE_ROOT, '..', 'package.json');
+const VERSION = readPackageVersion();
 const WEB_DIST = path.join(SERVICE_ROOT, 'packages', 'web', 'dist');
+
+function readPackageVersion() {
+  try {
+    return JSON.parse(fs.readFileSync(PACKAGE_JSON, 'utf8')).version || '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+}
 
 export async function startServer({ port = 11520 } = {}) {
   const app = Fastify({

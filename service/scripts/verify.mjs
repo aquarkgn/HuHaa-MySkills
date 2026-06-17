@@ -10,6 +10,7 @@ const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'huhaa-verify-'));
 const oldHome = process.env.HUHAA_HOME;
 process.env.HUHAA_HOME = path.join(tempRoot, 'home');
 
+const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
 const testFiles = [
   'service/packages/scanner/test/scanner.test.mjs',
   'service/packages/server/test/server.test.mjs',
@@ -66,7 +67,7 @@ limits:
       const health = await fetchJson(`${base}/api/health`);
       assert.equal(health.ok, true);
       assert.equal(health.items, 1);
-      assert.equal(health.version, '0.1.0');
+      assert.equal(health.version, pkg.version);
 
       const skills = await fetchJson(`${base}/api/skills`);
       assert.equal(skills.length, 1);

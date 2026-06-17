@@ -1,6 +1,6 @@
 {
   "name": "huhaa-myskills",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "description": "Local skill / plugin / MCP aggregation hub. Browse all your AI agent skills at http://localhost:11520.",
   "license": "MIT",
@@ -20,7 +20,14 @@
     "huhaa-myskills": "./service/bin/huhaa-myskills.mjs"
   },
   "files": [
-    "service/",
+    "service/bin/",
+    "service/config/",
+    "service/packages/scanner/package.json",
+    "service/packages/scanner/src/",
+    "service/packages/server/package.json",
+    "service/packages/server/src/",
+    "service/packages/web/dist/",
+    "service/scripts/build-web.mjs",
     "docs/",
     "README.md",
     "LICENSE"
