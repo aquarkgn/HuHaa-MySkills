@@ -19,6 +19,14 @@ function write(file, text) {
   fs.writeFileSync(file, text);
 }
 
+function groupBy(items, fn) {
+  return items.reduce((acc, item) => {
+    const key = fn(item);
+    (acc[key] ||= []).push(item);
+    return acc;
+  }, {});
+}
+
 test('scan aggregates enabled sources, strips duplicate semantic skill exports, and redacts MCP secrets', async (t) => {
   const { root, home } = makeTempHome();
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -83,7 +91,7 @@ limits:
 `);
 
   const items = await scan();
-  const bySource = Object.groupBy(items, it => it.source);
+  const bySource = groupBy(items, it => it.source);
 
   assert.equal(bySource.hermes?.length, 1, 'semantic duplicate hermes skill should collapse to one item');
   assert.equal(bySource.codex?.length, 1);
