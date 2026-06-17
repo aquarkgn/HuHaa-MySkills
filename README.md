@@ -62,12 +62,22 @@ Linux/Windows can run the scanner/server, but clipboard/open behavior depends on
 
 ## Install
 
+### Option A: clone and run
+
 ```bash
 git clone https://github.com/aquarkgn/HuHaa-MySkills.git
 cd HuHaa-MySkills
 npm install
 npm run init
 npm start
+```
+
+### Option B: install CLI directly from GitHub
+
+```bash
+npm install -g github:aquarkgn/HuHaa-MySkills
+huhaa-myskills init
+huhaa-myskills start
 ```
 
 Then open:

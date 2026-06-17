@@ -19,6 +19,12 @@
   "bin": {
     "huhaa-myskills": "./service/bin/huhaa-myskills.mjs"
   },
+  "files": [
+    "service/",
+    "docs/",
+    "README.md",
+    "LICENSE"
+  ],
   "workspaces": [
     "service/packages/*"
   ],
@@ -30,15 +36,16 @@
     "init": "node service/bin/huhaa-myskills.mjs init",
     "purge": "node service/bin/huhaa-myskills.mjs purge",
     "dev": "node service/bin/huhaa-myskills.mjs dev",
-    "build:web": "npm -w @huhaa/web run build",
+    "build:web": "npm --prefix service/packages/web run build",
+    "prepare": "npm run build:web",
     "test": "node --test service/packages/scanner/test/*.test.mjs service/packages/server/test/*.test.mjs",
     "verify": "node service/scripts/verify.mjs"
   },
   "dependencies": {
-    "@huhaa/scanner": "*",
-    "@huhaa/server": "*"
+    "@huhaa/scanner": "file:service/packages/scanner",
+    "@huhaa/server": "file:service/packages/server"
   },
   "devDependencies": {
-    "@huhaa/web": "*"
+    "@huhaa/web": "file:service/packages/web"
   }
 }
