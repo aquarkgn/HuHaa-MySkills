@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.vite/
+
+# 用户运行时数据现在落 ~/.config/huhaa-myskills/，仓内不再有 data/ 目录。
+# 留这一条防有人手动放：
+data/

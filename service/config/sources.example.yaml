@@ -1,0 +1,90 @@
+# HuHaa-MySkills sources.yaml
+#
+# This file is copied to ~/.config/huhaa-myskills/sources.yaml by `npm run init`.
+# Paths support ~ expansion and simple glob expansion in roots.
+#
+# Environment overrides:
+# - HUHAA_HOME: user data directory
+# - PORT: preferred HTTP port
+#
+# Safety:
+# - adapters only read files; they do not execute tools or commands
+# - MCP configs are redacted before entering raw/preview
+# - copy/open API calls only operate on scanned item ids, not arbitrary paths
+
+sources:
+  hermes:
+    enabled: true
+    roots:
+      - ~/.hermes/skills
+      - ~/.hermes/profiles/*/skills
+
+  claude-code:
+    enabled: true
+    roots:
+      - ~/.claude/skills
+
+  codex:
+    enabled: true
+    files:
+      - ~/.codex/AGENTS.md
+    roots: []
+    globs:
+      - AGENTS.md
+
+  cursor:
+    enabled: true
+    files: []
+    roots:
+      - ~/.cursor
+    globs:
+      - rules/**/*.{md,mdc}
+      - .cursorrules
+
+  mcp-config:
+    enabled: true
+    files:
+      - ~/.cursor/mcp.json
+      - ~/.codex/config.toml
+      - ~/Library/Application Support/Claude/claude_desktop_config.json
+      - ~/.hermes/config.yaml
+
+  hermes-plugin:
+    enabled: true
+    roots:
+      - ~/.hermes/plugins
+      - ~/.hermes/profiles/*/plugins
+
+  project-runbook:
+    enabled: true
+    # Add your project roots here. The default scans ~/Project/*.
+    # Each root scans docs/RUNBOOK-*.md plus common AI-agent instruction files.
+    roots:
+      - ~/Project/*
+    globs:
+      - docs/RUNBOOK-*.md
+      - AGENTS.md
+      - CLAUDE.md
+      - .cursorrules
+      - .cursor/rules/**/*.{md,mdc}
+
+  obsidian:
+    enabled: false
+    roots: []
+    tagFilter: '#skill'
+
+ui:
+  port: 11520
+  autoOpen: true
+  defaultEditor: cursor
+  groupBy: [editor, category, product]
+
+limits:
+  maxFiles: 5000
+  maxFileBytes: 1048576
+
+exclude:
+  - '**/node_modules/**'
+  - '**/.git/**'
+  - '**/dist/**'
+  - '**/.venv/**'

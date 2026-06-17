@@ -1,0 +1,44 @@
+{
+  "name": "huhaa-myskills",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Local skill / plugin / MCP aggregation hub. Browse all your AI agent skills at http://localhost:11520.",
+  "license": "MIT",
+  "homepage": "https://github.com/aquarkgn/HuHaa-MySkills#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aquarkgn/HuHaa-MySkills.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aquarkgn/HuHaa-MySkills/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "bin": {
+    "huhaa-myskills": "./service/bin/huhaa-myskills.mjs"
+  },
+  "workspaces": [
+    "service/packages/*"
+  ],
+  "scripts": {
+    "start": "node service/bin/huhaa-myskills.mjs start",
+    "scan": "node service/bin/huhaa-myskills.mjs scan",
+    "stats": "node service/bin/huhaa-myskills.mjs stats",
+    "duplicates": "node service/bin/huhaa-myskills.mjs duplicates",
+    "init": "node service/bin/huhaa-myskills.mjs init",
+    "purge": "node service/bin/huhaa-myskills.mjs purge",
+    "dev": "node service/bin/huhaa-myskills.mjs dev",
+    "build:web": "npm -w @huhaa/web run build",
+    "test": "node --test service/packages/scanner/test/*.test.mjs service/packages/server/test/*.test.mjs",
+    "verify": "node service/scripts/verify.mjs"
+  },
+  "dependencies": {
+    "@huhaa/scanner": "*",
+    "@huhaa/server": "*"
+  },
+  "devDependencies": {
+    "@huhaa/web": "*"
+  }
+}
