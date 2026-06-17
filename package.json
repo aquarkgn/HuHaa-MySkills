@@ -17,7 +17,7 @@
     "node": ">=20.0.0"
   },
   "bin": {
-    "huhaa-myskills": "./service/bin/huhaa-myskills.mjs"
+    "huhaa-myskills": "service/bin/huhaa-myskills.mjs"
   },
   "files": [
     "service/bin/",
