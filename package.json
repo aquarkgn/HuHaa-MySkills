@@ -39,7 +39,11 @@
   },
   "dependencies": {
     "@huhaa/scanner": "file:service/packages/scanner",
-    "@huhaa/server": "file:service/packages/server"
+    "@huhaa/server": "file:service/packages/server",
+    "chokidar": "^4.0.3",
+    "fast-glob": "^3.3.2",
+    "fastify": "^5.0.0",
+    "yaml": "^2.6.0"
   },
   "devDependencies": {
     "@huhaa/web": "file:service/packages/web",
