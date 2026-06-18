@@ -67,17 +67,17 @@ export const useSkillsStore = defineStore('skills', {
       const q = parsed.text;
       if (!q) return sortItems(arr, state.sortKey);
       const fuse = new Fuse(arr, {
-        threshold: 0.35,
+        threshold: 0.25,
         ignoreLocation: true,
+        minMatchCharLength: 2,
         keys: [
-          { name: 'name', weight: 0.35 },
+          { name: 'name', weight: 0.40 },
           { name: 'description', weight: 0.30 },
-          { name: 'category', weight: 0.12 },
-          { name: 'editor', weight: 0.10 },
-          { name: 'source', weight: 0.08 },
-          { name: 'product', weight: 0.08 },
-          { name: 'brand', weight: 0.04 },
-          { name: 'paths.abs', weight: 0.03 },
+          { name: 'category', weight: 0.15 },
+          { name: 'editor', weight: 0.08 },
+          { name: 'source', weight: 0.05 },
+          { name: 'product', weight: 0.05 },
+          { name: 'brand', weight: 0.02 },
         ],
       });
       return sortItems(fuse.search(q).map(r => r.item), state.sortKey);
