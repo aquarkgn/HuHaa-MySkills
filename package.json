@@ -27,10 +27,11 @@
     "service/packages/server/package.json",
     "service/packages/server/src/",
     "service/packages/web/dist/",
-    "service/scripts/build-web.mjs",
+    "service/scripts/",
     "docs/",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "install-and-sync.sh"
   ],
   "scripts": {
     "start": "node service/bin/huhaa-myskills.mjs start",
@@ -40,6 +41,8 @@
     "init": "node service/bin/huhaa-myskills.mjs init",
     "purge": "node service/bin/huhaa-myskills.mjs purge",
     "dev": "node service/bin/huhaa-myskills.mjs dev",
+    "sync": "bash service/scripts/sync-skills.sh",
+    "sync:remote": "curl -fsSL https://raw.githubusercontent.com/aquarkgn/HuHaa-MySkills/main/install-and-sync.sh | bash -s -- --sync-only",
     "build:web": "node service/scripts/build-web.mjs",
     "test": "node --test service/packages/scanner/test/*.test.mjs service/packages/server/test/*.test.mjs",
     "verify": "node service/scripts/verify.mjs"

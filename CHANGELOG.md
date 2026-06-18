@@ -11,14 +11,14 @@
 ## [Unreleased]
 
 ### Planned
-- **v0.1.2** (2026-06-30): [Hermes 技能集成 + 搜索优化](./docs/releases/v0.1.2.md) → [计划](./docs/todo/v0.1.2.md)
-- **v0.1.3** (2026-07-07): Obsidian Vault 与 Claude.md 支持 → [计划](./docs/todo/v0.1.3.md)
-- **v0.1.4** (2026-07-21): 分组与筛选增强 → [计划](./docs/todo/v0.1.4.md)
-- **v0.1.5** (2026-07-28): 导出与分享 → [计划](./docs/todo/v0.1.5.md)
-- **v0.1.6** (2026-08-11): 增量扫描与缓存 → [计划](./docs/todo/v0.1.6.md)
-- **v0.1.7** (2026-08-25): 跨平台完整支持 → [计划](./docs/todo/v0.1.7.md)
-- **v0.1.8** (2026-09-01): 开发者工具 → [计划](./docs/todo/v0.1.8.md)
-- **v0.1.9** (2026-09-15): 完成度冲刺 → [计划](./docs/todo/v0.1.9.md)
+- **v0.1.2** (TBD): [Hermes 技能集成 + 搜索优化](./docs/releases/v0.1.2.md) → [计划](./docs/todo/v0.1.2.md)
+- **v0.1.3** (TBD): Obsidian Vault 与 Claude.md 支持 → [计划](./docs/todo/v0.1.3.md)
+- **v0.1.4** (TBD): 分组与筛选增强 → [计划](./docs/todo/v0.1.4.md)
+- **v0.1.5** (TBD): 导出与分享 → [计划](./docs/todo/v0.1.5.md)
+- **v0.1.6** (TBD): 增量扫描与缓存 → [计划](./docs/todo/v0.1.6.md)
+- **v0.1.7** (TBD): 跨平台完整支持 → [计划](./docs/todo/v0.1.7.md)
+- **v0.1.8** (TBD): 开发者工具 → [计划](./docs/todo/v0.1.8.md)
+- **v0.1.9** (TBD): 完成度冲刺 → [计划](./docs/todo/v0.1.9.md)
 
 详见 [版本计划总汇](./docs/releases/)
 
