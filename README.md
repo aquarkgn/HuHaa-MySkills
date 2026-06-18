@@ -24,7 +24,7 @@ curl -fsSL https://raw.githubusercontent.com/aquarkgn/HuHaa-MySkills/main/instal
 - **代码编辑器** — Cursor、VS Code、VS Code Insiders、Windsurf、Zed、Sublime Text、TextMate
 - **终端编辑器** — Neovim、Vim、Emacs、Helix
 - **其他编辑器** — Atom、Kate、Gedit、BBEdit、JetBrains IDEs
-- **新兴工具** — Openclaw、Herems
+- **新兴工具** — Openclaw、Herems、Trae、Trae CN
 
 **就这么简单！** 无需 git clone，无需手动配置，一条命令搞定。
 

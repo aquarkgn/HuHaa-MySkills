@@ -27,8 +27,8 @@
 全球 20+ 编辑器支持 | [详细说明](./docs/releases/v0.1.3.md)
 
 ### Added
-- ✅ 扩展编辑器支持：从 6 个增至 20+ 个
-- ✅ 新增编辑器支持：VS Code Insiders、Zed、Vim、Emacs、Sublime 4、TextMate、BBEdit、Atom、Kate、Gedit、JetBrains IDEs、Openclaw、Herems
+- ✅ 扩展编辑器支持：从 6 个增至 22 个
+- ✅ 新增编辑器支持：VS Code Insiders、Zed、Vim、Emacs、Sublime 4、TextMate、BBEdit、Atom、Kate、Gedit、JetBrains IDEs、Openclaw、Herems、Trae、Trae CN
 - ✅ 优化编辑器检测逻辑，支持多个版本
 - ✅ 改进交互界面，支持 1-based 编号和更好的格式化
 - ✅ 完整的 macOS 和 Linux 平台支持

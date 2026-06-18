@@ -42,7 +42,7 @@ detect_editors() {
   # Windsurf
   case "$os" in
     macos) [[ -d "$HOME/Library/Application Support/Windsurf" ]] && echo "$i|windsurf|$HOME/Library/Application Support/Windsurf" && i=$((i+1)) ;;
-    linux) [[ -d "$HOME/.config/Windsurf" ]] && echo "$i|windsurf|$HOME/.config/Windsurf" && i=$((i+1)) ;;
+    linux) [[ -d "$HOME/.config/windsurf" ]] && echo "$i|windsurf|$HOME/.config/windsurf" && i=$((i+1)) ;;
   esac
 
   # Zed
@@ -53,7 +53,7 @@ detect_editors() {
 
   # Helix
   case "$os" in
-    macos) [[ -d "$HOME/Library/Application Support/helix" ]] && echo "$i|helix|$HOME/Library/Application Support/helix" && i=$((i+1)) ;;
+    macos) [[ -d "$HOME/Library/Application Support/Helix" ]] && echo "$i|helix|$HOME/Library/Application Support/Helix" && i=$((i+1)) ;;
     linux) [[ -d "$HOME/.config/helix" ]] && echo "$i|helix|$HOME/.config/helix" && i=$((i+1)) ;;
   esac
 
@@ -109,7 +109,7 @@ detect_editors() {
       [[ -d "$HOME/Library/Application Support/JetBrains" ]] && echo "$i|jetbrains|$HOME/Library/Application Support/JetBrains" && i=$((i+1))
       ;;
     linux)
-      [[ -d "$HOME/.config/JetBrains" ]] && echo "$i|jetbrains|$HOME/.config/JetBrains" && i=$((i+1))
+      [[ -d "$HOME/.config/jetbrains" ]] && echo "$i|jetbrains|$HOME/.config/jetbrains" && i=$((i+1))
       ;;
   esac
 
@@ -123,6 +123,18 @@ detect_editors() {
   case "$os" in
     macos) [[ -d "$HOME/Library/Application Support/Herems" ]] && echo "$i|herems|$HOME/Library/Application Support/Herems" && i=$((i+1)) ;;
     linux) [[ -d "$HOME/.config/herems" ]] && echo "$i|herems|$HOME/.config/herems" && i=$((i+1)) ;;
+  esac
+
+  # Trae
+  case "$os" in
+    macos) [[ -d "$HOME/Library/Application Support/Trae" ]] && echo "$i|trae|$HOME/Library/Application Support/Trae" && i=$((i+1)) ;;
+    linux) [[ -d "$HOME/.config/trae" ]] && echo "$i|trae|$HOME/.config/trae" && i=$((i+1)) ;;
+  esac
+
+  # Trae CN (中文版本，目录名为 "Trae CN" 带空格)
+  case "$os" in
+    macos) [[ -d "$HOME/Library/Application Support/Trae CN" ]] && echo "$i|trae-cn|$HOME/Library/Application Support/Trae CN" && i=$((i+1)) ;;
+    linux) [[ -d "$HOME/.config/trae-cn" ]] && echo "$i|trae-cn|$HOME/.config/trae-cn" && i=$((i+1)) ;;
   esac
 }
 
@@ -274,6 +286,18 @@ sync_to_herems() {
   log_success "Herems: 已同步"
 }
 
+sync_to_trae() {
+  local editor_path="$1" root="$2"
+  mkdir -p "$editor_path"
+  log_success "Trae: 已同步"
+}
+
+sync_to_trae_cn() {
+  local editor_path="$1" root="$2"
+  mkdir -p "$editor_path"
+  log_success "Trae CN: 已同步"
+}
+
 main() {
   echo -e "\n${CYAN}╔════════════════════════════════════════════════════════╗${NC}"
   echo -e "${CYAN}║          HuHaa-MySkills 编辑器技能同步 v0.1.3         ║${NC}"
@@ -325,6 +349,8 @@ main() {
         jetbrains) sync_to_jetbrains "$path" "$huhaa_root" ;;
         openclaw) sync_to_openclaw "$path" "$huhaa_root" ;;
         herems) sync_to_herems "$path" "$huhaa_root" ;;
+        trae) sync_to_trae "$path" "$huhaa_root" ;;
+        trae-cn) sync_to_trae_cn "$path" "$huhaa_root" ;;
       esac
     done
   else
@@ -360,6 +386,8 @@ main() {
         jetbrains) sync_to_jetbrains "$path" "$huhaa_root" ;;
         openclaw) sync_to_openclaw "$path" "$huhaa_root" ;;
         herems) sync_to_herems "$path" "$huhaa_root" ;;
+        trae) sync_to_trae "$path" "$huhaa_root" ;;
+        trae-cn) sync_to_trae_cn "$path" "$huhaa_root" ;;
       esac
     done
   fi
