@@ -1,5 +1,5 @@
 #!/bin/bash
-# HuHaa-MySkills 编辑器技能同步脚本 v0.1.3
+# HuHaa-MySkills 编辑器技能同步脚本 v0.1.5
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -135,6 +135,18 @@ detect_editors() {
   case "$os" in
     macos) [[ -d "$HOME/Library/Application Support/Trae CN" ]] && echo "$i|trae-cn|$HOME/Library/Application Support/Trae CN" && i=$((i+1)) ;;
     linux) [[ -d "$HOME/.config/trae-cn" ]] && echo "$i|trae-cn|$HOME/.config/trae-cn" && i=$((i+1)) ;;
+  esac
+
+  # Codex (AI 编程助手)
+  case "$os" in
+    macos) [[ -d "$HOME/Library/Application Support/Codex" ]] && echo "$i|codex|$HOME/Library/Application Support/Codex" && i=$((i+1)) ;;
+    linux) [[ -d "$HOME/.config/codex" ]] && echo "$i|codex|$HOME/.config/codex" && i=$((i+1)) ;;
+  esac
+
+  # Claude (Anthropic AI 助手)
+  case "$os" in
+    macos) [[ -d "$HOME/Library/Application Support/Claude" ]] && echo "$i|claude|$HOME/Library/Application Support/Claude" && i=$((i+1)) ;;
+    linux) [[ -d "$HOME/.config/claude" ]] && echo "$i|claude|$HOME/.config/claude" && i=$((i+1)) ;;
   esac
 }
 
@@ -298,9 +310,19 @@ sync_to_trae_cn() {
   log_success "Trae CN: 已同步"
 }
 
+sync_to_codex() {
+  local editor_path="$1" root="$2"
+  [[ -f "$root/.cursorrules" ]] && cp "$root/.cursorrules" "$editor_path/.cursorrules" && log_success "Codex: 已同步" || log_warn "Codex: 跳过"
+}
+
+sync_to_claude() {
+  local editor_path="$1" root="$2"
+  [[ -f "$root/.cursorrules" ]] && cp "$root/.cursorrules" "$editor_path/.cursorrules" && log_success "Claude: 已同步" || log_warn "Claude: 跳过"
+}
+
 main() {
   echo -e "\n${CYAN}╔════════════════════════════════════════════════════════╗${NC}"
-  echo -e "${CYAN}║          HuHaa-MySkills 编辑器技能同步 v0.1.3         ║${NC}"
+  echo -e "${CYAN}║          HuHaa-MySkills 编辑器技能同步 v0.1.5         ║${NC}"
   echo -e "${CYAN}╚════════════════════════════════════════════════════════╝${NC}\n"
 
   log_info "扫描已安装的编辑器...\n"
@@ -351,6 +373,8 @@ main() {
         herems) sync_to_herems "$path" "$huhaa_root" ;;
         trae) sync_to_trae "$path" "$huhaa_root" ;;
         trae-cn) sync_to_trae_cn "$path" "$huhaa_root" ;;
+        codex) sync_to_codex "$path" "$huhaa_root" ;;
+        claude) sync_to_claude "$path" "$huhaa_root" ;;
       esac
     done
   else
@@ -388,6 +412,8 @@ main() {
         herems) sync_to_herems "$path" "$huhaa_root" ;;
         trae) sync_to_trae "$path" "$huhaa_root" ;;
         trae-cn) sync_to_trae_cn "$path" "$huhaa_root" ;;
+        codex) sync_to_codex "$path" "$huhaa_root" ;;
+        claude) sync_to_claude "$path" "$huhaa_root" ;;
       esac
     done
   fi
