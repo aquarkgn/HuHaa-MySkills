@@ -1,37 +1,22 @@
 // @huhaa/server — Fastify HTTP API + placeholder UI.
-//
-// Hard rules (locked from day 1):
-//   - bind 127.0.0.1 ONLY, never 0.0.0.0
-//   - server NEVER scans files; it reads in-memory IR populated by scanner
-//   - copy/open ONLY operate on paths that exist in the loaded IR snapshot
-//     (whitelist defense: a malicious request can't ask us to pbcopy / open
-//     arbitrary files because we resolve via skill id, not via raw path)
-//
-// API surface (P2):
-//   GET  /api/health            — liveness + counts
-//   GET  /api/skills            — list (no `raw` field — detail-only)
-//   GET  /api/skills/:id        — full IR item (with raw)
-//   GET  /api/stats             — by source / category / brand aggregates
-//   POST /api/copy              — { id, what: 'path'|'dir'|'rel'|'name'|'raw'|'prompt' } -> pbcopy
-//   POST /api/open              — { id, with?: 'cursor'|'finder'|'default' }
-//
-// P3 replaces the placeholder HTML with a built Vue SPA mounted at /.
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import Fastify from 'fastify';
 import chokidar from 'chokidar';
-import { scan, getWatchTargets } from '@huhaa/scanner';
 
 const PHASE = 'P6';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// server/src -> server -> packages -> service
-const SERVICE_ROOT = path.resolve(__dirname, '..', '..', '..');
-const PACKAGE_JSON = path.resolve(SERVICE_ROOT, '..', 'package.json');
+const PKGS_ROOT = path.resolve(__dirname, '..', '..');
+const PACKAGE_JSON = path.resolve(PKGS_ROOT, '..', 'package.json');
 const VERSION = readPackageVersion();
-const WEB_DIST = path.join(SERVICE_ROOT, 'packages', 'web', 'dist');
+const WEB_DIST = path.join(PKGS_ROOT, 'web', 'dist');
+
+async function importScanner() {
+  const { scan, getWatchTargets } = await import(path.join(PKGS_ROOT, 'scanner/src/index.mjs'));
+  return { scan, getWatchTargets };
+}
 
 function readPackageVersion() {
   try {
@@ -45,6 +30,8 @@ export async function startServer({ port = 11520 } = {}) {
   const app = Fastify({
     logger: { level: process.env.LOG_LEVEL || 'warn' },
   });
+
+  const { scan, getWatchTargets } = await importScanner();
 
   // In-memory IR. HTTP handlers only read this snapshot; reload/watch swaps it atomically.
   let irCache = await scan();

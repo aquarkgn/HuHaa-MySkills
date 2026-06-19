@@ -5,15 +5,15 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const repoRoot = path.resolve(import.meta.dirname, '..', '..');
+const repoRoot = path.resolve(import.meta.dirname, '..');
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'huhaa-verify-'));
 const oldHome = process.env.HUHAA_HOME;
 process.env.HUHAA_HOME = path.join(tempRoot, 'home');
 
 const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
 const testFiles = [
-  'service/packages/scanner/test/scanner.test.mjs',
-  'service/packages/server/test/server.test.mjs',
+  'packages/scanner/test/scanner.test.mjs',
+  'packages/server/test/server.test.mjs',
 ];
 
 function run(name, args) {
@@ -56,7 +56,7 @@ limits:
   maxFileBytes: 1048576
 `);
 
-    const { startServer } = await import('../packages/server/src/index.mjs');
+    const { startServer } = await import('./packages/server/src/index.mjs');
     const { app } = await startServer({ port: 0 });
     const address = app.server.address();
     const port = address.port;
