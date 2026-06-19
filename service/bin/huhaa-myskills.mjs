@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
 import {
   homeDir,
@@ -30,6 +31,18 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SERVICE_ROOT = path.resolve(__dirname, '..');
 
+// Load version from package.json
+function getVersion() {
+  try {
+    const pkgPath = path.join(REPO_ROOT, 'package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+    return pkg.version;
+  } catch {
+    return 'unknown';
+  }
+}
+
+const VERSION = getVersion();
 const cmd = process.argv[2] || 'start';
 
 const handlers = {
@@ -40,9 +53,13 @@ const handlers = {
   init: cmdInit,
   purge: cmdPurge,
   dev: cmdDev,
+  sync: cmdSync,
   help: cmdHelp,
   '--help': cmdHelp,
   '-h': cmdHelp,
+  '--version': cmdVersion,
+  '-v': cmdVersion,
+  version: cmdVersion,
 };
 
 const fn = handlers[cmd] || cmdHelp;
@@ -53,11 +70,17 @@ fn().catch(err => {
 
 // ---------------- handlers ----------------
 
+// ---------------- commands ----------------
+
+async function cmdVersion() {
+  console.log(`huhaa-myskills v${VERSION}`);
+}
+
 async function cmdHelp() {
-  console.log(`huhaa-myskills — local skill / plugin / MCP aggregation hub
+  console.log(`huhaa-myskills v${VERSION} — local skill / plugin / MCP aggregation hub
 
 Usage:
-  huhaa-myskills <command>
+  huhaa-myskills <command> [options]
 
 Commands:
   start     Scan + start server + open browser (default)
@@ -66,12 +89,17 @@ Commands:
   duplicates Scan + print duplicate diagnostics by name/content/path
   init      Write default sources.yaml to ~/.config/huhaa-myskills/
   purge     Remove all user data under ~/.config/huhaa-myskills/
+  sync      Sync current skills to selected editors
   dev       Dev mode (Vite + nodemon)
-  help      Show this message
+
+Options:
+  -v, --version  Show version
+  -h, --help     Show this message
 
 Env:
   HUHAA_HOME      override user data dir (default: ~/.config/huhaa-myskills)
   PORT            override preferred port (default: 11520, falls back +10)
+  HUHAA_SYNC      comma-separated list of editors to sync (e.g. "cursor,vscode")
 
 Paths:
   config   ${configFile()}
@@ -289,6 +317,76 @@ async function cmdDev() {
   // P3+ wires Vite + nodemon. For now alias to start.
   console.log('[dev] dev mode comes in P3. running start for now.');
   await cmdStart();
+}
+
+async function cmdSync() {
+  const syncEnv = process.env.HUHAA_SYNC;
+  const editors = syncEnv
+    ? syncEnv.split(',').map(e => e.trim().toLowerCase())
+    : null;
+
+  const { scan } = await import('@huhaa/scanner');
+  await ensureConfigOrInit();
+  const items = await scan();
+
+  // Get skills with content
+  const skills = items.filter(it => it.raw && it.raw.trim());
+
+  console.log(`[sync] found ${skills.length} skills to sync`);
+
+  if (editors) {
+    console.log(`[sync] syncing to editors: ${editors.join(', ')}`);
+    await syncToEditors(skills, editors);
+  } else {
+    await interactiveSync(skills);
+  }
+}
+
+async function syncToEditors(skills, editors) {
+  const supported = ['cursor', 'vscode', 'windsurf', 'zed', 'neovim', 'helix', 'sublime', 'vim', 'emacs'];
+  const validEditors = editors.filter(e => supported.includes(e));
+
+  if (validEditors.length === 0) {
+    console.error(`[sync] no valid editors. Supported: ${supported.join(', ')}`);
+    return;
+  }
+
+  for (const editor of validEditors) {
+    await syncToEditor(skills, editor);
+  }
+}
+
+async function syncToEditor(skills, editor) {
+  console.log(`[sync] syncing ${skills.length} skills to ${editor}...`);
+
+  const syncScript = path.join(SERVICE_ROOT, 'scripts', 'sync-skills.sh');
+  const skillsJson = JSON.stringify(skills);
+
+  return new Promise((resolve, reject) => {
+    const child = spawn('bash', [syncScript, '--editor', editor, '--skills', skillsJson], {
+      stdio: ['pipe', 'inherit', 'inherit']
+    });
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        console.log(`[sync] ${editor}: done`);
+        resolve();
+      } else {
+        console.error(`[sync] ${editor}: failed (exit ${code})`);
+        resolve();
+      }
+    });
+  });
+}
+
+async function interactiveSync(skills) {
+  console.log('\nSupported editors:');
+  console.log('  [1] cursor      [2] vscode     [3] windsurf');
+  console.log('  [4] zed        [5] neovim     [6] helix');
+  console.log('  [7] sublime    [8] vim        [9] emacs');
+  console.log('  [0] all editors');
+  console.log('\nUse HUHAA_SYNC env to sync without prompt:');
+  console.log('  HUHAA_SYNC=cursor,vscode huhaa-myskills sync');
 }
 
 // ---------------- helpers ----------------
