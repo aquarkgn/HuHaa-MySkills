@@ -5,8 +5,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, '..', '..');
-const webRoot = path.join(repoRoot, 'service', 'packages', 'web');
+const repoRoot = path.resolve(__dirname, '..');
+const webRoot = path.join(repoRoot, 'packages', 'web');
 const viteBin = path.join(repoRoot, 'node_modules', 'vite', 'bin', 'vite.js');
 
 if (!fs.existsSync(viteBin)) {

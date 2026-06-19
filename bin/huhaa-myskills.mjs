@@ -1,35 +1,26 @@
 #!/usr/bin/env node
 // huhaa-myskills CLI
-//
-// Subcommands:
-//   start   — scan + start server + open browser
-//   scan    — scan only, dump IR JSON to stdout
-//   init    — write default sources.yaml to ~/.config/huhaa-myskills/
-//   purge   — delete ~/.config/huhaa-myskills/ (zero-residue uninstall helper)
-//   dev     — dev mode (P3+ wires Vite + nodemon)
-//
-// All user-side state lives under HUHAA_HOME (defaults to ~/.config/huhaa-myskills).
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 
-import {
-  homeDir,
-  configFile,
-  cacheFile,
-  stateFile,
-  ensureHomeDir,
-  writeJson,
-} from './lib/paths.mjs';
-import { pickPort } from './lib/port.mjs';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const REPO_ROOT = path.resolve(__dirname, '..');
+const PKGS_ROOT = path.join(REPO_ROOT, 'packages');
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// bin/ -> service/ -> repo root
-const REPO_ROOT = path.resolve(__dirname, '..', '..');
-const SERVICE_ROOT = path.resolve(__dirname, '..');
+const require = createRequire(import.meta.url);
+
+// Load paths helper
+const pathsLib = require('./lib/paths.mjs');
+const { homeDir, configFile, cacheFile, stateFile, ensureHomeDir, writeJson } = pathsLib;
+
+// Load port helper
+const { pickPort } = require('./lib/port.mjs');
 
 // Load version from package.json
 function getVersion() {
@@ -67,8 +58,6 @@ fn().catch(err => {
   console.error('[huhaa-myskills] error:', err && err.stack || err);
   process.exit(1);
 });
-
-// ---------------- handlers ----------------
 
 // ---------------- commands ----------------
 
@@ -116,7 +105,7 @@ async function cmdInit() {
     console.log('[init] not overwriting. delete it first if you want to reset.');
     return;
   }
-  const tpl = path.join(SERVICE_ROOT, 'config', 'sources.example.yaml');
+  const tpl = path.join(REPO_ROOT, 'config', 'sources.example.yaml');
   fs.copyFileSync(tpl, dst);
   console.log(`[init] wrote ${dst}`);
   console.log('[init] edit it to add / remove sources, then run: huhaa-myskills start');
@@ -134,8 +123,7 @@ async function cmdPurge() {
 }
 
 async function cmdScan() {
-  // P0 placeholder. P1 wires real adapters.
-  const { scan } = await import('@huhaa/scanner');
+  const { scan } = await import(path.join(PKGS_ROOT, 'scanner/src/index.mjs'));
   await ensureConfigOrInit();
   const items = await scan();
   process.stdout.write(JSON.stringify(items, null, 2) + '\n');
@@ -143,7 +131,7 @@ async function cmdScan() {
 }
 
 async function cmdStats() {
-  const { scan } = await import('@huhaa/scanner');
+  const { scan } = await import(path.join(PKGS_ROOT, 'scanner/src/index.mjs'));
   await ensureConfigOrInit();
   const items = await scan();
 
@@ -206,7 +194,6 @@ async function cmdStats() {
     }
   }
 
-  // deterministic-ish sample: every Nth item so coverage spans both sources
   const sampleN = Math.min(8, items.length);
   if (sampleN > 0) {
     const step = Math.max(1, Math.floor(items.length / sampleN));
@@ -228,7 +215,7 @@ async function cmdStats() {
 }
 
 async function cmdDuplicates() {
-  const { scan } = await import('@huhaa/scanner');
+  const { scan } = await import(path.join(PKGS_ROOT, 'scanner/src/index.mjs'));
   await ensureConfigOrInit();
   const items = await scan();
   const byName = groupBy(items, it => `${it.source}:${it.name}`);
@@ -291,20 +278,17 @@ async function cmdStart() {
     console.error(`[start] port ${preferred} busy, using ${port} instead.`);
   }
 
-  // Persist actual port for any tooling that wants to know.
   writeJson(stateFile(), { port, pid: process.pid, startedAt: new Date().toISOString() });
 
-  const { startServer } = await import('@huhaa/server');
+  const { startServer } = await import(path.join(PKGS_ROOT, 'server/src/index.mjs'));
   await startServer({ port });
 
   console.log(`\n  HuHaa-MySkills running:  http://localhost:${port}\n`);
   console.log(`  data dir: ${homeDir()}`);
   console.log(`  Ctrl+C to stop.\n`);
 
-  // Auto-open browser on macOS / linux / win
   openBrowser(`http://localhost:${port}`);
 
-  // Cleanup state file on exit so a stale port number doesn't linger.
   const cleanup = () => {
     try { fs.unlinkSync(stateFile()); } catch {}
     process.exit(0);
@@ -314,7 +298,6 @@ async function cmdStart() {
 }
 
 async function cmdDev() {
-  // P3+ wires Vite + nodemon. For now alias to start.
   console.log('[dev] dev mode comes in P3. running start for now.');
   await cmdStart();
 }
@@ -325,11 +308,10 @@ async function cmdSync() {
     ? syncEnv.split(',').map(e => e.trim().toLowerCase())
     : null;
 
-  const { scan } = await import('@huhaa/scanner');
+  const { scan } = await import(path.join(PKGS_ROOT, 'scanner/src/index.mjs'));
   await ensureConfigOrInit();
   const items = await scan();
 
-  // Get skills with content
   const skills = items.filter(it => it.raw && it.raw.trim());
 
   console.log(`[sync] found ${skills.length} skills to sync`);
@@ -359,22 +341,20 @@ async function syncToEditors(skills, editors) {
 async function syncToEditor(skills, editor) {
   console.log(`[sync] syncing ${skills.length} skills to ${editor}...`);
 
-  const syncScript = path.join(SERVICE_ROOT, 'scripts', 'sync-skills.sh');
-  const skillsJson = JSON.stringify(skills);
+  const syncScript = path.join(REPO_ROOT, 'scripts', 'sync-skills.sh');
 
-  return new Promise((resolve, reject) => {
-    const child = spawn('bash', [syncScript, '--editor', editor, '--skills', skillsJson], {
+  return new Promise((resolve) => {
+    const child = spawn('bash', [syncScript, '--editor', editor], {
       stdio: ['pipe', 'inherit', 'inherit']
     });
 
     child.on('close', (code) => {
       if (code === 0) {
         console.log(`[sync] ${editor}: done`);
-        resolve();
       } else {
         console.error(`[sync] ${editor}: failed (exit ${code})`);
-        resolve();
       }
+      resolve();
     });
   });
 }

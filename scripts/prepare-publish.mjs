@@ -1,12 +1,12 @@
 // prepare-publish.mjs - 准备发布：清理 workspace 依赖
-// 在 npm publish 之前运行，将 @huhaa/* 依赖替换为打包后的本地源码
+// 在 npm publish 之前运行，将 @huhaa/* workspace 依赖替换为打包后的本地源码
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PKG_ROOT = path.resolve(__dirname, '..', '..');
+const PKG_ROOT = __dirname;
 
 const mainPkg = JSON.parse(fs.readFileSync(path.join(PKG_ROOT, 'package.json'), 'utf8'));
 
@@ -22,9 +22,8 @@ for (const [name, version] of Object.entries(deps)) {
   if (name.startsWith('@huhaa/') && version === '*') {
     console.log(`Replacing ${name}: * with file: reference`);
     
-    // 找到对应的子包
     const pkgName = name.replace('@huhaa/', '');
-    const pkgPath = `service/packages/${pkgName}`;
+    const pkgPath = `packages/${pkgName}`;
     
     if (mainPkg.dependencies?.[name]) {
       mainPkg.dependencies[name] = `file:${pkgPath}`;
