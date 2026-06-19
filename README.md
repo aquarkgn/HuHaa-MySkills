@@ -182,10 +182,10 @@ npm install
 npm start
 ```
 
-### 方式 C：npm 全局安装（不含编辑器同步）
+### 方式 C：npm 全局安装（推荐）
 
 ```bash
-npm install -g github:aquarkgn/HuHaa-MySkills
+npm install -g huhaa-myskills
 huhaa-myskills init
 huhaa-myskills start
 ```
