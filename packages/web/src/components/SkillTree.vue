@@ -98,6 +98,8 @@ function getSourceIcon(source) {
   align-items: center;
   gap: 6px;
   font-size: 12px;
+  text-align: left;
+  justify-content: flex-start;
   transition: all 0.15s ease;
 }
 
@@ -158,6 +160,7 @@ function getSourceIcon(source) {
   transition: background-color 0.1s ease;
   text-align: left;
   color: inherit;
+  justify-content: flex-start;
 }
 
 .skill-tree-item:hover {

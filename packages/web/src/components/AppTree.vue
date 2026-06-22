@@ -121,6 +121,7 @@ function getAppIcon(app) {
   gap: 6px;
   font-size: 12px;
   text-align: left;
+  justify-content: flex-start;
   transition: all 0.15s ease;
 }
 
@@ -181,6 +182,7 @@ function getAppIcon(app) {
   text-align: left;
   transition: background-color 0.1s ease;
   color: inherit;
+  justify-content: flex-start;
 }
 
 .skill-tree-item:hover {

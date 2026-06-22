@@ -3,7 +3,7 @@ import { computed, reactive } from 'vue';
 import { useSkillsStore } from '../stores/skills.js';
 
 const store = useSkillsStore();
-const treeState = reactive(new Map());
+const expandedPaths = reactive(new Set());
 
 const directoryTree = computed(() => {
   const tree = new Map();
@@ -31,13 +31,12 @@ const directoryTree = computed(() => {
   return tree;
 });
 
-function getPathKey(path) {
-  return `path:${path}`;
-}
-
 function togglePath(path) {
-  const key = getPathKey(path);
-  treeState.set(key, !treeState.get(key));
+  if (expandedPaths.has(path)) {
+    expandedPaths.delete(path);
+  } else {
+    expandedPaths.add(path);
+  }
 }
 
 function countSkills(tree) {
@@ -52,35 +51,6 @@ function countSkills(tree) {
   return count;
 }
 
-const flatTree = computed(() => {
-  const dirs = [];
-
-  function traverse(tree, depth = 0, pathPrefix = '') {
-    for (const [key, value] of tree.entries()) {
-      if (key === '__skills__') continue;
-
-      const currentPath = pathPrefix ? `${pathPrefix}/${key}` : key;
-      const isExpanded = treeState.get(getPathKey(currentPath));
-
-      dirs.push({
-        type: 'dir',
-        name: key,
-        path: currentPath,
-        depth,
-        expanded: isExpanded,
-        skillCount: countSkills(value),
-      });
-
-      if (isExpanded && value instanceof Map) {
-        traverse(value, depth + 1, currentPath);
-      }
-    }
-  }
-
-  traverse(directoryTree.value);
-  return dirs;
-});
-
 function getSkillsInPath(path) {
   let current = directoryTree.value;
   const parts = path.split('/');
@@ -92,6 +62,34 @@ function getSkillsInPath(path) {
 
   return current.get('__skills__') || [];
 }
+
+const flatTree = computed(() => {
+  const dirs = [];
+
+  function traverse(tree, depth = 0, pathPrefix = '') {
+    for (const [key, value] of tree.entries()) {
+      if (key === '__skills__') continue;
+
+      const currentPath = pathPrefix ? `${pathPrefix}/${key}` : key;
+      const isExpanded = expandedPaths.has(currentPath);
+
+      dirs.push({
+        name: key,
+        path: currentPath,
+        depth,
+        expanded: isExpanded,
+        skillCount: countSkills(value),
+      });
+
+      if (isExpanded) {
+        traverse(value, depth + 1, currentPath);
+      }
+    }
+  }
+
+  traverse(directoryTree.value);
+  return dirs;
+});
 
 function getPaddingLeft(depth) {
   return `${depth * 16 + 8}px`;
@@ -131,7 +129,7 @@ function getSkillPaddingLeft(depth) {
             class="tree-skill-item"
             :style="{ paddingLeft: getSkillPaddingLeft(dir.depth) }"
             :class="{ active: skill.id === store.selectedId }"
-            @click="store.loadDetail(skill.id)"
+            @click.stop="store.loadDetail(skill.id)"
             :title="skill.description"
           >
             <span class="tree-icon">📄</span>
@@ -169,6 +167,8 @@ function getSkillPaddingLeft(depth) {
   text-align: left;
   color: inherit;
   transition: background-color 0.1s ease;
+  width: 100%;
+  justify-content: flex-start;
 }
 
 .tree-dir:hover {
@@ -225,6 +225,8 @@ function getSkillPaddingLeft(depth) {
   text-align: left;
   color: inherit;
   transition: background-color 0.1s ease;
+  width: 100%;
+  justify-content: flex-start;
 }
 
 .tree-skill-item:hover {

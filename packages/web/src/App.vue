@@ -13,6 +13,16 @@ const t = i18n.t;
 const md = new MarkdownIt({ html: false, linkify: true, typographer: true });
 const viewMode = ref('list');
 
+const viewModeLabel = computed(() => {
+  const labels = {
+    'list': '列表',
+    'tree': '分类',
+    'path-tree': '目录结构',
+    'app-tree': '应用分组',
+  };
+  return labels[viewMode.value] || '列表';
+});
+
 onMounted(() => store.load());
 
 const detailHtml = computed(() => {
@@ -304,6 +314,7 @@ function formatBytes(n) {
       <div class="content">
         <section class="list-panel">
           <div class="list-head">
+            <div class="list-view-label">{{ viewModeLabel }}</div>
             <div class="list-view-controls">
               <button
                 :class="{ active: viewMode === 'list' }"
