@@ -325,7 +325,12 @@ async function cmdSync() {
 }
 
 async function syncToEditors(skills, editors) {
-  const supported = ['cursor', 'vscode', 'windsurf', 'zed', 'neovim', 'helix', 'sublime', 'vim', 'emacs'];
+  const supported = [
+    'cursor', 'vscode', 'vscode-insiders', 'windsurf', 'zed', 'helix',
+    'neovim', 'vim', 'emacs', 'sublime', 'sublime4', 'textmate',
+    'bbedit', 'atom', 'kate', 'gedit', 'jetbrains', 'openclaw',
+    'herems', 'trae', 'trae-cn', 'codex', 'claude'
+  ];
   const validEditors = editors.filter(e => supported.includes(e));
 
   if (validEditors.length === 0) {
@@ -368,19 +373,35 @@ async function interactiveSync(skills) {
 
   const question = (prompt) => new Promise(resolve => rl.question(prompt, resolve));
 
+  const allEditors = [
+    'cursor', 'vscode', 'vscode-insiders', 'windsurf', 'zed', 'helix',
+    'neovim', 'vim', 'emacs', 'sublime', 'sublime4', 'textmate',
+    'bbedit', 'atom', 'kate', 'gedit', 'jetbrains', 'openclaw',
+    'herems', 'trae', 'trae-cn', 'codex', 'claude'
+  ];
+
   console.log(`\n[sync] found ${skills.length} skills`);
   console.log('\nSupported editors:');
-  console.log('  [1] cursor      [2] vscode     [3] windsurf');
-  console.log('  [4] zed        [5] neovim     [6] helix');
-  console.log('  [7] sublime    [8] vim        [9] emacs');
-  console.log('  [0] all editors');
-  console.log('  [q] quit\n');
 
-  const editorMap = {
-    '1': 'cursor', '2': 'vscode', '3': 'windsurf',
-    '4': 'zed', '5': 'neovim', '6': 'helix',
-    '7': 'sublime', '8': 'vim', '9': 'emacs'
-  };
+  // Display editors in 3 columns
+  for (let i = 0; i < allEditors.length; i += 3) {
+    const line = [];
+    for (let j = 0; j < 3; j++) {
+      const idx = i + j + 1;
+      const editor = allEditors[i + j];
+      if (editor) {
+        line.push(`[${idx.toString().padEnd(2)}] ${editor.padEnd(16)}`);
+      }
+    }
+    console.log('  ' + line.join('  '));
+  }
+
+  console.log('  [0] all editors   [q] quit\n');
+
+  const editorMap = {};
+  allEditors.forEach((editor, i) => {
+    editorMap[(i + 1).toString()] = editor;
+  });
 
   const input = await question('Select editors (0/1/2/... or q): ');
   rl.close();
@@ -392,7 +413,7 @@ async function interactiveSync(skills) {
 
   let editors = [];
   if (input === '0') {
-    editors = Object.values(editorMap);
+    editors = allEditors;
   } else {
     const selected = input.split(/[,\s]+/).filter(s => s);
     editors = selected.map(s => editorMap[s]).filter(Boolean);

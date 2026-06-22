@@ -174,7 +174,7 @@ find_huhaa_root() {
   fi
 
   local script_dir
-  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
   if [[ -f "$script_dir/package.json" ]]; then
     echo "$script_dir"
