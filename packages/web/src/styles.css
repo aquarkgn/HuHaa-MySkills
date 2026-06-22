@@ -198,7 +198,8 @@ button { cursor: pointer; }
 
 .content { flex: 1; min-height: 0; display: grid; grid-template-columns: 420px 1fr; gap: 0; }
 .list-panel { overflow: auto; padding: 14px; border-right: 1px solid #d9dee8; }
-.list-head { display: flex; gap: 10px; align-items: center; justify-content: space-between; color: #6b7280; margin: 0 0 10px 4px; }
+.list-head { display: flex; gap: 10px; align-items: center; justify-content: flex-start; color: #6b7280; margin: 0 0 10px 4px; }
+.list-head > div:last-child { margin-left: auto; }
 .list-head strong { color: #111827; font-size: 20px; margin-right: 4px; }
 
 .list-view-controls {

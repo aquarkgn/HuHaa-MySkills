@@ -4,6 +4,8 @@ import MarkdownIt from 'markdown-it';
 import { useSkillsStore } from './stores/skills.js';
 import { useI18nStore } from './stores/i18n.js';
 import SkillTree from './components/SkillTree.vue';
+import DirectoryTree from './components/DirectoryTree.vue';
+import AppTree from './components/AppTree.vue';
 
 const store = useSkillsStore();
 const i18n = useI18nStore();
@@ -315,6 +317,18 @@ function formatBytes(n) {
                 @click="viewMode = 'tree'"
                 :title="t('category')"
               >{{ t('category') }}</button>
+              <button
+                :class="{ active: viewMode === 'path-tree' }"
+                class="view-btn"
+                @click="viewMode = 'path-tree'"
+                title="按目录结构"
+              >目录结构</button>
+              <button
+                :class="{ active: viewMode === 'app-tree' }"
+                class="view-btn"
+                @click="viewMode = 'app-tree'"
+                title="按应用分组"
+              >应用分组</button>
             </div>
             <div>
               <strong>{{ store.filtered.length }}</strong>
@@ -348,8 +362,14 @@ function formatBytes(n) {
           </button>
           </template>
 
-          <!-- Tree View -->
+          <!-- Tree View (by Source) -->
           <SkillTree v-else-if="viewMode === 'tree'" />
+
+          <!-- Directory Tree View -->
+          <DirectoryTree v-else-if="viewMode === 'path-tree'" />
+
+          <!-- App Tree View -->
+          <AppTree v-else-if="viewMode === 'app-tree'" />
         </section>
 
         <section class="detail-panel" v-if="store.selected">
