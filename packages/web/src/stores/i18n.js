@@ -4,11 +4,12 @@ const messages = {
   zh: {
     appSubtitle: '本地技能中枢',
     skillsLoaded: '已加载技能',
+    list: '列表',
     source: '来源',
     editor: '所属编辑器',
     kind: '类型',
     product: '产品',
-    category: '目录',
+    category: '分类',
     brand: '品牌',
     filters: '筛选',
     active: '已启用',
@@ -67,6 +68,7 @@ const messages = {
   en: {
     appSubtitle: 'local skill hub',
     skillsLoaded: 'skills loaded',
+    list: 'List',
     source: 'Source',
     editor: 'Editor',
     kind: 'Kind',
@@ -135,6 +137,16 @@ export const useI18nStore = defineStore('i18n', {
   }),
   getters: {
     t: (state) => (key) => messages[state.locale]?.[key] || messages.zh[key] || key,
+
+    // Get localized skill property (name, description, category)
+    skillText: (state) => (skill, field) => {
+      if (!skill) return '';
+      if (state.locale === 'zh') {
+        const zhField = `${field}_zh`;
+        if (skill.i18n?.[zhField]) return skill.i18n[zhField];
+      }
+      return skill[field] || '';
+    },
   },
   actions: {
     setLocale(locale) {

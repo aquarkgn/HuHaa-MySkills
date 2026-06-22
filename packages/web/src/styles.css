@@ -200,6 +200,38 @@ button { cursor: pointer; }
 .list-panel { overflow: auto; padding: 14px; border-right: 1px solid #d9dee8; }
 .list-head { display: flex; gap: 10px; align-items: center; justify-content: space-between; color: #6b7280; margin: 0 0 10px 4px; }
 .list-head strong { color: #111827; font-size: 20px; margin-right: 4px; }
+
+.list-view-controls {
+  display: flex;
+  gap: 4px;
+  border: 1px solid #d9dee8;
+  background: #fff;
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.view-btn {
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.view-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.view-btn.active {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
 .sort-select { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280; }
 .sort-select select { border: 1px solid #d4dbe8; border-radius: 9px; background: #fff; padding: 5px 8px; color: #374151; max-width: 118px; }
 .skill-card {

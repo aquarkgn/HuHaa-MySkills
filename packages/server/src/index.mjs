@@ -232,6 +232,24 @@ export async function startServer({ port = 11520 } = {}) {
     }
   });
 
+  app.post('/api/translate', async (req, reply) => {
+    const { id } = req.body || {};
+    const item = irById.get(id);
+    if (!item) {
+      reply.code(404);
+      return { error: 'not found' };
+    }
+
+    const { translateSkill } = await import('./translator.mjs');
+    try {
+      const translated = await translateSkill(item, 'zh');
+      return translated;
+    } catch (e) {
+      reply.code(500);
+      return { error: e.message };
+    }
+  });
+
   app.get('/assets/*', async (req, reply) => {
     if (!hasSpa) {
       reply.code(404);

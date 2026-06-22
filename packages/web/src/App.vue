@@ -1,13 +1,15 @@
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import MarkdownIt from 'markdown-it';
 import { useSkillsStore } from './stores/skills.js';
 import { useI18nStore } from './stores/i18n.js';
+import SkillTree from './components/SkillTree.vue';
 
 const store = useSkillsStore();
 const i18n = useI18nStore();
 const t = i18n.t;
 const md = new MarkdownIt({ html: false, linkify: true, typographer: true });
+const viewMode = ref('list');
 
 onMounted(() => store.load());
 
@@ -66,16 +68,41 @@ const usagePrompt = computed(() => buildUsagePrompt(store.selected));
 
 function buildUsagePrompt(item) {
   if (!item) return '';
-  const name = item.name || item.title || 'selected item';
+
+  const locale = i18n.locale;
+  const name = i18n.skillText(item, 'name');
   const path = item.paths?.abs || '';
-  if (item.source === 'hermes') return `Use Hermes skill ${name}: skill_view(name='${name}')`;
-  if (item.source === 'claude-code') return `Use Claude Code skill ${name}. Local path: ${path}`;
-  if (item.source === 'codex') return `Use Codex instructions from ${path}`;
-  if (item.source === 'cursor') return `Use Cursor rule ${name}. Local path: ${path}`;
-  if (item.source === 'mcp-config') return `Use MCP server/tool ${name}. Config source: ${path}`;
-  if (item.source === 'project-runbook') return `Use runbook ${name}. Local path: ${path}`;
-  if (item.source === 'hermes-plugin') return `Use Hermes plugin ${name}. Local path: ${path}`;
-  return `Use ${name}. Local path: ${path}`;
+  const source = item.source || '';
+
+  const templates = {
+    zh: {
+      hermes: `使用 Hermes 技能 ${name}：skill_view(name='${name}')`,
+      'claude-code': `使用 Claude Code 技能 ${name}。本地路径：${path}`,
+      codex: `使用 Codex 指令。路径：${path}`,
+      cursor: `使用 Cursor 规则 ${name}。路径：${path}`,
+      'mcp-config': `使用 MCP 工具 ${name}。配置：${path}`,
+      'project-runbook': `使用项目手册 ${name}。路径：${path}`,
+      'hermes-plugin': `使用 Hermes 插件 ${name}。路径：${path}`,
+      'skills': `使用技能 ${name}。路径：${path}`,
+      'mcp': `使用 MCP ${name}。路径：${path}`,
+      default: `使用 ${name}。路径：${path}`,
+    },
+    en: {
+      hermes: `Use Hermes skill ${name}: skill_view(name='${name}')`,
+      'claude-code': `Use Claude Code skill ${name}. Local path: ${path}`,
+      codex: `Use Codex instructions. Path: ${path}`,
+      cursor: `Use Cursor rule ${name}. Path: ${path}`,
+      'mcp-config': `Use MCP tool ${name}. Config: ${path}`,
+      'project-runbook': `Use runbook ${name}. Path: ${path}`,
+      'hermes-plugin': `Use Hermes plugin ${name}. Path: ${path}`,
+      'skills': `Use skill ${name}. Path: ${path}`,
+      'mcp': `Use MCP ${name}. Path: ${path}`,
+      default: `Use ${name}. Path: ${path}`,
+    },
+  };
+
+  const localizedTemplates = templates[locale] || templates.en;
+  return localizedTemplates[source] || localizedTemplates.default;
 }
 
 function clearFilterChip(key) {
@@ -102,7 +129,7 @@ function searchTerms(query) {
   return String(query || '')
     .split(/\s+/)
     .filter(Boolean)
-    .filter(part => !/^(editor|kind|source|product|brand):/i.test(part))
+    .filter(part => !/^(editor|kind|source|product|brand|trigger):/i.test(part))
     .map(part => part.replace(/^['"]|['"]$/g, ''));
 }
 
@@ -275,11 +302,28 @@ function formatBytes(n) {
       <div class="content">
         <section class="list-panel">
           <div class="list-head">
+            <div class="list-view-controls">
+              <button
+                :class="{ active: viewMode === 'list' }"
+                class="view-btn"
+                @click="viewMode = 'list'"
+                :title="t('list')"
+              >{{ t('list') }}</button>
+              <button
+                :class="{ active: viewMode === 'tree' }"
+                class="view-btn"
+                @click="viewMode = 'tree'"
+                :title="t('category')"
+              >{{ t('category') }}</button>
+            </div>
             <div>
               <strong>{{ store.filtered.length }}</strong>
               <span>{{ t('items') }}</span>
             </div>
           </div>
+
+          <!-- List View -->
+          <template v-if="viewMode === 'list'">
           <button
             v-for="item in store.filtered"
             :key="item.id"
@@ -302,6 +346,10 @@ function formatBytes(n) {
             </div>
             <p v-html="highlighted(item.description)"></p>
           </button>
+          </template>
+
+          <!-- Tree View -->
+          <SkillTree v-else-if="viewMode === 'tree'" />
         </section>
 
         <section class="detail-panel" v-if="store.selected">
@@ -312,7 +360,7 @@ function formatBytes(n) {
                 <span>{{ store.selected.editor || store.selected.source }}</span>
                 <span>{{ store.selected.category || t('uncategorized') }}</span>
               </div>
-              <h2>{{ store.selected.name }}</h2>
+              <h2>{{ i18n.skillText(store.selected, 'name') }}</h2>
               <div class="badge-row">
                 <span
                   v-for="badge in detailBadges"
@@ -321,7 +369,7 @@ function formatBytes(n) {
                   :class="{ danger: badge === t('parseError'), warn: badge === t('redacted') }"
                 >{{ badge }}</span>
               </div>
-              <p>{{ store.selected.description }}</p>
+              <p>{{ i18n.skillText(store.selected, 'description') }}</p>
             </div>
           </div>
 

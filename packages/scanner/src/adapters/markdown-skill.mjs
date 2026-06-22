@@ -102,7 +102,7 @@ function parseSkillFile({ abs, root, source, limits }) {
     });
   }
 
-  const { data: fm, body, parseError } = parseFrontmatter(text);
+  const { data: fm, body, i18n, parseError } = parseFrontmatter(text);
 
   const name = (fm.name || dirName).toString().trim();
   const title = (fm.title || fm.name || dirName).toString().trim();
@@ -140,6 +140,16 @@ function parseSkillFile({ abs, root, source, limits }) {
     updatedAt: new Date(mtime).toISOString(),
     product,
   };
+
+  // Include i18n translations if present
+  if (i18n) {
+    item.i18n = {
+      ...i18n,
+      translatedAt: new Date().toISOString(),
+      translationModel: 'frontmatter',
+    };
+  }
+
   item.brand = inferBrand({
     name: item.name,
     description: item.description,

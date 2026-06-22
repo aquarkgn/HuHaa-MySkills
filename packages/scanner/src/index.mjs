@@ -132,6 +132,18 @@ export async function scan() {
 
   const out = dedupeSemantic(all);
 
+  // Optional: translate skills to Chinese via LLM
+  if (process.env.HUHAA_TRANSLATE === '1') {
+    console.log('[scan] translating skills to Chinese...');
+    try {
+      const { translateSkill } = await import('../../../packages/server/src/translator.mjs');
+      const translated = await Promise.all(out.map(s => translateSkill(s, 'zh')));
+      return translated;
+    } catch (e) {
+      console.warn('[scan] translation failed:', e.message);
+    }
+  }
+
   if (process.env.HUHAA_DEBUG) {
     console.error('[scan] stats:', JSON.stringify(stats, null, 2));
   }

@@ -67,17 +67,17 @@ export const useSkillsStore = defineStore('skills', {
       const q = parsed.text;
       if (!q) return sortItems(arr, state.sortKey);
       const fuse = new Fuse(arr, {
-        threshold: 0.25,
+        threshold: 0.20,
         ignoreLocation: true,
         minMatchCharLength: 2,
         keys: [
-          { name: 'name', weight: 0.40 },
-          { name: 'description', weight: 0.30 },
-          { name: 'category', weight: 0.15 },
+          { name: 'name', weight: 0.50 },
+          { name: 'description', weight: 0.25 },
+          { name: 'category', weight: 0.10 },
           { name: 'editor', weight: 0.08 },
-          { name: 'source', weight: 0.05 },
-          { name: 'product', weight: 0.05 },
+          { name: 'product', weight: 0.04 },
           { name: 'brand', weight: 0.02 },
+          { name: 'triggers', weight: 0.01 },
         ],
       });
       return sortItems(fuse.search(q).map(r => r.item), state.sortKey);
@@ -224,7 +224,7 @@ function countOptions(items, pick) {
 function parseQuery(input) {
   const filters = {};
   const textParts = [];
-  const re = /(editor|kind|source|product|brand):("[^"]+"|'[^']+'|\S+)/gi;
+  const re = /(editor|kind|source|product|brand|trigger):("[^"]+"|'[^']+'|\S+)/gi;
   let last = 0;
   let match;
   while ((match = re.exec(input || ''))) {
@@ -243,13 +243,24 @@ function applyStructuredFilters(items, filters) {
   for (const [key, value] of Object.entries(filters || {})) {
     const needle = String(value || '').toLowerCase();
     if (!needle) continue;
-    arr = arr.filter(it => String(fieldValue(it, key) || '').toLowerCase() === needle);
+    arr = arr.filter(it => {
+      const field = fieldValue(it, key);
+      if (key === 'trigger') {
+        // Handle triggers as array or comma-separated string
+        const triggers = Array.isArray(field)
+          ? field
+          : (field || '').split(',').map(s => s.trim());
+        return triggers.some(t => t.toLowerCase() === needle);
+      }
+      return String(field || '').toLowerCase() === needle;
+    });
   }
   return arr;
 }
 
 function fieldValue(item, key) {
   if (key === 'editor') return item.editor || item.source;
+  if (key === 'trigger') return item.triggers || [];
   return item[key];
 }
 

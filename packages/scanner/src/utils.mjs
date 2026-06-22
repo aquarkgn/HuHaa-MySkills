@@ -82,7 +82,7 @@ const FM_RE = /^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/;
 
 /**
  * Parse YAML frontmatter at the very top of a markdown file.
- * Returns { data, body, parseError? }. `data` is always an object (possibly
+ * Returns { data, body, i18n?, parseError? }. `data` is always an object (possibly
  * empty). Body never has the frontmatter block.
  */
 export function parseFrontmatter(text) {
@@ -96,9 +96,17 @@ export function parseFrontmatter(text) {
   const [, yamlBlock, body] = m;
   try {
     const data = YAML.parse(yamlBlock) || {};
+
+    // Extract i18n fields if present
+    const i18n = {};
+    for (const key of ['name_zh', 'description_zh', 'category_zh']) {
+      if (data[key]) i18n[key] = data[key];
+    }
+
     return {
       data: typeof data === 'object' && !Array.isArray(data) ? data : {},
       body: body || '',
+      ...(Object.keys(i18n).length > 0 && { i18n }),
     };
   } catch (e) {
     return { data: {}, body: body || text, parseError: `frontmatter: ${e.message}` };
