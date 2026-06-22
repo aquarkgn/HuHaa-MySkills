@@ -193,126 +193,236 @@ sync_to_cursor() {
 sync_to_vscode() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path/User/snippets"
+
+  # 尝试同步 .cursorrules 作为注释文件用于参考
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/User/.cursorrules.txt" 2>/dev/null || true
+  fi
+
   log_success "VS Code: 已同步"
 }
 
 sync_to_vscode_insiders() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path/User/snippets"
+
+  # 尝试同步 .cursorrules 作为注释文件用于参考
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/User/.cursorrules.txt" 2>/dev/null || true
+  fi
+
   log_success "VS Code Insiders: 已同步"
 }
 
 sync_to_windsurf() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path"
+
+  # 同步 .cursorrules 如果存在
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/.cursorrules" 2>/dev/null || log_warn "Windsurf: .cursorrules 复制失败"
+  fi
+
   log_success "Windsurf: 已同步"
 }
 
 sync_to_zed() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path"
+
+  # Zed 支持 .cursorrules
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/.cursorrules" 2>/dev/null || log_warn "Zed: .cursorrules 复制失败"
+  fi
+
   log_success "Zed: 已同步"
 }
 
 sync_to_helix() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path"
+
+  # 尝试同步技能相关的配置
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/rules.md" 2>/dev/null || log_warn "Helix: rules 复制失败"
+  fi
+
   log_success "Helix: 已同步"
 }
 
 sync_to_neovim() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path/plugin"
+
+  # 创建基础配置加载文件
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/huhaa_rules.md" 2>/dev/null || log_warn "Neovim: rules 复制失败"
+  fi
+
   log_success "Neovim: 已同步"
 }
 
 sync_to_vim() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path/plugin"
+
+  # 创建基础配置加载文件
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/huhaa_rules.md" 2>/dev/null || log_warn "Vim: rules 复制失败"
+  fi
+
   log_success "Vim: 已同步"
 }
 
 sync_to_emacs() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path"
+
+  # Emacs 用户可以加载规则文件
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/huhaa-rules.md" 2>/dev/null || log_warn "Emacs: rules 复制失败"
+  fi
+
   log_success "Emacs: 已同步"
 }
 
 sync_to_sublime() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path/Packages/User"
+
+  # 同步规则到 Sublime 用户目录
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/Packages/User/huhaa_rules.md" 2>/dev/null || log_warn "Sublime Text: rules 复制失败"
+  fi
+
   log_success "Sublime Text: 已同步"
 }
 
 sync_to_sublime4() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path/Packages/User"
+
+  # 同步规则到 Sublime 用户目录
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/Packages/User/huhaa_rules.md" 2>/dev/null || log_warn "Sublime Text 4: rules 复制失败"
+  fi
+
   log_success "Sublime Text 4: 已同步"
 }
 
 sync_to_textmate() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path"
+
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/huhaa_rules.md" 2>/dev/null || log_warn "TextMate: rules 复制失败"
+  fi
+
   log_success "TextMate: 已同步"
 }
 
 sync_to_bbedit() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path"
+
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/huhaa_rules.md" 2>/dev/null || log_warn "BBEdit: rules 复制失败"
+  fi
+
   log_success "BBEdit: 已同步"
 }
 
 sync_to_atom() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path/packages"
+
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/huhaa_rules.md" 2>/dev/null || log_warn "Atom: rules 复制失败"
+  fi
+
   log_success "Atom: 已同步"
 }
 
 sync_to_kate() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path"
+
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/huhaa_rules.md" 2>/dev/null || log_warn "Kate: rules 复制失败"
+  fi
+
   log_success "Kate: 已同步"
 }
 
 sync_to_gedit() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path"
+
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/huhaa_rules.md" 2>/dev/null || log_warn "Gedit: rules 复制失败"
+  fi
+
   log_success "Gedit: 已同步"
 }
 
 sync_to_jetbrains() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path"
+
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/huhaa_rules.md" 2>/dev/null || log_warn "JetBrains IDEs: rules 复制失败"
+  fi
+
   log_success "JetBrains IDEs: 已同步"
 }
 
 sync_to_openclaw() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path"
+
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/.cursorrules" 2>/dev/null || log_warn "Openclaw: .cursorrules 复制失败"
+  fi
+
   log_success "Openclaw: 已同步"
 }
 
 sync_to_herems() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path"
+
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/.cursorrules" 2>/dev/null || log_warn "Herems: .cursorrules 复制失败"
+  fi
+
   log_success "Herems: 已同步"
 }
 
 sync_to_trae() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path"
+
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/.cursorrules" 2>/dev/null || log_warn "Trae: .cursorrules 复制失败"
+  fi
+
   log_success "Trae: 已同步"
 }
 
 sync_to_trae_cn() {
   local editor_path="$1" root="$2"
   mkdir -p "$editor_path"
+
+  if [[ -f "$root/.cursorrules" ]]; then
+    cp "$root/.cursorrules" "$editor_path/.cursorrules" 2>/dev/null || log_warn "Trae CN: .cursorrules 复制失败"
+  fi
+
   log_success "Trae CN: 已同步"
 }
 
 sync_to_codex() {
   local editor_path="$1" root="$2"
-  [[ -f "$root/.cursorrules" ]] && cp "$root/.cursorrules" "$editor_path/.cursorrules" && log_success "Codex: 已同步" || log_warn "Codex: 跳过"
+  [[ -f "$root/.cursorrules" ]] && cp "$root/.cursorrules" "$editor_path/.cursorrules" 2>/dev/null && log_success "Codex: 已同步" || log_warn "Codex: 跳过"
 }
 
 sync_to_claude() {
