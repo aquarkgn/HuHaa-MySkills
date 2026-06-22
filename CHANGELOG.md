@@ -21,6 +21,30 @@
 
 ---
 
+## [0.2.6] - 2026-06-22
+
+完整的编辑器同步支持 | 新增 trae/trae-cn 等新兴编辑器
+
+### Added
+- ✅ 扩展编辑器支持列表：从 9 个增至 23 个
+  - 新增：trae, trae-cn, vscode-insiders, sublime4, textmate, bbedit, atom, kate, gedit, jetbrains, openclaw, herems, codex, claude
+  - 所有编辑器现在在交互菜单中可见
+
+- ✅ 改进交互式菜单：3 列网格布局显示所有编辑器选项
+
+### Fixed
+- ✅ 修复脚本根目录检测问题（find_huhaa_root 函数）
+  - 解决了从不同目录运行 sync 命令时找不到项目的 bug
+  
+- ✅ 修改 npm run sync 以使用 JavaScript 命令而非直接调用 bash 脚本
+  - 现在交互式菜单正确显示所有编辑器选项
+
+### Changed
+- npm run sync 现在调用 `node bin/huhaa-myskills.mjs sync` 而非 `bash scripts/sync-skills.sh`
+- 编辑器菜单显示更清晰，支持多列布局
+
+---
+
 ## [0.2.5] - 2026-06-22
 
 编辑器技能同步完整功能 | 3 项核心修复
