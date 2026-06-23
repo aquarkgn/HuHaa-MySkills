@@ -13,9 +13,9 @@ const i18n = useI18nStore();
 const t = i18n.t;
 const md = new MarkdownIt({ html: false, linkify: true, typographer: true });
 const viewMode = ref('list');
-const sidebarOpen = ref(false); // 抽屉式侧边栏打开状态
 const translating = ref(false);
 const translatedFields = ref({}); // { skillId: { field: 'translated text', ... } }
+const listCollapsed = ref(false); // 卡片列表是否折叠
 
 const viewModeLabel = computed(() => {
   const labels = {
@@ -149,7 +149,7 @@ function searchTerms(query) {
     .split(/\s+/)
     .filter(Boolean)
     .filter(part => !/^(editor|kind|source|product|brand|trigger):/i.test(part))
-    .map(part => part.replace(/^['"]|['"]$/g, ''));
+    .map(part => part.replace(/^['""]|[""]$/g, ''));
 }
 
 function escapeHtml(s) {
@@ -175,9 +175,6 @@ function formatBytes(n) {
 function handleKeydown(e) {
   if (e.key === 'Escape' && store.selected) {
     store.selectedId = null;
-  }
-  if (e.key === 'Escape' && sidebarOpen.value) {
-    sidebarOpen.value = false;
   }
 }
 
@@ -215,17 +212,10 @@ function getTranslatedDescription() {
 </script>
 
 <template>
-  <div class="shell" :style="{ gridTemplateColumns: `50px 1fr 320px` }">
-    <!-- OVERLAY - 侧边栏打开时的背景层 -->
-    <div v-if="sidebarOpen" class="sidebar-overlay" @click="sidebarOpen = false"></div>
-
-    <!-- LEFT SIDEBAR - 筛选项（抽屉式） -->
-    <aside class="sidebar" :class="{ open: sidebarOpen }">
-      <div class="sidebar-toggle" @click="sidebarOpen = !sidebarOpen" :title="sidebarOpen ? '关闭筛选' : '打开筛选'">
-        {{ sidebarOpen ? '✕' : '☰' }}
-      </div>
-      
-      <div class="sidebar-content" v-show="sidebarOpen">
+  <div class="shell">
+    <!-- LEFT SIDEBAR - 固定 200px 筛选栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-content">
         <!-- 筛选项 -->
         <div class="filter-compact">
           <label class="filter-item">
@@ -275,9 +265,9 @@ function getTranslatedDescription() {
       </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
-    <main class="main">
-      <!-- TOPBAR -->
+    <!-- RIGHT MAIN CONTENT AREA - 占据剩余全部空间 -->
+    <main class="main-area">
+      <!-- TOPBAR - 搜索和操作 -->
       <header class="topbar">
         <div class="topbar-left">
           <div class="search-box">
@@ -298,163 +288,157 @@ function getTranslatedDescription() {
         </div>
       </header>
 
-      <!-- CONTENT AREA -->
-      <div class="content-wrapper">
-        <div v-if="store.error" class="error">{{ store.error }}</div>
-        <div v-if="store.loading" class="loading">{{ t('loading') }}</div>
-
-        <!-- LIST PANEL -->
-        <section class="list-panel">
-          <div class="list-head">
-            <div class="list-view-label">{{ viewModeLabel }}</div>
-            <div>
-              <strong>{{ store.filtered.length }}</strong>
-              <span>{{ t('items') }}</span>
-            </div>
+      <!-- LIST SECTION - 上方 120px 固定（可 scroll） -->
+      <section class="list-section" :class="{ collapsed: listCollapsed }">
+        <div class="list-header">
+          <div class="list-header-left">
+            <button class="list-collapse-btn" @click="listCollapsed = !listCollapsed" :title="listCollapsed ? '展开' : '收起'">
+              {{ listCollapsed ? '▼' : '▲' }} {{ viewModeLabel }} ({{ store.filtered.length }})
+            </button>
           </div>
+          <div class="list-header-right">
+            <span v-if="activeFilterText" class="filter-text">{{ activeFilterText }}</span>
+          </div>
+        </div>
+
+        <!-- LIST CONTENT - scrollable -->
+        <div v-show="!listCollapsed" class="list-content">
+          <div v-if="store.error" class="error">{{ store.error }}</div>
+          <div v-if="store.loading" class="loading">{{ t('loading') }}</div>
 
           <!-- List View -->
           <template v-if="viewMode === 'list'">
             <button
               v-for="item in store.filtered"
               :key="item.id"
-              class="skill-card"
+              class="skill-card-mini"
               :class="{ selected: item.id === store.selectedId }"
               @click="store.loadDetail(item.id)"
+              :title="item.name"
             >
-              <div class="skill-title">
-                <span class="src" :class="`src-${item.source}`">{{ item.source }}</span>
-                <strong v-html="highlighted(item.name)"></strong>
-              </div>
-              <div class="skill-chipline">
-                <span>{{ item.editor || item.source }}</span>
-                <span>{{ item.kind || '-' }}</span>
-                <span v-if="item.product">{{ item.product }}</span>
-              </div>
-              <div class="skill-meta">
-                <span>{{ item.category || '-' }}</span>
-                <span v-if="item.brand">· {{ item.brand }}</span>
-              </div>
-              <p v-html="highlighted(item.description)"></p>
+              <span class="src" :class="`src-${item.source}`">{{ item.source }}</span>
+              <span class="name" v-html="highlighted(item.name)"></span>
+              <span class="kind">{{ item.kind || '-' }}</span>
             </button>
           </template>
 
-          <!-- Tree View (by Source) -->
+          <!-- Tree Views -->
           <SkillTree v-else-if="viewMode === 'tree'" />
-
-          <!-- Directory Tree View -->
           <DirectoryTree v-else-if="viewMode === 'path-tree'" />
-
-          <!-- App Tree View -->
           <AppTree v-else-if="viewMode === 'app-tree'" />
-        </section>
-      </div>
-    </main>
-
-    <!-- RIGHT DETAIL PANEL - 固定第三栏（不是浮层） -->
-    <aside class="detail-panel-fixed" v-if="store.selected" role="complementary">
-      <!-- CLOSE BUTTON -->
-      <button class="detail-close" @click="store.selectedId = null" title="Close (Esc)">✕</button>
-
-      <!-- HEADER -->
-      <div class="detail-head">
-        <div>
-          <div class="detail-kicker">
-            <span class="src" :class="`src-${store.selected.source}`">{{ store.selected.source }}</span>
-            <span>{{ store.selected.editor || store.selected.source }}</span>
-            <span>{{ store.selected.category || t('uncategorized') }}</span>
-          </div>
-          <h2>{{ i18n.skillText(store.selected, 'name') }}</h2>
-          <div class="badge-row">
-            <span
-              v-for="badge in detailBadges"
-              :key="badge"
-              class="badge"
-              :class="{ danger: badge === t('parseError'), warn: badge === t('redacted') }"
-            >{{ badge }}</span>
-          </div>
-          <p>{{ i18n.skillText(store.selected, 'description') }}</p>
         </div>
-      </div>
+      </section>
 
-      <!-- ACTIONS -->
-      <div class="actions">
-        <button @click="store.copySelected('path', { copied: t('copied'), bytes: t('bytes') })" class="action-btn">💬 {{ t('copyPath') }}</button>
-        <button @click="store.copySelected('dir', { copied: t('copied'), bytes: t('bytes') })" class="action-btn">📂 {{ t('copyDir') }}</button>
-        <button @click="store.copySelected('rel', { copied: t('copied'), bytes: t('bytes') })" class="action-btn">🔗 {{ t('copyRel') }}</button>
-        <button @click="store.copySelected('prompt', { copied: t('copied'), bytes: t('bytes') })" class="action-btn">📋 {{ t('copyPrompt') }}</button>
-        <button @click="store.openSelected('cursor', { opened: t('opened') })" class="action-btn">🎯 {{ t('openCursor') }}</button>
-        <button @click="store.openSelected('finder', { opened: t('opened') })" class="action-btn">🔍 {{ t('reveal') }}</button>
-        <button @click="translateCurrentSkill" :disabled="translating || !store.selected" class="action-btn translate-btn" :class="{ loading: translating }">{{ translating ? '⏳...' : '🌐' }}</button>
-      </div>
-
-      <div v-if="store.notice" class="notice">{{ store.notice }}</div>
-
-      <!-- SCROLLABLE CONTENT -->
-      <div class="detail-scroll">
-        <!-- USAGE CARD -->
-        <section class="usage-card">
-          <div class="usage-head">
-            <span>{{ t('usage') }}</span>
-            <h3>{{ t('howToUse') }}</h3>
-          </div>
-          <div class="usage-prompt"><code>{{ usagePrompt }}</code></div>
-          <div class="usage-grid">
-            <div>
-              <strong>{{ t('appliesTo') }}</strong>
-              <p>{{ getTranslatedDescription() || '-' }}</p>
+      <!-- DETAIL SECTION - 下方占据剩余全部空间 -->
+      <section class="detail-section" v-if="store.selected">
+        <!-- DETAIL HEADER -->
+        <div class="detail-header">
+          <div class="detail-header-left">
+            <div class="detail-kicker">
+              <span class="src" :class="`src-${store.selected.source}`">{{ store.selected.source }}</span>
+              <span>{{ store.selected.editor || store.selected.source }}</span>
+              <span>{{ store.selected.category || t('uncategorized') }}</span>
             </div>
-            <div>
-              <strong>{{ t('quickFacts') }}</strong>
-              <p>{{ store.selected.editor || store.selected.source }} · {{ store.selected.kind }}<span v-if="store.selected.product"> · {{ store.selected.product }}</span></p>
+            <h2>{{ i18n.skillText(store.selected, 'name') }}</h2>
+            <div class="badge-row">
+              <span
+                v-for="badge in detailBadges"
+                :key="badge"
+                class="badge"
+                :class="{ danger: badge === t('parseError'), warn: badge === t('redacted') }"
+              >{{ badge }}</span>
             </div>
+            <p>{{ i18n.skillText(store.selected, 'description') }}</p>
           </div>
-          <div class="usage-block" v-if="store.selected.params?.length">
-            <strong>{{ t('params') }}</strong>
-            <div class="param-table">
-              <div v-for="p in store.selected.params" :key="p.name">
-                <code>{{ p.name }}</code>
-                <span>{{ p.type || '-' }}</span>
-                <b v-if="p.required">{{ t('required') }}</b>
-                <p>{{ p.description || p.default || '-' }}</p>
+          <button class="detail-close-btn" @click="store.selectedId = null" title="Close (Esc)">✕</button>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="detail-actions">
+          <button @click="store.copySelected('path', { copied: t('copied'), bytes: t('bytes') })" class="action-btn">💬 {{ t('copyPath') }}</button>
+          <button @click="store.copySelected('dir', { copied: t('copied'), bytes: t('bytes') })" class="action-btn">📂 {{ t('copyDir') }}</button>
+          <button @click="store.copySelected('rel', { copied: t('copied'), bytes: t('bytes') })" class="action-btn">🔗 {{ t('copyRel') }}</button>
+          <button @click="store.copySelected('prompt', { copied: t('copied'), bytes: t('bytes') })" class="action-btn">📋 {{ t('copyPrompt') }}</button>
+          <button @click="store.openSelected('cursor', { opened: t('opened') })" class="action-btn">🎯 {{ t('openCursor') }}</button>
+          <button @click="store.openSelected('finder', { opened: t('opened') })" class="action-btn">🔍 {{ t('reveal') }}</button>
+          <button @click="translateCurrentSkill" :disabled="translating || !store.selected" class="action-btn translate-btn" :class="{ loading: translating }">{{ translating ? '⏳...' : '🌐' }}</button>
+        </div>
+
+        <div v-if="store.notice" class="notice">{{ store.notice }}</div>
+
+        <!-- SCROLLABLE CONTENT -->
+        <div class="detail-scroll">
+          <!-- USAGE CARD -->
+          <section class="usage-card">
+            <div class="usage-head">
+              <span>{{ t('usage') }}</span>
+              <h3>{{ t('howToUse') }}</h3>
+            </div>
+            <div class="usage-prompt"><code>{{ usagePrompt }}</code></div>
+            <div class="usage-grid">
+              <div>
+                <strong>{{ t('appliesTo') }}</strong>
+                <p>{{ getTranslatedDescription() || '-' }}</p>
+              </div>
+              <div>
+                <strong>{{ t('quickFacts') }}</strong>
+                <p>{{ store.selected.editor || store.selected.source }} · {{ store.selected.kind }}<span v-if="store.selected.product"> · {{ store.selected.product }}</span></p>
               </div>
             </div>
-          </div>
-          <div class="usage-block" v-if="store.selected.triggers?.length">
-            <strong>{{ t('triggers') }}</strong>
-            <span class="tag" v-for="tag in store.selected.triggers.slice(0, 12)" :key="tag">{{ tag }}</span>
-          </div>
-          <div class="usage-block" v-if="store.selected.links?.length">
-            <strong>{{ t('links') }}</strong>
-            <a class="usage-link" v-for="link in store.selected.links" :key="link.url" :href="link.url" target="_blank" rel="noreferrer">{{ link.label || link.url }}</a>
-          </div>
-        </section>
+            <div class="usage-block" v-if="store.selected.params?.length">
+              <strong>{{ t('params') }}</strong>
+              <div class="param-table">
+                <div v-for="p in store.selected.params" :key="p.name">
+                  <code>{{ p.name }}</code>
+                  <span>{{ p.type || '-' }}</span>
+                  <b v-if="p.required">{{ t('required') }}</b>
+                  <p>{{ p.description || p.default || '-' }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="usage-block" v-if="store.selected.triggers?.length">
+              <strong>{{ t('triggers') }}</strong>
+              <span class="tag" v-for="tag in store.selected.triggers.slice(0, 12)" :key="tag">{{ tag }}</span>
+            </div>
+            <div class="usage-block" v-if="store.selected.links?.length">
+              <strong>{{ t('links') }}</strong>
+              <a class="usage-link" v-for="link in store.selected.links" :key="link.url" :href="link.url" target="_blank" rel="noreferrer">{{ link.label || link.url }}</a>
+            </div>
+          </section>
 
-        <!-- METADATA -->
-        <dl class="kv">
-          <div>
-            <dt>{{ t('path') }}</dt>
-            <dd><code>{{ store.selected.paths?.abs }}</code></dd>
-          </div>
-          <div v-for="([label, value]) in detailMeta" :key="label">
-            <dt>{{ label }}</dt>
-            <dd>{{ value }}</dd>
-          </div>
-          <div v-if="store.selected.parseError" class="kv-error">
-            <dt>{{ t('parseError') }}</dt>
-            <dd>{{ store.selected.parseError }}</dd>
-          </div>
-          <div v-if="store.selected.triggers?.length">
-            <dt>{{ t('triggers') }}</dt>
-            <dd>
-              <span class="tag" v-for="trig in store.selected.triggers.slice(0, 8)" :key="trig">{{ trig }}</span>
-            </dd>
-          </div>
-        </dl>
+          <!-- METADATA -->
+          <dl class="kv">
+            <div>
+              <dt>{{ t('path') }}</dt>
+              <dd><code>{{ store.selected.paths?.abs }}</code></dd>
+            </div>
+            <div v-for="([label, value]) in detailMeta" :key="label">
+              <dt>{{ label }}</dt>
+              <dd>{{ value }}</dd>
+            </div>
+            <div v-if="store.selected.parseError" class="kv-error">
+              <dt>{{ t('parseError') }}</dt>
+              <dd>{{ store.selected.parseError }}</dd>
+            </div>
+            <div v-if="store.selected.triggers?.length">
+              <dt>{{ t('triggers') }}</dt>
+              <dd>
+                <span class="tag" v-for="trig in store.selected.triggers.slice(0, 8)" :key="trig">{{ trig }}</span>
+              </dd>
+            </div>
+          </dl>
 
-        <!-- MARKDOWN CONTENT -->
-        <article class="markdown" v-html="detailHtml"></article>
-      </div>
-    </aside>
+          <!-- MARKDOWN CONTENT -->
+          <article class="markdown" v-html="detailHtml"></article>
+        </div>
+      </section>
+
+      <!-- 无选中时的空状态 -->
+      <section v-else class="detail-section empty">
+        <div class="empty-state">
+          <p>{{ t('selectItem') || '选择一个技能查看详情' }}</p>
+        </div>
+      </section>
+    </main>
   </div>
 </template>
