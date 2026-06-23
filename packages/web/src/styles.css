@@ -547,12 +547,34 @@ mark {
   padding: 8px 12px;
   font-size: 12px;
   border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: 4px;
   background: white;
   color: #374151;
   cursor: pointer;
   transition: all 0.2s ease;
-  white-space: nowrap;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-btn.translate-btn {
+  min-width: 40px;
+}
+
+.action-btn.translate-btn.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 .action-btn:hover {

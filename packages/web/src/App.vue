@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import MarkdownIt from 'markdown-it';
 import { useSkillsStore } from './stores/skills.js';
 import { useI18nStore } from './stores/i18n.js';
+import { translateText, getCacheStats } from './lib/translator.js';
 import SkillTree from './components/SkillTree.vue';
 import DirectoryTree from './components/DirectoryTree.vue';
 import AppTree from './components/AppTree.vue';
@@ -12,12 +13,9 @@ const i18n = useI18nStore();
 const t = i18n.t;
 const md = new MarkdownIt({ html: false, linkify: true, typographer: true });
 const viewMode = ref('list');
-const sidebarWidth = ref(180); // 不再需要（保留向后兼容）
-const isResizing = ref(false);
-const startX = ref(0);
-const startWidth = ref(0);
-const sidebarCollapsed = ref(false); // 侧边栏折叠状态
-const sidebarOpen = ref(false); // 抽屉式侧边栏打开状态（移动端）
+const sidebarOpen = ref(false); // 抽屉式侧边栏打开状态
+const translating = ref(false);
+const translatedFields = ref({}); // { skillId: { field: 'translated text', ... } }
 
 const viewModeLabel = computed(() => {
   const labels = {
@@ -181,6 +179,38 @@ function handleKeydown(e) {
   if (e.key === 'Escape' && sidebarOpen.value) {
     sidebarOpen.value = false;
   }
+}
+
+/**
+ * 翻译当前选中技能的描述
+ */
+async function translateCurrentSkill() {
+  if (!store.selected) return;
+
+  translating.value = true;
+  const skillId = store.selected.id;
+
+  try {
+    const translated = await translateText(store.selected.description || '', 'zh-CN');
+    if (!translatedFields.value[skillId]) {
+      translatedFields.value[skillId] = {};
+    }
+    translatedFields.value[skillId].description = translated;
+    console.debug('[translate] skill description translated:', translated.slice(0, 30));
+  } catch (e) {
+    console.error('[translate] error:', e);
+  } finally {
+    translating.value = false;
+  }
+}
+
+/**
+ * 获取翻译后的描述文本，如果没有则返回原文本
+ */
+function getTranslatedDescription() {
+  if (!store.selected) return '';
+  const skillId = store.selected.id;
+  return translatedFields.value[skillId]?.description || store.selected.description || '';
 }
 </script>
 
@@ -355,6 +385,7 @@ function handleKeydown(e) {
         <button @click="store.copySelected('prompt', { copied: t('copied'), bytes: t('bytes') })" class="action-btn">📋 {{ t('copyPrompt') }}</button>
         <button @click="store.openSelected('cursor', { opened: t('opened') })" class="action-btn">🎯 {{ t('openCursor') }}</button>
         <button @click="store.openSelected('finder', { opened: t('opened') })" class="action-btn">🔍 {{ t('reveal') }}</button>
+        <button @click="translateCurrentSkill" :disabled="translating || !store.selected" class="action-btn translate-btn" :class="{ loading: translating }">{{ translating ? '⏳...' : '🌐' }}</button>
       </div>
 
       <div v-if="store.notice" class="notice">{{ store.notice }}</div>
@@ -371,7 +402,7 @@ function handleKeydown(e) {
           <div class="usage-grid">
             <div>
               <strong>{{ t('appliesTo') }}</strong>
-              <p>{{ store.selected.description || '-' }}</p>
+              <p>{{ getTranslatedDescription() || '-' }}</p>
             </div>
             <div>
               <strong>{{ t('quickFacts') }}</strong>

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import Fastify from 'fastify';
 import chokidar from 'chokidar';
+import { translate } from 'google-translate-api-x';
 
 const PHASE = 'P6';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -23,6 +24,26 @@ function readPackageVersion() {
     return JSON.parse(fs.readFileSync(PACKAGE_JSON, 'utf8')).version || '0.0.0';
   } catch {
     return '0.0.0';
+  }
+}
+
+/**
+ * 翻译文本
+ * @param {string} text - 要翻译的文本
+ * @param {string} targetLang - 目标语言 (默认: 'zh-CN')
+ * @returns {Promise<string>} 翻译结果
+ */
+async function translateText(text, targetLang = 'zh-CN') {
+  if (!text || !text.trim()) return '';
+
+  try {
+    const result = await translate(text, {
+      to: targetLang === 'zh-CN' ? 'zh' : targetLang,
+    });
+    return result.text || text;
+  } catch (e) {
+    console.warn(`[translate] error: ${e.message}`);
+    return text; // 降级返回原文本
   }
 }
 
@@ -233,21 +254,39 @@ export async function startServer({ port = 11520 } = {}) {
   });
 
   app.post('/api/translate', async (req, reply) => {
-    const { id } = req.body || {};
-    const item = irById.get(id);
-    if (!item) {
-      reply.code(404);
-      return { error: 'not found' };
+    const { text, targetLang = 'zh-CN', id } = req.body || {};
+
+    // 新模式：直接翻译文本（前端使用）
+    if (text) {
+      try {
+        const translated = await translateText(text, targetLang);
+        return { ok: true, result: translated, targetLang };
+      } catch (e) {
+        reply.code(500);
+        return { ok: false, error: e.message };
+      }
     }
 
-    const { translateSkill } = await import('./translator.mjs');
-    try {
-      const translated = await translateSkill(item, 'zh');
-      return translated;
-    } catch (e) {
-      reply.code(500);
-      return { error: e.message };
+    // 旧模式：翻译技能对象（保持向后兼容）
+    if (id) {
+      const item = irById.get(id);
+      if (!item) {
+        reply.code(404);
+        return { error: 'not found' };
+      }
+
+      const { translateSkill } = await import('./translator.mjs');
+      try {
+        const translated = await translateSkill(item, 'zh');
+        return translated;
+      } catch (e) {
+        reply.code(500);
+        return { error: e.message };
+      }
     }
+
+    reply.code(400);
+    return { ok: false, error: 'missing text or id parameter' };
   });
 
   app.get('/assets/*', async (req, reply) => {
