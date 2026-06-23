@@ -12,11 +12,12 @@ const i18n = useI18nStore();
 const t = i18n.t;
 const md = new MarkdownIt({ html: false, linkify: true, typographer: true });
 const viewMode = ref('list');
-const sidebarWidth = ref(180); // 默认 180px（更合理的宽度）
+const sidebarWidth = ref(180); // 不再需要（保留向后兼容）
 const isResizing = ref(false);
 const startX = ref(0);
 const startWidth = ref(0);
 const sidebarCollapsed = ref(false); // 侧边栏折叠状态
+const sidebarOpen = ref(false); // 抽屉式侧边栏打开状态（移动端）
 
 const viewModeLabel = computed(() => {
   const labels = {
@@ -31,11 +32,6 @@ const viewModeLabel = computed(() => {
 onMounted(() => {
   store.load();
   window.addEventListener('keydown', handleKeydown);
-  // 从 localStorage 加载侧栏宽度
-  const saved = localStorage.getItem('huhaa-sidebar-width');
-  if (saved) {
-    sidebarWidth.value = parseInt(saved, 10);
-  }
 });
 
 const detailHtml = computed(() => {
@@ -182,45 +178,24 @@ function handleKeydown(e) {
   if (e.key === 'Escape' && store.selected) {
     store.selectedId = null;
   }
+  if (e.key === 'Escape' && sidebarOpen.value) {
+    sidebarOpen.value = false;
+  }
 }
-
-function startResize(e) {
-  isResizing.value = true;
-  startX.value = e.clientX;
-  startWidth.value = sidebarWidth.value;
-  document.addEventListener('mousemove', onResize);
-  document.addEventListener('mouseup', stopResize);
-}
-
-function onResize(e) {
-  if (!isResizing.value) return;
-  const diff = e.clientX - startX.value;
-  const newWidth = Math.max(80, Math.min(300, startWidth.value + diff));
-  sidebarWidth.value = newWidth;
-}
-
-function stopResize() {
-  isResizing.value = false;
-  document.removeEventListener('mousemove', onResize);
-  document.removeEventListener('mouseup', stopResize);
-  // 保存到 localStorage
-  localStorage.setItem('huhaa-sidebar-width', sidebarWidth.value.toString());
-}
-
-onMounted(() => {
-  window.addEventListener('keydown', handleKeydown);
-});
 </script>
 
 <template>
-  <div class="shell" :style="{ gridTemplateColumns: `${sidebarCollapsed ? 50 : sidebarWidth}px 1fr 380px` }">
-    <!-- LEFT SIDEBAR - 筛选项（支持拖拽） -->
-    <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
-      <div class="sidebar-toggle" @click="sidebarCollapsed = !sidebarCollapsed" :title="sidebarCollapsed ? '展开筛选' : '折叠筛选'">
-        {{ sidebarCollapsed ? '▶' : '◀' }}
+  <div class="shell" :style="{ gridTemplateColumns: `50px 1fr 320px` }">
+    <!-- OVERLAY - 侧边栏打开时的背景层 -->
+    <div v-if="sidebarOpen" class="sidebar-overlay" @click="sidebarOpen = false"></div>
+
+    <!-- LEFT SIDEBAR - 筛选项（抽屉式） -->
+    <aside class="sidebar" :class="{ open: sidebarOpen }">
+      <div class="sidebar-toggle" @click="sidebarOpen = !sidebarOpen" :title="sidebarOpen ? '关闭筛选' : '打开筛选'">
+        {{ sidebarOpen ? '✕' : '☰' }}
       </div>
       
-      <div class="sidebar-content" v-show="!sidebarCollapsed">
+      <div class="sidebar-content" v-show="sidebarOpen">
         <!-- 筛选项 -->
         <div class="filter-compact">
           <label class="filter-item">
@@ -268,9 +243,6 @@ onMounted(() => {
           </label>
         </div>
       </div>
-
-      <!-- 拖拽调整把手 -->
-      <div class="sidebar-resize-handle" @mousedown="startResize" title="拖拽调整宽度"></div>
     </aside>
 
     <!-- MAIN CONTENT -->
