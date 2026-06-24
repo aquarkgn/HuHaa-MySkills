@@ -7,9 +7,10 @@
 - **[快速开始指南](guides/QUICK_START.md)** — 5 分钟上手
 
 ## 📋 协作规范（必读）
-- **[CLAUDE.md](../CLAUDE.md)** — AI 助手协作规则、工程纪律、提交规范
-- **[AGENT.md](../AGENT.md)** — Claude Code 代理行为准则、权限边界
-- **[工程规范](ENGINEERING_STANDARDS.md)** — 代码质量、测试覆盖、性能基准
+- **[CLAUDE.md](../CLAUDE.md)** — AI 助手协作规则、工程纪律、提交规范（项目级）
+- **[AGENT.md](../AGENT.md)** — Claude Code 代理行为准则、权限边界（项目级）
+- **[GitHub 前端标准](GITHUB_FRONTEND_STANDARDS.md)** — 通用前端项目管理规范（详细版）
+- **[工程规范](ENGINEERING_STANDARDS.md)** — 代码质量、测试覆盖、性能基准（可选阅读）
 
 ## 🔧 开发指南
 - **[NPM 同步修复](guides/SYNC-FIX-GUIDE.md)** — 解决编辑器同步问题
