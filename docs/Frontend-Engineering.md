@@ -109,63 +109,81 @@ v1.2.3+build.2026062401   # 构建版本
 ```
 my-project/
 ├── .github/
-│   ├── workflows/           # CI/CD 工作流
-│   ├── ISSUE_TEMPLATE/      # Issue 模板
+│   ├── workflows/                    # CI/CD 工作流
+│   ├── ISSUE_TEMPLATE/               # Issue 模板
 │   ├── PULL_REQUEST_TEMPLATE/
 │   └── pull_request_template.md
-├── src/
-│   ├── app/                 # 路由和页面
+├── src/                              # 源代码（Next.js / Vite 项目）
+│   ├── app/                          # 路由和页面（Next.js App Router）
 │   ├── components/
-│   │   ├── ui/              # 基础 UI 组件
-│   │   ├── common/          # 通用业务组件
-│   │   └── layout/          # 布局组件
-│   ├── features/            # 功能模块
-│   ├── hooks/               # React Hooks
-│   ├── lib/                 # 工具函数
-│   ├── types/               # 全局类型
-│   ├── constants/           # 常量
-│   ├── config/              # 配置文件
-│   ├── styles/              # 全局样式
-│   └── providers.tsx        # 上下文提供者
+│   │   ├── ui/                       # 基础 UI 组件（shadcn/ui）
+│   │   ├── common/                   # 通用业务组件
+│   │   └── layout/                   # 布局组件
+│   ├── features/                     # 功能模块
+│   ├── hooks/                        # React Hooks
+│   ├── lib/                          # 工具函数
+│   ├── types/                        # 全局类型
+│   ├── constants/                    # 常量
+│   ├── config/                       # 配置文件
+│   ├── styles/                       # 全局样式
+│   └── providers.tsx                 # 上下文提供者
 ├── public/
 │   ├── images/
 │   └── icons/
-├── tests/                   # 测试文件
-├── docs/                    # 文档
-│   ├── ENGINEERING_STANDARDS.md
-│   ├── API.md
-│   └── ARCHITECTURE.md
-├── scripts/                 # Shell 脚本（.sh）
-├── build/                   # 构建脚本（.js、.mjs）
-├── .env.example             # 环境变量模板
-├── .env.local              # （忽略，本地私密）
-├── .eslintrc.json          # ESLint 配置
-├── .prettierrc              # Prettier 配置
-├── tsconfig.json            # TypeScript 配置
+├── tests/                            # 测试文件
+├── docs/                             # 文档
+│   ├── Frontend-Engineering.md        # 通用工程规范（本文件）
+│   ├── INDEX.md                      # 文档导航
+│   ├── guides/                       # 操作指南
+│   ├── reports/                      # 项目报告
+│   └── archive/                      # 历史文档和变更日志
+├── scripts/                          # Shell 脚本（.sh）
+├── build/                            # 构建脚本（.js、.mjs）
+├── bin/                              # 可执行程序入口
+├── config/                           # 配置文件目录
+├── packages/                         # 多包支持（monorepo）
+├── .env.example                      # 环境变量模板
+├── .env.local                        # 本地私密配置（git 忽略）
+├── .eslintrc.json                    # ESLint 配置
+├── .prettierrc                       # Prettier 配置
+├── tsconfig.json                     # TypeScript 配置
+├── next.config.js / vite.config.ts   # 框架配置
 ├── package.json
-├── README.md               # 项目概述
-├── CLAUDE.md               # AI 协作规范
-├── AGENT.md                # Claude 代理准则
-└── CHANGELOG.md            # 版本更新日志
+├── package-lock.json                 # 锁定版本（必须提交）
+├── README.md                         # 项目概述
+├── CLAUDE.md                         # AI 协作规范
+├── AGENT.md                          # Claude 代理准则
+├── LICENSE                           # 开源协议
+└── .gitignore                        # Git 忽略规则
 ```
 
 ### 目录职责明确
 
 ```
-app/          → 路由、页面布局、服务端逻辑
-components/   → 可复用 React 组件
-features/     → 业务功能模块（按功能分目录）
+app/          → 路由、页面布局、服务端逻辑（Next.js 应用）
+components/   → 可复用 React 组件（UI + 业务）
+  ├── ui/     → 基础 UI 组件（按钮、输入框等）
+  ├── common/ → 通用业务组件
+  └── layout/ → 布局组件
+features/     → 业务功能模块（按功能分目录，如 dashboard, settings）
 hooks/        → 自定义 React Hooks
 lib/          → 工具函数、请求封装、数据转换
 types/        → TypeScript 类型定义
 config/       → 项目配置（主题、导航、API 地址）
 constants/    → 常量和枚举
 styles/       → 全局样式、主题变量
-tests/        → 单元测试、集成测试
-docs/         → 工程文档、架构设计
-scripts/      → Shell 脚本（.sh）— 构建、部署、自动化脚本
-build/        → 构建脚本（.js、.mjs、.ts）— npm run 调用的 build/verify/check 工具
-public/       → 静态资源
+tests/        → 单元测试、集成测试、E2E 测试
+docs/         → 工程文档、操作指南、变更日志
+  ├── INDEX.md                    → 文档导航中心
+  ├── Frontend-Engineering.md     → 本工程规范
+  ├── guides/                     → 操作指南（快速开始等）
+  ├── reports/                    → 项目报告和总结
+  └── archive/                    → 历史文档
+scripts/      → Shell 脚本（.sh）— 部署、自动化脚本
+build/        → 构建脚本（.js、.mjs）— npm run 调用的 build/verify 工具
+bin/          → 可执行程序入口（CLI 命令）
+packages/     → 多包管理（monorepo 结构）
+public/       → 静态资源（图片、图标等）
 ```
 
 ---
@@ -589,18 +607,25 @@ API_SECRET_KEY
 
 ### 必需文档
 
+**根目录**：
 ```
 README.md                   # 项目总览和快速开始
-CLAUDE.md                   # AI 协作规范
-AGENT.md                    # Claude 代理准则
-docs/ENGINEERING_STANDARDS.md
-                            # 完整工程规范（本文件）
-docs/API.md                 # API 文档（如果有后端）
-docs/ARCHITECTURE.md        # 架构设计和决策记录
-CHANGELOG.md                # 版本更新日志
-.github/pull_request_template.md
-                            # PR 模板
-.github/ISSUE_TEMPLATE/*.md # Issue 模板（bug、feature、question）
+CLAUDE.md                   # AI 协作规范（项目级）
+AGENT.md                    # Claude 代理准则（项目级）
+LICENSE                     # 开源协议
+.gitignore                  # Git 忽略规则
+```
+
+**docs/ 目录**：
+```
+docs/INDEX.md                          # 文档导航中心（必需）
+docs/Frontend-Engineering.md           # 通用工程规范（本文件）
+docs/guides/QUICK_START.md             # 快速开始指南
+docs/guides/[其他操作指南].md
+docs/reports/                          # 项目完成报告、实现总结
+docs/archive/CHANGELOG.md              # 版本更新日志
+.github/pull_request_template.md       # PR 模板
+.github/ISSUE_TEMPLATE/*.md            # Issue 模板（bug、feature、question）
 ```
 
 ### README.md 必含内容
