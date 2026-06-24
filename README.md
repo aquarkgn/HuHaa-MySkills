@@ -125,6 +125,48 @@ huhaa-myskills scan
 
 ---
 
+## 📅 版本路线图
+
+### 当前版本：v0.3.2 ✨
+
+HuHaa-MySkills 正在稳步迭代。查看完整的[版本重构计划](https://github.com/aquarkgn/HuHaa-MySkills/issues?q=milestone%3A%22v0.3.3+本地稳定版%22)。
+
+### 版本进阶路线
+
+```
+v0.3.3 (2026-07)   — 本地稳定版
+  ├─ 修复 SSE 长连接不稳定
+  ├─ 安全加固 + 文档完善
+  └─ 单元测试覆盖 30% → 60%
+
+v0.4.0 (2026-08)   — 功能完善版
+  ├─ 增量扫描支持（<500ms）
+  ├─ 缓存层实现（80% 命中率）
+  ├─ 导出功能（JSON/CSV/Markdown）
+  └─ 性能优化（首屏 1.5s，搜索 45ms）
+
+v0.5.0 (2026-09)   — 高级特性版
+  ├─ 团队协作（共享、权限、版本追踪）
+  ├─ 智能推荐 + 批量操作
+  ├─ 插件系统（可扩展适配器）
+  └─ 移动支持 + 离线模式
+
+v1.0.0 (2026-10)   — 生产就绪版 (GA)
+  ├─ API 稳定化（2 年兼容承诺）
+  ├─ 测试覆盖 ≥85%
+  ├─ 性能 SLA（可用性 99%）
+  └─ 完整文档 + 社区支持
+```
+
+### 最新 Milestones
+
+- 🎯 [v0.3.3 本地稳定版](https://github.com/aquarkgn/HuHaa-MySkills/milestone/1)
+- 🎯 [v0.4.0 功能完善版](https://github.com/aquarkgn/HuHaa-MySkills/milestone/2)
+- 🎯 [v0.5.0 高级特性版](https://github.com/aquarkgn/HuHaa-MySkills/milestone/3)
+- 🎯 [v1.0.0 生产就绪版](https://github.com/aquarkgn/HuHaa-MySkills/milestone/4)
+
+---
+
 ## 🔧 配置
 
 ### 默认配置位置
