@@ -16,7 +16,6 @@ const md = new MarkdownIt({ html: false, linkify: true, typographer: true });
 const viewMode = ref('list');
 const translating = ref(false);
 const translatedFields = ref({});
-const listCollapsed = ref(false);
 const showMoreFilters = ref(false);
 
 const viewModeLabel = computed(() => {
@@ -134,35 +133,6 @@ function clearFilterChip(key) {
   store.setFilter(key, '');
 }
 
-function highlighted(text) {
-  const source = String(text || '');
-  const terms = searchTerms(store.query);
-  if (!terms.length) return escapeHtml(source);
-  const escapedTerms = terms
-    .filter(term => term.length >= 2)
-    .map(escapeRegExp);
-  if (!escapedTerms.length) return escapeHtml(source);
-  const re = new RegExp(`(${escapedTerms.join('|')})`, 'ig');
-  return escapeHtml(source).replace(re, '<mark>$1</mark>');
-}
-
-function searchTerms(q) {
-  return (q || '')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-}
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-function escapeRegExp(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 function handleKeydown(e) {
   if (e.key === 'Escape') {
     store.selected = null;
@@ -171,6 +141,10 @@ function handleKeydown(e) {
 
 function selectSkill(skill) {
   store.selected = skill;
+}
+
+function closeDetail() {
+  store.selected = null;
 }
 
 function copyPath(path) {
@@ -188,229 +162,237 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-function getLabel(key, value) {
-  if (!value) return '';
-  return i18n.t(key === 'editor' ? 'editor' : key === 'kind' ? 'kind' : key === 'source' ? 'source' : key === 'product' ? 'product' : key === 'brand' ? 'brand' : key === 'category' ? 'category' : value) || value;
+function getLabel(type, value) {
+  if (!store.stats?.labels || !value) return value;
+  const labels = store.stats.labels;
+  switch(type) {
+    case 'source': return labels.sources?.[value] || value;
+    case 'editor': return labels.editors?.[value] || value;
+    case 'kind': return labels.kinds?.[value] || value;
+    case 'category': return labels.categories?.[value] || value;
+    case 'brand': return labels.brands?.[value] || value;
+    default: return value;
+  }
 }
 </script>
 
 <template>
-  <div class="shell-v2">
-    <!-- 顶部搜索栏 -->
-    <header class="topbar-v2">
-      <div class="search-section">
-        <div class="search-box">
-          <span class="search-icon">🔍</span>
-          <input
-            v-model="store.query"
-            type="search"
-            :placeholder="t('searchPlaceholder')"
-            class="search-input"
-          />
+  <div class="app-v3">
+    <!-- 顶部搜索和过滤栏 -->
+    <header class="app-header">
+      <div class="header-top">
+        <div class="search-section">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input
+              v-model="store.query"
+              type="search"
+              :placeholder="t('searchPlaceholder')"
+              class="search-input"
+            />
+            <button
+              v-if="store.query"
+              class="search-clear-btn"
+              @click="store.query = ''"
+              title="清空搜索"
+            >✕</button>
+          </div>
+        </div>
+
+        <div class="action-buttons">
           <button
-            v-if="store.query"
-            class="search-clear-btn"
-            @click="store.query = ''"
-            title="清空搜索"
-          >✕</button>
+            class="btn-action"
+            @click="store.clearFilters"
+            title="清除所有过滤"
+          >清空</button>
+          <button
+            class="btn-action btn-action-primary"
+            :disabled="store.reloadState?.scanning"
+            @click="store.reload({ done: t('reloadDone') })"
+          >
+            {{ store.reloadState?.scanning ? '扫描中...' : '扫描' }}
+          </button>
         </div>
       </div>
 
-      <div class="action-buttons">
-        <button
-          class="btn-action"
-          @click="store.clearFilters"
-          title="清除所有过滤"
-        >清空</button>
-        <button
-          class="btn-action btn-action-primary"
-          :disabled="store.reloadState?.scanning"
-          @click="store.reload({ done: t('reloadDone') })"
-        >
-          {{ store.reloadState?.scanning ? '扫描中...' : '重新扫描' }}
-        </button>
-      </div>
-    </header>
+      <!-- 快速过滤 Chips -->
+      <div class="filter-chips">
+        <div class="chips-row">
+          <!-- 来源快速选择 -->
+          <button
+            v-for="source in filteredSources"
+            :key="`src-${source.name}`"
+            class="chip"
+            :class="{ 'chip-active': store.filters.source === source.name }"
+            @click="store.setFilter('source', store.filters.source === source.name ? '' : source.name)"
+          >
+            {{ getSourceBranding(source.name).icon }} {{ getLabel('source', source.name) }}
+          </button>
 
-    <!-- 快速过滤 Chips -->
-    <div class="filter-chips-section">
-      <div class="chips-container">
-        <!-- 来源快速选择 -->
-        <button
-          v-for="source in filteredSources"
-          :key="`src-${source.name}`"
-          class="chip"
-          :class="{ 'chip-active': store.filters.source === source.name }"
-          @click="store.setFilter('source', store.filters.source === source.name ? '' : source.name)"
-        >
-          {{ getSourceBranding(source.name).icon }} {{ getLabel('source', source.name) }} ({{ source.count }})
-        </button>
+          <!-- 更多过滤按钮 -->
+          <button
+            v-if="store.filterSources.length > 3"
+            class="chip chip-more"
+            @click="showMoreFilters = !showMoreFilters"
+          >
+            {{ showMoreFilters ? '收起' : '+' }}
+          </button>
 
-        <!-- 更多过滤按钮 -->
-        <button
-          v-if="store.filterSources.length > 3"
-          class="chip chip-more"
-          @click="showMoreFilters = !showMoreFilters"
-        >
-          {{ showMoreFilters ? '收起' : '+更多' }} ({{ store.filterSources.length - 3 }})
-        </button>
+          <!-- 清除过滤 -->
+          <button
+            v-if="activeFilterChips.length"
+            class="chip chip-clear"
+            @click="store.clearFilters"
+          >
+            🗑️ 清除过滤
+          </button>
+        </div>
 
-        <!-- 活跃过滤条件显示 -->
-        <div v-if="activeFilterChips.length" class="active-filters">
-          <span class="filters-label">活跃过滤:</span>
+        <!-- 活跃过滤显示 -->
+        <div v-if="activeFilterChips.length" class="chips-row chips-active">
           <button
             v-for="chip in activeFilterChips"
             :key="`${chip.key}-${chip.value}`"
-            class="chip-filter"
+            class="chip-tag"
           >
             {{ chip.value }}
             <button
-              class="chip-remove"
+              class="chip-tag-remove"
               @click.stop="clearFilterChip(chip.key)"
             >✕</button>
           </button>
         </div>
       </div>
-    </div>
+    </header>
 
-    <!-- 主要布局：列表 + 侧面板 -->
-    <div class="main-layout">
-      <!-- 列表区域 -->
-      <section class="list-area">
-        <div class="list-header">
-          <span class="list-title">
-            {{ store.filtered.length }} 条结果
-          </span>
-          <span class="list-view-mode">{{ viewModeLabel }}</span>
-        </div>
+    <!-- 列表区域 -->
+    <main class="app-main">
+      <div class="list-header">
+        <span>{{ store.filtered.length }} 个技能</span>
+        <span class="list-mode">{{ viewModeLabel }}</span>
+      </div>
 
-        <div class="list-content-container">
-          <!-- List 视图 -->
-          <div v-if="viewMode === 'list'" class="list-grid">
-            <div
-              v-for="skill in store.filtered"
-              :key="skill.id"
-              class="skill-card"
-              :class="{ 'skill-card-selected': store.selected?.id === skill.id }"
-              @click="selectSkill(skill)"
-            >
-              <div class="card-header">
-                <span class="card-source">{{ getSourceBranding(skill.source).icon }}</span>
-                <span class="card-name">{{ i18n.skillText(skill, 'name') }}</span>
-              </div>
-              <div class="card-description">
-                {{ i18n.skillText(skill, 'desc') }}
-              </div>
-              <div class="card-footer">
-                <span class="card-kind">{{ getLabel('kind', skill.kind) }}</span>
-                <span class="card-product">{{ skill.product }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Tree 视图 -->
-          <div v-else-if="viewMode === 'tree'" class="tree-view">
-            <SkillTree @select="selectSkill" />
-          </div>
-
-          <!-- 路径树视图 -->
-          <div v-else-if="viewMode === 'path-tree'" class="tree-view">
-            <DirectoryTree @select="selectSkill" />
-          </div>
-
-          <!-- 应用树视图 -->
-          <div v-else-if="viewMode === 'app-tree'" class="tree-view">
-            <AppTree @select="selectSkill" />
-          </div>
-        </div>
-      </section>
-
-      <!-- 右侧侧面板（Detail Drawer） -->
-      <aside class="detail-drawer" :class="{ 'detail-drawer-show': store.selected }">
-        <div v-if="store.selected" class="detail-content">
-          <!-- 关闭按钮 -->
+      <div class="list-container">
+        <!-- Grid 列表 -->
+        <div v-if="viewMode === 'list'" class="skills-grid">
           <button
-            class="detail-close-btn"
-            @click="store.selected = null"
-            title="关闭详情 (ESC)"
+            v-for="skill in store.filtered"
+            :key="skill.id"
+            class="skill-card"
+            @click="selectSkill(skill)"
+          >
+            <div class="card-icon">{{ getSourceBranding(skill.source).icon }}</div>
+            <div class="card-name">{{ i18n.skillText(skill, 'name') }}</div>
+            <div class="card-kind">{{ getLabel('kind', skill.kind) }}</div>
+          </button>
+        </div>
+
+        <!-- 树视图 -->
+        <div v-else class="tree-container">
+          <SkillTree v-if="viewMode === 'tree'" @select="selectSkill" />
+          <DirectoryTree v-else-if="viewMode === 'path-tree'" @select="selectSkill" />
+          <AppTree v-else-if="viewMode === 'app-tree'" @select="selectSkill" />
+        </div>
+      </div>
+    </main>
+
+    <!-- 全屏详情弹窗 -->
+    <div v-if="store.selected" class="modal-overlay" @click.self="closeDetail">
+      <div class="modal-dialog">
+        <!-- 头部 -->
+        <div class="modal-header">
+          <h2 class="modal-title">{{ i18n.skillText(store.selected, 'name') }}</h2>
+          <button
+            class="modal-close-btn"
+            @click="closeDetail"
+            title="关闭 (ESC)"
           >✕</button>
+        </div>
 
-          <!-- 标题 -->
-          <h2 class="detail-title">{{ i18n.skillText(store.selected, 'name') }}</h2>
-
+        <!-- 内容区 -->
+        <div class="modal-content">
           <!-- 描述 -->
-          <div class="detail-description">
-            {{ i18n.skillText(store.selected, 'desc') }}
-          </div>
+          <section class="detail-section" v-if="i18n.skillText(store.selected, 'desc')">
+            <p class="detail-text">{{ i18n.skillText(store.selected, 'desc') }}</p>
+          </section>
 
-          <!-- 路径信息（新增） -->
-          <div v-if="store.selected.paths?.abs" class="detail-path-section">
-            <label class="detail-label">📁 路径</label>
-            <div class="path-display">
-              <code class="path-code">{{ store.selected.paths.abs }}</code>
-              <button
-                class="btn-copy"
-                @click="copyPath(store.selected.paths.abs)"
-                title="复制路径"
-              >📋</button>
+          <!-- 路径信息 -->
+          <section class="detail-section" v-if="store.selected.paths?.abs">
+            <div class="info-block">
+              <label class="info-label">📁 路径</label>
+              <div class="path-row">
+                <code class="path-code">{{ store.selected.paths.abs }}</code>
+                <button
+                  class="btn-copy-path"
+                  @click="copyPath(store.selected.paths.abs)"
+                  title="复制路径"
+                >📋 复制</button>
+              </div>
             </div>
-          </div>
+          </section>
 
           <!-- 标签 -->
-          <div v-if="detailBadges.length" class="detail-badges">
-            <span v-for="badge in detailBadges" :key="badge" class="badge">{{ badge }}</span>
-          </div>
+          <section class="detail-section" v-if="detailBadges.length">
+            <label class="info-label">🏷️ 标签</label>
+            <div class="badge-group">
+              <span v-for="badge in detailBadges" :key="badge" class="badge">{{ badge }}</span>
+            </div>
+          </section>
 
           <!-- 元数据 -->
-          <div class="detail-meta">
-            <div v-for="[key, value] in detailMeta" :key="key" class="meta-row">
-              <dt>{{ key }}</dt>
-              <dd>{{ value }}</dd>
+          <section class="detail-section" v-if="detailMeta.length">
+            <label class="info-label">ℹ️ 信息</label>
+            <div class="meta-table">
+              <div v-for="[key, value] in detailMeta" :key="key" class="meta-row">
+                <dt>{{ key }}</dt>
+                <dd>{{ value }}</dd>
+              </div>
             </div>
-          </div>
+          </section>
 
-          <!-- 用法示例 -->
-          <div class="detail-usage">
-            <label class="detail-label">💡 使用方法</label>
-            <code class="usage-code">{{ usagePrompt }}</code>
-          </div>
+          <!-- 使用方法 -->
+          <section class="detail-section" v-if="usagePrompt">
+            <label class="info-label">💡 使用方法</label>
+            <div class="code-block">
+              <code>{{ usagePrompt }}</code>
+            </div>
+          </section>
 
-          <!-- 内容预览 -->
-          <div v-if="detailHtml" class="detail-markdown">
-            <label class="detail-label">📄 内容</label>
-            <div class="markdown" v-html="detailHtml"></div>
-          </div>
+          <!-- 完整内容 -->
+          <section class="detail-section" v-if="detailHtml">
+            <label class="info-label">📄 完整内容</label>
+            <div class="markdown-content" v-html="detailHtml"></div>
+          </section>
         </div>
-
-        <!-- 空状态 -->
-        <div v-else class="detail-empty">
-          <p>选择一个技能查看详情</p>
-        </div>
-      </aside>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* === 整体布局 === */
-.shell-v2 {
+/* === 整体容器 === */
+.app-v3 {
   display: flex;
   flex-direction: column;
   height: 100vh;
   background: #fff;
   color: #182033;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* === 顶部搜索栏 === */
-.topbar-v2 {
+/* === 顶部栏 === */
+.app-header {
   flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e5e7eb;
   background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px 16px;
+}
+
+.header-top {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
 }
 
 .search-section {
@@ -478,6 +460,7 @@ function getLabel(key, value) {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .btn-action:hover:not(:disabled) {
@@ -501,17 +484,14 @@ function getLabel(key, value) {
   border-color: #7c3aed;
 }
 
-/* === 快速过滤 Chips === */
-.filter-chips-section {
-  flex: 0 0 auto;
-  padding: 8px 16px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
-  overflow-x: auto;
-  overflow-y: hidden;
+/* === Chips 过滤 === */
+.filter-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.chips-container {
+.chips-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -531,7 +511,7 @@ function getLabel(key, value) {
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
-  flex-shrink: 0;
+  font-weight: 500;
 }
 
 .chip:hover {
@@ -546,43 +526,45 @@ function getLabel(key, value) {
 }
 
 .chip-more {
-  font-size: 11px;
-  color: #6b7280;
+  font-size: 13px;
+  padding: 5px 8px;
 }
 
-.active-filters {
-  display: flex;
+.chip-clear {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
+.chip-clear:hover {
+  background: #fca5a5;
+  border-color: #ef4444;
+}
+
+.chips-active {
+  margin-top: 4px;
   gap: 6px;
-  align-items: center;
-  flex-wrap: wrap;
 }
 
-.filters-label {
-  font-size: 11px;
-  color: #9ca3af;
-  font-weight: 600;
-}
-
-.chip-filter {
+.chip-tag {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
   border: 1px solid #fecaca;
   border-radius: 12px;
-  background: #fee2e2;
+  background: #fef2f2;
   color: #991b1b;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.chip-filter:hover {
-  background: #fca5a5;
-  border-color: #ef4444;
+.chip-tag:hover {
+  background: #fee2e2;
 }
 
-.chip-remove {
+.chip-tag-remove {
   background: none;
   border: none;
   color: inherit;
@@ -590,35 +572,26 @@ function getLabel(key, value) {
   padding: 0;
   font-size: 12px;
   line-height: 1;
+  transition: transform 0.2s;
 }
 
-/* === 主要布局 === */
-.main-layout {
+.chip-tag-remove:hover {
+  transform: scale(1.2);
+}
+
+/* === 主内容区 === */
+.app-main {
   flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 0;
-  gap: 0;
-  overflow: hidden;
-  transition: grid-template-columns 0.3s ease;
-}
-
-.main-layout:has(.detail-drawer-show) {
-  grid-template-columns: 1fr 350px;
-}
-
-/* === 列表区域 === */
-.list-area {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-right: 1px solid #e5e7eb;
 }
 
 .list-header {
   flex: 0 0 auto;
   padding: 12px 16px;
   border-bottom: 1px solid #e5e7eb;
-  background: #fff;
+  background: #f9fafb;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -626,444 +599,466 @@ function getLabel(key, value) {
   color: #6b7280;
 }
 
-.list-title {
-  font-weight: 600;
-  color: #374151;
-}
-
-.list-view-mode {
+.list-mode {
   font-size: 11px;
   color: #9ca3af;
 }
 
-.list-content-container {
+.list-container {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  padding: 12px;
 }
 
-.list-grid {
+/* === 技能卡片网格 === */
+.skills-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
-  padding: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
   align-content: flex-start;
 }
 
-/* === 技能卡片 === */
 .skill-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 6px;
   background: #fff;
   cursor: pointer;
   transition: all 0.2s;
-  min-height: 120px;
-  overflow: hidden;
+  min-height: 90px;
+  text-align: center;
 }
 
 .skill-card:hover {
   background: #f9fafb;
   border-color: #9ca3af;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
 }
 
-.skill-card-selected {
-  background: #f3f0ff;
-  border: 2px solid #8b5cf6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-  padding: 11px;
+.skill-card:active {
+  transform: translateY(0);
 }
 
-.card-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.card-source {
-  flex: 0 0 auto;
-  font-size: 14px;
+.card-icon {
+  font-size: 24px;
+  line-height: 1;
 }
 
 .card-name {
-  flex: 1;
-  min-width: 0;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 11px;
   color: #182033;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.2;
-}
-
-.card-description {
-  flex: 1;
-  min-width: 0;
-  font-size: 12px;
-  color: #6b7280;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  line-height: 1.4;
-}
-
-.card-footer {
-  flex: 0 0 auto;
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  font-size: 11px;
+  width: 100%;
+  line-height: 1.2;
 }
 
 .card-kind {
-  padding: 2px 6px;
-  border-radius: 3px;
+  font-size: 10px;
+  color: #9ca3af;
   background: #f0f1f3;
-  color: #6b7280;
-}
-
-.card-product {
-  padding: 2px 6px;
-  border-radius: 3px;
-  background: #f0f1f3;
-  color: #6b7280;
+  padding: 2px 4px;
+  border-radius: 2px;
 }
 
 /* === 树视图 === */
-.tree-view {
-  padding: 12px;
+.tree-container {
+  padding: 0;
+  font-size: 13px;
 }
 
-/* === 右侧侧面板 === */
-.detail-drawer {
+/* === 模态窗口（全屏） === */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-dialog {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  width: 95vw;
+  max-width: 900px;
+  height: 90vh;
   background: #fff;
-  border-left: 1px solid #e5e7eb;
-  width: 0;
-  opacity: 0;
-  transition: all 0.3s ease;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease;
 }
 
-.detail-drawer-show {
-  width: 350px;
-  opacity: 1;
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
-.detail-content {
+.modal-header {
+  flex: 0 0 auto;
   display: flex;
-  flex-direction: column;
-  height: 100%;
-  position: relative;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
 }
 
-.detail-close-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 28px;
-  height: 28px;
+.modal-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #182033;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.modal-close-btn {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
   border: none;
   border-radius: 6px;
   background: #f3f4f6;
   color: #6b7280;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 18px;
   transition: all 0.2s;
-  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.detail-close-btn:hover {
+.modal-close-btn:hover {
   background: #e5e7eb;
   color: #374151;
 }
 
-.detail-title {
-  flex: 0 0 auto;
-  margin: 0;
-  padding: 16px 12px 12px 12px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #182033;
-  border-bottom: 1px solid #f0f1f3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.modal-close-btn:active {
+  background: #d1d5db;
 }
 
-.detail-description {
-  flex: 0 0 auto;
-  padding: 12px;
-  font-size: 13px;
+.modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+/* === 详情区块 === */
+.detail-section {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.detail-text {
+  margin: 0;
   color: #6b7280;
-  line-height: 1.4;
-  border-bottom: 1px solid #f0f1f3;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
-.detail-label {
+.info-label {
   display: block;
-  margin: 0;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-top: 12px;
-  margin-bottom: 6px;
-  padding: 0 12px;
+  margin-bottom: 8px;
 }
 
-.detail-path-section {
-  flex: 0 0 auto;
-  padding: 12px;
-  border-bottom: 1px solid #f0f1f3;
-}
-
-.path-display {
+.info-block {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
+}
+
+.path-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .path-code {
   flex: 1;
-  min-width: 0;
   display: block;
-  padding: 6px 8px;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
   border-radius: 4px;
   background: #f9fafb;
   font-family: 'Courier New', monospace;
-  font-size: 11px;
+  font-size: 12px;
   color: #374151;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border: 1px solid #e5e7eb;
 }
 
-.btn-copy {
+.btn-copy-path {
   flex: 0 0 auto;
-  background: none;
+  padding: 8px 12px;
   border: 1px solid #d1d5db;
   border-radius: 4px;
-  padding: 4px 6px;
-  cursor: pointer;
+  background: #fff;
+  color: #374151;
   font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
-.btn-copy:hover {
+.btn-copy-path:hover {
   background: #f3f4f6;
   border-color: #9ca3af;
 }
 
-.detail-badges {
-  flex: 0 0 auto;
-  padding: 12px;
+.badge-group {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  border-bottom: 1px solid #f0f1f3;
 }
 
 .badge {
   display: inline-block;
-  padding: 3px 8px;
-  border-radius: 3px;
+  padding: 4px 10px;
+  border-radius: 12px;
   background: #f0f1f3;
   color: #6b7280;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 
-.detail-meta {
-  flex: 0 0 auto;
-  padding: 12px;
-  font-size: 12px;
-  border-bottom: 1px solid #f0f1f3;
+.meta-table {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 6px;
+  gap: 8px;
+  font-size: 13px;
 }
 
 .meta-row {
   display: grid;
-  grid-template-columns: 80px 1fr;
-  gap: 8px;
-  font-size: 11px;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
 }
 
 .meta-row dt {
   color: #6b7280;
   font-weight: 600;
-  word-break: break-word;
 }
 
 .meta-row dd {
   margin: 0;
   color: #374151;
   word-break: break-word;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.detail-usage {
-  flex: 0 0 auto;
+.code-block {
   padding: 12px;
-  border-bottom: 1px solid #f0f1f3;
-}
-
-.usage-code {
-  display: block;
-  padding: 8px;
+  border: 1px solid #e5e7eb;
   border-radius: 4px;
   background: #f9fafb;
+}
+
+.code-block code {
   font-family: 'Courier New', monospace;
-  font-size: 11px;
+  font-size: 12px;
   color: #374151;
-  border: 1px solid #e5e7eb;
   word-break: break-all;
   white-space: pre-wrap;
 }
 
-.detail-markdown {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 12px;
-  font-size: 12px;
-}
-
-.markdown {
+/* === Markdown === */
+.markdown-content {
+  font-size: 14px;
   line-height: 1.6;
   color: #374151;
 }
 
-.markdown h1, .markdown h2, .markdown h3, .markdown h4, .markdown h5, .markdown h6 {
-  margin: 12px 0 6px;
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin: 16px 0 8px;
   color: #182033;
   font-weight: 600;
 }
 
-.markdown h1 { font-size: 18px; }
-.markdown h2 { font-size: 16px; }
-.markdown h3 { font-size: 14px; }
-.markdown h4 { font-size: 13px; }
+.markdown-content h1 { font-size: 24px; }
+.markdown-content h2 { font-size: 20px; }
+.markdown-content h3 { font-size: 16px; }
+.markdown-content h4 { font-size: 14px; }
+.markdown-content h5 { font-size: 13px; }
+.markdown-content h6 { font-size: 12px; }
 
-.markdown p {
-  margin: 6px 0;
+.markdown-content p {
+  margin: 8px 0;
 }
 
-.markdown pre {
+.markdown-content ul,
+.markdown-content ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.markdown-content li {
+  margin: 4px 0;
+}
+
+.markdown-content pre {
   background: #1f2937;
   color: #f3f4f6;
-  padding: 8px;
+  padding: 12px;
   border-radius: 4px;
   overflow-x: auto;
-  font-size: 11px;
-  line-height: 1.4;
-  margin: 6px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 12px 0;
 }
 
-.markdown code {
+.markdown-content code {
   background: #f9fafb;
   padding: 2px 4px;
   border-radius: 2px;
   font-family: monospace;
-  font-size: 12px;
+  font-size: 13px;
   color: #7c3aed;
 }
 
-.markdown pre code {
+.markdown-content pre code {
   background: transparent;
   color: #f3f4f6;
   padding: 0;
 }
 
-.detail-empty {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #9ca3af;
-  font-size: 13px;
-  text-align: center;
-  padding: 40px 20px;
+.markdown-content a {
+  color: #8b5cf6;
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
 }
 
 /* === 响应式 === */
-@media (max-width: 1024px) {
-  .main-layout:has(.detail-drawer-show) {
-    grid-template-columns: 0.5fr 350px;
-  }
-}
-
 @media (max-width: 768px) {
-  .topbar-v2 {
+  .header-top {
     flex-direction: column;
     gap: 8px;
-    align-items: stretch;
-    padding: 8px 12px;
   }
 
   .search-section {
-    flex: 1;
+    width: 100%;
   }
 
   .action-buttons {
-    flex: 1;
-  }
-
-  .filter-chips-section {
-    padding: 6px 12px;
-  }
-
-  .main-layout:has(.detail-drawer-show) {
-    grid-template-columns: 0;
-  }
-
-  .list-area {
-    border-right: none;
-  }
-
-  .detail-drawer-show {
     width: 100%;
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000;
+  }
+
+  .skills-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+
+  .modal-dialog {
+    width: 98vw;
+    height: 95vh;
+  }
+
+  .modal-header {
+    padding: 16px;
+  }
+
+  .modal-content {
+    padding: 16px;
+  }
+
+  .meta-row {
+    grid-template-columns: 80px 1fr;
   }
 }
 
 @media (max-width: 480px) {
-  .list-grid {
+  .skills-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 6px;
+  }
+
+  .skill-card {
+    padding: 6px;
+    min-height: 80px;
+    gap: 4px;
+  }
+
+  .card-icon {
+    font-size: 20px;
+  }
+
+  .card-name {
+    font-size: 10px;
+  }
+
+  .modal-dialog {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  .path-row {
+    flex-direction: column;
+  }
+
+  .btn-copy-path {
+    width: 100%;
+  }
+
+  .meta-row {
     grid-template-columns: 1fr;
-  }
-
-  .detail-drawer-show {
-    animation: slideUp 0.3s ease;
+    gap: 4px;
   }
 }
 
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
+/* === 滚动条 === */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
