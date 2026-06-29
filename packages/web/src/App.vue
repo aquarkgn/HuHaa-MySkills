@@ -31,6 +31,14 @@ const viewModeLabel = computed(() => {
 onMounted(() => {
   store.load();
   window.addEventListener('keydown', handleKeydown);
+  
+  // 为关闭按钮添加原生事件监听
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-action="close-modal"]')) {
+      console.log('Close modal clicked');
+      closeDetail();
+    }
+  });
 });
 
 const detailHtml = computed(() => {
@@ -297,14 +305,14 @@ function getLabel(type, value) {
     </main>
 
     <!-- 全屏详情弹窗 -->
-    <div v-if="store.selected" class="modal-overlay" @click="e => e.target === e.currentTarget && closeDetail()">
+    <div v-if="store.selected" class="modal-overlay" @click.self="closeDetail()">
       <div class="modal-dialog">
         <!-- 头部 -->
         <div class="modal-header">
           <h2 class="modal-title">{{ i18n.skillText(store.selected, 'name') }}</h2>
           <button
             class="modal-close-btn"
-            @click.stop="closeDetail"
+            data-action="close-modal"
             title="关闭 (ESC)"
           >✕</button>
         </div>
