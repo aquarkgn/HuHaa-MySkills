@@ -1,0 +1,300 @@
+{
+  "timestamp": "2026-06-29T10:42:22.993526",
+  "total": 145,
+  "with_brand": 145,
+  "newly_added": 0,
+  "brands": {
+    "Apple": 7,
+    "RSS": 1,
+    "Google": 8,
+    "GitHub": 6,
+    "Linux": 2,
+    "Minecraft": 1,
+    "Unity": 1,
+    "X": 2,
+    "Anthropic": 7,
+    "Proxy": 10,
+    "MCP": 1,
+    "Kubernetes": 1,
+    "Rust": 18,
+    "Docker": 10,
+    "Python": 8,
+    "Hermes": 3,
+    "Vue": 1,
+    "Development": 11,
+    "React": 1,
+    "Node.js": 2,
+    "HuHaa": 1,
+    "dspy": 1,
+    "Hugging Face": 1,
+    "TRL": 1,
+    "Stable Diffusion": 1,
+    "PyTorch": 1,
+    "Unsloth": 1,
+    "Suno": 3,
+    "Segment Anything": 1,
+    "OpenAI": 1,
+    "Modal": 1,
+    "Meta": 2,
+    "LlamaIndex": 1,
+    "Weights & Biases": 2,
+    "System": 1,
+    "Obsidian": 1,
+    "Creativity": 5,
+    "Comfy": 1,
+    "Excalidraw": 1,
+    "Design": 5,
+    "Manim": 1,
+    "P5.js": 1,
+    "Email": 2,
+    "OpenHue": 1,
+    "OCR": 2,
+    "OpenStreetMap": 1,
+    "Notion": 3,
+    "Airtable": 1
+  },
+  "skills_by_brand": {
+    "Apple": [
+      "apple-notes",
+      "apple-reminders",
+      "findmy",
+      "imessage",
+      "macos-application-forensics",
+      "macos-computer-use",
+      "macos-startup-cleanup"
+    ],
+    "RSS": [
+      "blogwatcher"
+    ],
+    "Google": [
+      "arxiv",
+      "gif-search",
+      "llm-wiki",
+      "polymarket",
+      "research-paper-writing",
+      "research-report-discipline",
+      "songsee",
+      "youtube-content"
+    ],
+    "GitHub": [
+      "github-pr-workflow",
+      "network-protocol-research",
+      "release-automation-github-actions",
+      "research-and-validation",
+      "third-party-api-self-throttle",
+      "vllm"
+    ],
+    "Linux": [
+      "discourse-community-scan",
+      "linux-service-recovery"
+    ],
+    "Minecraft": [
+      "minecraft-modpack-server"
+    ],
+    "Unity": [
+      "pokemon-player"
+    ],
+    "X": [
+      "xitter",
+      "xurl"
+    ],
+    "Anthropic": [
+      "anthropic-api-integration",
+      "claude-code",
+      "claude-design",
+      "custom-anthropic-endpoint-setup",
+      "godmode",
+      "third-party-api-gateway-setup",
+      "vision-model-testing-local-images"
+    ],
+    "Proxy": [
+      "clash-verge-config-management",
+      "clash-verge-proxy-rules",
+      "hysteria2-deployment",
+      "minimal-proxy-deployment",
+      "new-api-deployment",
+      "proxy-deployment-documentation",
+      "proxy-reliability-debugging",
+      "public-exposure-private-host",
+      "sing-box-multi-protocol-deployment",
+      "webhook-subscriptions"
+    ],
+    "MCP": [
+      "cross-branch-makefile-integration"
+    ],
+    "Kubernetes": [
+      "deploy-script-wrapper"
+    ],
+    "Rust": [
+      "astro-vercel-content-site",
+      "centralized-config-patterns",
+      "clip",
+      "config-sync-patterns",
+      "find-nearby",
+      "guidance",
+      "kanban-orchestrator",
+      "kanban-worker",
+      "mcporter",
+      "native-mcp",
+      "outlines",
+      "peft",
+      "prompt-injection-defense",
+      "prompt-rules-distribution",
+      "react-multi-step-wizard",
+      "react-router-state-sync",
+      "trl-fine-tuning",
+      "vue3-pinia-i18n-filter-patterns"
+    ],
+    "Docker": [
+      "deployment-script-best-practices",
+      "docker-compose-stacks",
+      "docker-image-cleanup",
+      "k8s-private-registry-deploy",
+      "llm-api-proxy-stack",
+      "rclone-as-s3-gateway",
+      "residential-proxy-routing",
+      "storage-consistency-atomicity",
+      "subscription-account-pools",
+      "xray-multi-instance-deployment"
+    ],
+    "Python": [
+      "cross-layer-logic-relocation",
+      "dingtalk-bot-notifications",
+      "google-workspace",
+      "jupyter-live-kernel",
+      "python-debugpy",
+      "stable-diffusion",
+      "teams-meeting-pipeline",
+      "touchdesigner-mcp"
+    ],
+    "Hermes": [
+      "hermes-agent",
+      "hermes-agent-skill-authoring",
+      "huhaa-myskills-release-automation"
+    ],
+    "Vue": [
+      "vue-vite-layout-refactoring"
+    ],
+    "Development": [
+      "multi-source-data-aggregation-diagnosis",
+      "multi-source-data-ui-validation",
+      "phased-engineering-plan",
+      "plan",
+      "requesting-code-review",
+      "simplify-code",
+      "spike",
+      "subagent-driven-development",
+      "systematic-debugging",
+      "test-driven-development",
+      "writing-plans"
+    ],
+    "React": [
+      "vue3-react-component-refactoring"
+    ],
+    "Node.js": [
+      "local-cli-node-tool-design",
+      "node-inspect-debugger"
+    ],
+    "HuHaa": [
+      "huhaa-myskills"
+    ],
+    "dspy": [
+      "dspy"
+    ],
+    "Hugging Face": [
+      "huggingface-hub"
+    ],
+    "TRL": [
+      "grpo-rl-training"
+    ],
+    "Stable Diffusion": [
+      "axolotl"
+    ],
+    "PyTorch": [
+      "pytorch-fsdp"
+    ],
+    "Unsloth": [
+      "unsloth"
+    ],
+    "Suno": [
+      "audiocraft",
+      "heartmula",
+      "songwriting-and-ai-music"
+    ],
+    "Segment Anything": [
+      "segment-anything"
+    ],
+    "OpenAI": [
+      "whisper"
+    ],
+    "Modal": [
+      "modal"
+    ],
+    "Meta": [
+      "gguf",
+      "llama-cpp"
+    ],
+    "LlamaIndex": [
+      "obliteratus"
+    ],
+    "Weights & Biases": [
+      "lm-evaluation-harness",
+      "weights-and-biases"
+    ],
+    "System": [
+      "aicloudrule"
+    ],
+    "Obsidian": [
+      "obsidian"
+    ],
+    "Creativity": [
+      "ascii-art",
+      "ascii-video",
+      "baoyu-infographic",
+      "creative-ideation",
+      "humanizer"
+    ],
+    "Comfy": [
+      "comfyui"
+    ],
+    "Excalidraw": [
+      "excalidraw"
+    ],
+    "Design": [
+      "architecture-diagram",
+      "design-md",
+      "popular-web-designs",
+      "pretext",
+      "sketch"
+    ],
+    "Manim": [
+      "manim-video"
+    ],
+    "P5.js": [
+      "p5js"
+    ],
+    "Email": [
+      "himalaya",
+      "powerpoint"
+    ],
+    "OpenHue": [
+      "openhue"
+    ],
+    "OCR": [
+      "nano-pdf",
+      "ocr-and-documents"
+    ],
+    "OpenStreetMap": [
+      "maps"
+    ],
+    "Notion": [
+      "linear",
+      "notion",
+      "work-report-generation"
+    ],
+    "Airtable": [
+      "airtable"
+    ]
+  },
+  "failures": []
+}
