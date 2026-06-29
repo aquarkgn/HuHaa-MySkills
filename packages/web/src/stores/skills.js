@@ -34,7 +34,7 @@ export const useSkillsStore = defineStore('skills', {
       return Object.keys(state.stats?.bySource || {}).sort();
     },
     editors(state) {
-      return Object.entries(state.stats?.byEditor || state.stats?.bySource || {})
+      return Object.entries(state.stats?.byEditor || {})
         .sort((a, b) => {
           if (state.filters.editor && a[0] === state.filters.editor) return -1;
           if (state.filters.editor && b[0] === state.filters.editor) return 1;
@@ -60,7 +60,7 @@ export const useSkillsStore = defineStore('skills', {
     filtered(state) {
       let arr = state.skills;
       const { editor, kind, source, product, brand } = state.filters;
-      if (editor) arr = arr.filter(x => (x.editor || x.source) === editor);
+      if (editor) arr = arr.filter(x => x.editor === editor);
       if (kind) arr = arr.filter(x => x.kind === kind);
       if (source) arr = arr.filter(x => x.source === source);
       if (product) arr = arr.filter(x => x.product === product);
