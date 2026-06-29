@@ -297,14 +297,14 @@ function getLabel(type, value) {
     </main>
 
     <!-- 全屏详情弹窗 -->
-    <div v-if="store.selected" class="modal-overlay" @click.self="closeDetail">
+    <div v-if="store.selected" class="modal-overlay" @click="e => e.target === e.currentTarget && closeDetail()">
       <div class="modal-dialog">
         <!-- 头部 -->
         <div class="modal-header">
           <h2 class="modal-title">{{ i18n.skillText(store.selected, 'name') }}</h2>
           <button
             class="modal-close-btn"
-            @click="closeDetail"
+            @click.stop="closeDetail"
             title="关闭 (ESC)"
           >✕</button>
         </div>
@@ -729,6 +729,8 @@ function getLabel(type, value) {
   padding: 20px;
   border-bottom: 1px solid #e5e7eb;
   background: #fff;
+  position: relative;
+  z-index: 5;
 }
 
 .modal-title {
@@ -756,6 +758,9 @@ function getLabel(type, value) {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 10;
+  position: relative;
+  pointer-events: auto;
 }
 
 .modal-close-btn:hover {
