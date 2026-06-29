@@ -371,9 +371,14 @@ function getLabel(type, value) {
           <AppTree v-else-if="viewMode === 'app-tree'" />
         </div>
       </section>
+    </main>
+  </div>
 
-      <!-- DETAIL SECTION - 下方占据剩余全部空间 -->
-      <section class="detail-section" v-if="store.selected">
+  <!-- MODAL BACKDROP & DETAIL PANEL (浮层模态框) -->
+  <Teleport to="body">
+    <div class="modal-backdrop" v-if="store.selected" @click.self="store.selectedId = null">
+      <!-- DETAIL SECTION - 浮层模态框 -->
+      <section class="detail-section detail-modal"
         <!-- DETAIL HEADER -->
         <div class="detail-header">
           <div class="detail-header-left">
@@ -475,13 +480,6 @@ function getLabel(type, value) {
           <article class="markdown" v-html="detailHtml"></article>
         </div>
       </section>
-
-      <!-- 无选中时的空状态 -->
-      <section v-else class="detail-section empty">
-        <div class="empty-state">
-          <p>{{ t('selectItem') || '选择一个技能查看详情' }}</p>
-        </div>
-      </section>
-    </main>
-  </div>
+    </div>
+  </Teleport>
 </template>

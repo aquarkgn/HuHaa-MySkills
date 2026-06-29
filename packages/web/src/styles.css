@@ -271,6 +271,13 @@ button { cursor: pointer; }
   overflow: hidden;
 }
 
+/* 旧版本布局被保留（以防需要） */
+.detail-section.old-layout {
+  flex: 1 1 auto;
+}
+
+/* 浮层版本已由 .detail-modal 接管 */
+
 .detail-section.empty {
   justify-content: center;
   align-items: center;
@@ -880,6 +887,71 @@ mark {
   from {
     opacity: 0;
     transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ===== MODAL BACKDROP & DETAIL PANEL (浮层模态框) ===== */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  z-index: 1000;
+  animation: backdropFadeIn 0.2s ease-out;
+}
+
+.detail-modal {
+  position: relative;
+  flex: 0 0 50vw;
+  max-width: 900px;
+  max-height: 100vh;
+  background: white;
+  margin: 0;
+  border-radius: 0;
+  border-left: 1px solid #e5e7eb;
+  animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 1024px) {
+  .detail-modal {
+    flex: 0 0 70vw;
+  }
+}
+
+@media (max-width: 768px) {
+  .detail-modal {
+    flex: 0 0 100vw;
+  }
+  .modal-backdrop {
+    align-items: flex-end;
+  }
+}
+
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
   }
   to {
     opacity: 1;
