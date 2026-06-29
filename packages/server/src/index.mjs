@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process';
 import Fastify from 'fastify';
 import chokidar from 'chokidar';
 import { translate } from 'google-translate-api-x';
+import { LABELS } from './labels.mjs';
 
 const PHASE = 'P6';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -461,6 +462,7 @@ function buildStats(items) {
     byKind,
     byCategory,
     byBrand,
+    labels: LABELS,
   };
 }
 

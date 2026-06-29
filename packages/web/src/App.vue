@@ -50,11 +50,11 @@ const activeFilterText = computed(() => {
 
 const activeFilterChips = computed(() => {
   const chips = [];
-  if (store.filters.editor) chips.push({ key: 'editor', label: t('editor'), value: store.filters.editor });
-  if (store.filters.kind) chips.push({ key: 'kind', label: t('kind'), value: store.filters.kind });
-  if (store.filters.source) chips.push({ key: 'source', label: t('source'), value: store.filters.source });
+  if (store.filters.editor) chips.push({ key: 'editor', label: t('editor'), value: getLabel('editor', store.filters.editor) });
+  if (store.filters.kind) chips.push({ key: 'kind', label: t('kind'), value: getLabel('kind', store.filters.kind) });
+  if (store.filters.source) chips.push({ key: 'source', label: t('source'), value: getLabel('source', store.filters.source) });
   if (store.filters.product) chips.push({ key: 'product', label: t('product'), value: store.filters.product });
-  if (store.filters.brand) chips.push({ key: 'brand', label: t('brand'), value: store.filters.brand });
+  if (store.filters.brand) chips.push({ key: 'brand', label: t('brand'), value: getLabel('brand', store.filters.brand) });
   if (store.query.trim()) chips.push({ key: 'query', label: 'q', value: store.query.trim() });
   return chips;
 });
@@ -62,12 +62,12 @@ const activeFilterChips = computed(() => {
 const detailMeta = computed(() => {
   const s = store.selected || {};
   return [
-    [t('editor'), s.editor || s.source],
-    [t('source'), s.source],
-    [t('kind'), s.kind],
+    [t('editor'), getLabel('editor', s.editor || s.source)],
+    [t('source'), getLabel('source', s.source)],
+    [t('kind'), getLabel('kind', s.kind)],
     [t('product'), s.product],
-    [t('brand'), s.brand],
-    [t('category'), s.category || t('uncategorized')],
+    [t('brand'), getLabel('brand', s.brand)],
+    [t('category'), getLabel('category', s.category || t('uncategorized'))],
     [t('rootKind'), s.paths?.rootKind],
     [t('relativePath'), s.paths?.rel],
     [t('fileSize'), formatBytes((s.raw || s.preview || '').length)],
@@ -77,7 +77,13 @@ const detailMeta = computed(() => {
 
 const detailBadges = computed(() => {
   const s = store.selected || {};
-  const badges = [s.kind, s.source, s.editor, s.product, s.brand].filter(Boolean);
+  const badges = [
+    getLabel('kind', s.kind),
+    getLabel('source', s.source),
+    getLabel('editor', s.editor),
+    getLabel('product', s.product),
+    getLabel('brand', s.brand),
+  ].filter(Boolean);
   if (s.raw?.includes('[REDACTED]') || s.preview?.includes('[REDACTED]')) badges.push(t('redacted'));
   if (s.parseError) badges.push(t('parseError'));
   return [...new Set(badges)];
@@ -209,6 +215,23 @@ function getTranslatedDescription() {
   const skillId = store.selected.id;
   return translatedFields.value[skillId]?.description || store.selected.description || '';
 }
+
+/**
+ * 获取标签翻译
+ * 根据标签类型和值，返回中文翻译的标签文本
+ */
+function getLabel(type, value) {
+  if (!store.stats?.labels || !value) return value;
+  const labels = store.stats.labels;
+  switch(type) {
+    case 'source': return labels.sources?.[value] || value;
+    case 'editor': return labels.editors?.[value] || value;
+    case 'kind': return labels.kinds?.[value] || value;
+    case 'category': return labels.categories?.[value] || value;
+    case 'brand': return labels.brands?.[value] || value;
+    default: return value;
+  }
+}
 </script>
 
 <template>
@@ -219,46 +242,54 @@ function getTranslatedDescription() {
         <!-- 筛选项 -->
         <div class="filter-compact">
           <label class="filter-item">
-            <span>类型</span>
+            <span>{{ t('editor') }}</span>
+            <select v-model="store.filters.editor" class="filter-select-compact">
+              <option value="">{{ t('all') }}</option>
+              <option v-for="o in store.editors" :key="o.name" :value="o.name">{{ getLabel('editor', o.name) }} ({{ o.count }})</option>
+            </select>
+          </label>
+
+          <label class="filter-item">
+            <span>{{ t('kind') }}</span>
             <select v-model="store.filters.kind" class="filter-select-compact">
-              <option value="">全部</option>
-              <option v-for="o in store.kinds" :key="o.name" :value="o.name">{{ o.name }}</option>
+              <option value="">{{ t('all') }}</option>
+              <option v-for="o in store.kinds" :key="o.name" :value="o.name">{{ getLabel('kind', o.name) }} ({{ o.count }})</option>
             </select>
           </label>
 
           <label class="filter-item">
-            <span>来源</span>
+            <span>{{ t('source') }}</span>
             <select v-model="store.filters.source" class="filter-select-compact">
-              <option value="">全部</option>
-              <option v-for="o in store.filterSources" :key="o.name" :value="o.name">{{ o.name }}</option>
+              <option value="">{{ t('all') }}</option>
+              <option v-for="o in store.filterSources" :key="o.name" :value="o.name">{{ getLabel('source', o.name) }} ({{ o.count }})</option>
             </select>
           </label>
 
           <label class="filter-item">
-            <span>产品</span>
+            <span>{{ t('product') }}</span>
             <select v-model="store.filters.product" class="filter-select-compact">
-              <option value="">全部</option>
-              <option v-for="o in store.products" :key="o.name" :value="o.name">{{ o.name }}</option>
+              <option value="">{{ t('all') }}</option>
+              <option v-for="o in store.products" :key="o.name" :value="o.name">{{ o.name }} ({{ o.count }})</option>
             </select>
           </label>
 
           <label class="filter-item">
-            <span>品牌</span>
+            <span>{{ t('brand') }}</span>
             <select v-model="store.filters.brand" class="filter-select-compact">
-              <option value="">全部</option>
-              <option v-for="o in store.brands" :key="o.name" :value="o.name">{{ o.name }}</option>
+              <option value="">{{ t('all') }}</option>
+              <option v-for="o in store.brands" :key="o.name" :value="o.name">{{ getLabel('brand', o.name) }} ({{ o.count }})</option>
             </select>
           </label>
 
           <label class="filter-item">
-            <span>排序</span>
+            <span>{{ t('sort') }}</span>
             <select v-model="store.sortKey" class="filter-select-compact">
-              <option value="default">默认</option>
-              <option value="name">名称</option>
-              <option value="updated">最近更新</option>
-              <option value="kind">类型</option>
-              <option value="source">来源</option>
-              <option value="product">产品</option>
+              <option value="default">{{ t('sortDefault') }}</option>
+              <option value="name">{{ t('sortName') }}</option>
+              <option value="updated">{{ t('sortUpdated') }}</option>
+              <option value="kind">{{ t('sortKind') }}</option>
+              <option value="source">{{ t('sortSource') }}</option>
+              <option value="product">{{ t('sortProduct') }}</option>
             </select>
           </label>
         </div>
@@ -316,9 +347,9 @@ function getTranslatedDescription() {
               @click="store.loadDetail(item.id)"
               :title="item.name"
             >
-              <span class="src" :class="`src-${item.source}`">{{ item.source }}</span>
+              <span class="src" :class="`src-${item.source}`">{{ getLabel('source', item.source) }}</span>
               <span class="name" v-html="highlighted(item.name)"></span>
-              <span class="kind">{{ item.kind || '-' }}</span>
+              <span class="kind">{{ getLabel('kind', item.kind) || '-' }}</span>
             </button>
           </template>
 
@@ -335,9 +366,9 @@ function getTranslatedDescription() {
         <div class="detail-header">
           <div class="detail-header-left">
             <div class="detail-kicker">
-              <span class="src" :class="`src-${store.selected.source}`">{{ store.selected.source }}</span>
-              <span>{{ store.selected.editor || store.selected.source }}</span>
-              <span>{{ store.selected.category || t('uncategorized') }}</span>
+              <span class="src" :class="`src-${store.selected.source}`">{{ getLabel('source', store.selected.source) }}</span>
+              <span>{{ getLabel('editor', store.selected.editor || store.selected.source) }}</span>
+              <span>{{ getLabel('category', store.selected.category || t('uncategorized')) }}</span>
             </div>
             <h2>{{ i18n.skillText(store.selected, 'name') }}</h2>
             <div class="badge-row">
@@ -382,7 +413,7 @@ function getTranslatedDescription() {
               </div>
               <div>
                 <strong>{{ t('quickFacts') }}</strong>
-                <p>{{ store.selected.editor || store.selected.source }} · {{ store.selected.kind }}<span v-if="store.selected.product"> · {{ store.selected.product }}</span></p>
+                <p>{{ getLabel('editor', store.selected.editor || store.selected.source) }} · {{ getLabel('kind', store.selected.kind) }}<span v-if="store.selected.product"> · {{ store.selected.product }}</span></p>
               </div>
             </div>
             <div class="usage-block" v-if="store.selected.params?.length">
