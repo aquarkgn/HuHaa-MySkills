@@ -15,8 +15,9 @@ const t = i18n.t;
 const md = new MarkdownIt({ html: false, linkify: true, typographer: true });
 const viewMode = ref('list');
 const translating = ref(false);
-const translatedFields = ref({}); // { skillId: { field: 'translated text', ... } }
-const listCollapsed = ref(false); // 卡片列表是否折叠
+const translatedFields = ref({});
+const listCollapsed = ref(false);
+const showMoreFilters = ref(false);
 
 const viewModeLabel = computed(() => {
   const labels = {
@@ -36,17 +37,6 @@ onMounted(() => {
 const detailHtml = computed(() => {
   const raw = store.selected?.raw || store.selected?.preview || '';
   return md.render(raw);
-});
-
-const activeFilterText = computed(() => {
-  const parts = [];
-  if (store.filters.editor) parts.push(`${t('editor')}:${store.filters.editor}`);
-  if (store.filters.kind) parts.push(`${t('kind')}:${store.filters.kind}`);
-  if (store.filters.source) parts.push(`${t('source')}:${store.filters.source}`);
-  if (store.filters.product) parts.push(`${t('product')}:${store.filters.product}`);
-  if (store.filters.brand) parts.push(`${t('brand')}:${store.filters.brand}`);
-  if (store.query) parts.push(`q:${store.query}`);
-  return parts.join(' · ');
 });
 
 const activeFilterChips = computed(() => {
@@ -91,6 +81,11 @@ const detailBadges = computed(() => {
 });
 
 const usagePrompt = computed(() => buildUsagePrompt(store.selected));
+
+const filteredSources = computed(() => {
+  const all = store.filterSources;
+  return showMoreFilters.value ? all : all.slice(0, 3);
+});
 
 function buildUsagePrompt(item) {
   if (!item) return '';
@@ -151,335 +146,939 @@ function highlighted(text) {
   return escapeHtml(source).replace(re, '<mark>$1</mark>');
 }
 
-function searchTerms(query) {
-  return String(query || '')
+function searchTerms(q) {
+  return (q || '')
+    .trim()
     .split(/\s+/)
-    .filter(Boolean)
-    .filter(part => !/^(editor|kind|source|product|brand|trigger):/i.test(part))
-    .map(part => part.replace(/^['""]|[""]$/g, ''));
+    .filter(Boolean);
 }
 
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
-function escapeRegExp(s) {
-  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function formatBytes(n) {
-  if (!Number.isFinite(n)) return '-';
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
-  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function handleKeydown(e) {
-  if (e.key === 'Escape' && store.selected) {
-    store.selectedId = null;
+  if (e.key === 'Escape') {
+    store.selected = null;
   }
 }
 
-/**
- * 翻译当前选中技能的描述
- */
-async function translateCurrentSkill() {
-  if (!store.selected) return;
-
-  translating.value = true;
-  const skillId = store.selected.id;
-
-  try {
-    const translated = await translateText(store.selected.description || '', 'zh-CN');
-    if (!translatedFields.value[skillId]) {
-      translatedFields.value[skillId] = {};
-    }
-    translatedFields.value[skillId].description = translated;
-    console.debug('[translate] skill description translated:', translated.slice(0, 30));
-  } catch (e) {
-    console.error('[translate] error:', e);
-  } finally {
-    translating.value = false;
-  }
+function selectSkill(skill) {
+  store.selected = skill;
 }
 
-/**
- * 获取翻译后的描述文本，如果没有则返回原文本
- */
-function getTranslatedDescription() {
-  if (!store.selected) return '';
-  const skillId = store.selected.id;
-  return translatedFields.value[skillId]?.description || store.selected.description || '';
+function copyPath(path) {
+  if (!path) return;
+  navigator.clipboard.writeText(path).then(() => {
+    alert('路径已复制到剪贴板');
+  });
 }
 
-/**
- * 获取标签翻译
- * 根据标签类型和值，返回中文翻译的标签文本
- */
-function getLabel(type, value) {
-  if (!store.stats?.labels || !value) return value;
-  const labels = store.stats.labels;
-  switch(type) {
-    case 'source': return labels.sources?.[value] || value;
-    case 'editor': return labels.editors?.[value] || value;
-    case 'kind': return labels.kinds?.[value] || value;
-    case 'category': return labels.categories?.[value] || value;
-    case 'brand': return labels.brands?.[value] || value;
-    default: return value;
-  }
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function getLabel(key, value) {
+  if (!value) return '';
+  return i18n.t(key === 'editor' ? 'editor' : key === 'kind' ? 'kind' : key === 'source' ? 'source' : key === 'product' ? 'product' : key === 'brand' ? 'brand' : key === 'category' ? 'category' : value) || value;
 }
 </script>
 
 <template>
-  <div class="shell">
-    <!-- LEFT SIDEBAR - 固定 200px 筛选栏 -->
-    <aside class="sidebar">
-      <div class="sidebar-content">
-        <!-- 筛选项 -->
-        <div class="filter-compact">
-          <label class="filter-item">
-            <span>{{ t('editor') }}</span>
-            <select v-model="store.filters.editor" class="filter-select-compact">
-              <option value="">{{ t('all') }}</option>
-              <option v-for="o in store.editors" :key="o.name" :value="o.name">{{ getSourceBranding(o.name).icon }} {{ getLabel('editor', o.name) }} ({{ o.count }})</option>
-            </select>
-          </label>
-
-          <label class="filter-item">
-            <span>{{ t('kind') }}</span>
-            <select v-model="store.filters.kind" class="filter-select-compact">
-              <option value="">{{ t('all') }}</option>
-              <option v-for="o in store.kinds" :key="o.name" :value="o.name">{{ getLabel('kind', o.name) }} ({{ o.count }})</option>
-            </select>
-          </label>
-
-          <label class="filter-item">
-            <span>{{ t('source') }}</span>
-            <select v-model="store.filters.source" class="filter-select-compact">
-              <option value="">{{ t('all') }}</option>
-              <option v-for="o in store.filterSources" :key="o.name" :value="o.name">{{ getSourceBranding(o.name).icon }} {{ getLabel('source', o.name) }} ({{ o.count }})</option>
-            </select>
-          </label>
-
-          <label class="filter-item">
-            <span>{{ t('product') }}</span>
-            <select v-model="store.filters.product" class="filter-select-compact">
-              <option value="">{{ t('all') }}</option>
-              <option v-for="o in store.products" :key="o.name" :value="o.name">{{ o.name }} ({{ o.count }})</option>
-            </select>
-          </label>
-
-          <label class="filter-item">
-            <span>{{ t('brand') }}</span>
-            <select v-model="store.filters.brand" class="filter-select-compact">
-              <option value="">{{ t('all') }}</option>
-              <option v-for="o in store.brands" :key="o.name" :value="o.name">📦 {{ getLabel('brand', o.name) }} ({{ o.count }})</option>
-            </select>
-          </label>
-
-          <label class="filter-item">
-            <span>{{ t('sort') }}</span>
-            <select v-model="store.sortKey" class="filter-select-compact">
-              <option value="default">{{ t('sortDefault') }}</option>
-              <option value="name">{{ t('sortName') }}</option>
-              <option value="updated">{{ t('sortUpdated') }}</option>
-              <option value="kind">{{ t('sortKind') }}</option>
-              <option value="source">{{ t('sortSource') }}</option>
-              <option value="product">{{ t('sortProduct') }}</option>
-            </select>
-          </label>
+  <div class="shell-v2">
+    <!-- 顶部搜索栏 -->
+    <header class="topbar-v2">
+      <div class="search-section">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input
+            v-model="store.query"
+            type="search"
+            :placeholder="t('searchPlaceholder')"
+            class="search-input"
+          />
+          <button
+            v-if="store.query"
+            class="search-clear-btn"
+            @click="store.query = ''"
+            title="清空搜索"
+          >✕</button>
         </div>
       </div>
-    </aside>
 
-    <!-- RIGHT MAIN CONTENT AREA - 占据剩余全部空间 -->
-    <main class="main-area">
-      <!-- TOPBAR - 搜索和操作 -->
-      <header class="topbar">
-        <div class="topbar-left">
-          <div class="search-box">
-            <span class="search-icon">⌕</span>
-            <input
-              v-model="store.query"
-              type="search"
-              :placeholder="t('searchPlaceholder')"
-            />
-          </div>
-        </div>
+      <div class="action-buttons">
+        <button
+          class="btn-action"
+          @click="store.clearFilters"
+          title="清除所有过滤"
+        >清空</button>
+        <button
+          class="btn-action btn-action-primary"
+          :disabled="store.reloadState?.scanning"
+          @click="store.reload({ done: t('reloadDone') })"
+        >
+          {{ store.reloadState?.scanning ? '扫描中...' : '重新扫描' }}
+        </button>
+      </div>
+    </header>
 
-        <div class="topbar-right">
-          <button class="btn soft" @click="store.clearFilters">{{ t('clear') }}</button>
-          <button class="btn primary" :disabled="store.reloadState?.scanning" @click="store.reload({ done: t('reloadDone') })">
-            {{ store.reloadState?.scanning ? t('reloading') : t('reload') }}
+    <!-- 快速过滤 Chips -->
+    <div class="filter-chips-section">
+      <div class="chips-container">
+        <!-- 来源快速选择 -->
+        <button
+          v-for="source in filteredSources"
+          :key="`src-${source.name}`"
+          class="chip"
+          :class="{ 'chip-active': store.filters.source === source.name }"
+          @click="store.setFilter('source', store.filters.source === source.name ? '' : source.name)"
+        >
+          {{ getSourceBranding(source.name).icon }} {{ getLabel('source', source.name) }} ({{ source.count }})
+        </button>
+
+        <!-- 更多过滤按钮 -->
+        <button
+          v-if="store.filterSources.length > 3"
+          class="chip chip-more"
+          @click="showMoreFilters = !showMoreFilters"
+        >
+          {{ showMoreFilters ? '收起' : '+更多' }} ({{ store.filterSources.length - 3 }})
+        </button>
+
+        <!-- 活跃过滤条件显示 -->
+        <div v-if="activeFilterChips.length" class="active-filters">
+          <span class="filters-label">活跃过滤:</span>
+          <button
+            v-for="chip in activeFilterChips"
+            :key="`${chip.key}-${chip.value}`"
+            class="chip-filter"
+          >
+            {{ chip.value }}
+            <button
+              class="chip-remove"
+              @click.stop="clearFilterChip(chip.key)"
+            >✕</button>
           </button>
         </div>
-      </header>
-
-      <!-- FILTER CHIPS - 显示活跃过滤条件 -->
-      <div class="filter-chips-row" v-if="activeFilterChips.length">
-        <div class="chips-container">
-          <span v-for="chip in activeFilterChips" :key="`${chip.key}-${chip.value}`" class="chip">
-            <span class="chip-label">{{ chip.label }}:</span>
-            <span class="chip-value">{{ chip.value }}</span>
-            <button class="chip-remove" @click="clearFilterChip(chip.key)" :aria-label="`移除 ${chip.label} 过滤`">×</button>
-          </span>
-        </div>
       </div>
+    </div>
 
-      <!-- LIST SECTION - 上方 120px 固定（可 scroll） -->
-      <section class="list-section" :class="{ collapsed: listCollapsed }">
+    <!-- 主要布局：列表 + 侧面板 -->
+    <div class="main-layout">
+      <!-- 列表区域 -->
+      <section class="list-area">
         <div class="list-header">
-          <div class="list-header-left">
-            <button class="list-collapse-btn" @click="listCollapsed = !listCollapsed" :title="listCollapsed ? '展开' : '收起'">
-              {{ listCollapsed ? '▼' : '▲' }} {{ viewModeLabel }} ({{ store.filtered.length }})
-            </button>
-          </div>
-          <div class="list-header-right">
-            <span v-if="activeFilterText" class="filter-text">{{ activeFilterText }}</span>
-          </div>
+          <span class="list-title">
+            {{ store.filtered.length }} 条结果
+          </span>
+          <span class="list-view-mode">{{ viewModeLabel }}</span>
         </div>
 
-        <!-- LIST CONTENT - scrollable -->
-        <div v-show="!listCollapsed" class="list-content">
-          <div v-if="store.error" class="error">{{ store.error }}</div>
-          <div v-if="store.loading" class="loading">{{ t('loading') }}</div>
-
-          <!-- List View -->
-          <template v-if="viewMode === 'list'">
-            <button
-              v-for="item in store.filtered"
-              :key="item.id"
-              class="skill-card-mini"
-              :class="{ selected: item.id === store.selectedId }"
-              @click="store.loadDetail(item.id)"
-              :title="item.name"
+        <div class="list-content-container">
+          <!-- List 视图 -->
+          <div v-if="viewMode === 'list'" class="list-grid">
+            <div
+              v-for="skill in store.filtered"
+              :key="skill.id"
+              class="skill-card"
+              :class="{ 'skill-card-selected': store.selected?.id === skill.id }"
+              @click="selectSkill(skill)"
             >
-              <span class="src" :class="`src-${item.source}`">{{ getLabel('source', item.source) }}</span>
-              <span class="name" v-html="highlighted(item.name)"></span>
-              <span class="kind">{{ getLabel('kind', item.kind) || '-' }}</span>
-            </button>
-          </template>
+              <div class="card-header">
+                <span class="card-source">{{ getSourceBranding(skill.source).icon }}</span>
+                <span class="card-name">{{ i18n.skillText(skill, 'name') }}</span>
+              </div>
+              <div class="card-description">
+                {{ i18n.skillText(skill, 'desc') }}
+              </div>
+              <div class="card-footer">
+                <span class="card-kind">{{ getLabel('kind', skill.kind) }}</span>
+                <span class="card-product">{{ skill.product }}</span>
+              </div>
+            </div>
+          </div>
 
-          <!-- Tree Views -->
-          <SkillTree v-else-if="viewMode === 'tree'" />
-          <DirectoryTree v-else-if="viewMode === 'path-tree'" />
-          <AppTree v-else-if="viewMode === 'app-tree'" />
+          <!-- Tree 视图 -->
+          <div v-else-if="viewMode === 'tree'" class="tree-view">
+            <SkillTree @select="selectSkill" />
+          </div>
+
+          <!-- 路径树视图 -->
+          <div v-else-if="viewMode === 'path-tree'" class="tree-view">
+            <DirectoryTree @select="selectSkill" />
+          </div>
+
+          <!-- 应用树视图 -->
+          <div v-else-if="viewMode === 'app-tree'" class="tree-view">
+            <AppTree @select="selectSkill" />
+          </div>
         </div>
       </section>
-    </main>
-  </div>
 
-  <!-- MODAL BACKDROP & DETAIL PANEL (浮层模态框) -->
-  <Teleport to="body">
-    <div class="modal-backdrop" v-if="store.selected" @click.self="store.selectedId = null">
-      <!-- DETAIL SECTION - 浮层模态框 -->
-      <section class="detail-section detail-modal"
-        <!-- DETAIL HEADER -->
-        <div class="detail-header">
-          <div class="detail-header-left">
-            <div class="detail-kicker">
-              <span class="src" :class="`src-${store.selected.source}`">{{ getSourceBranding(store.selected.source).icon }} {{ getLabel('source', store.selected.source) }}</span>
-              <span>{{ getSourceBranding(store.selected.editor || store.selected.source).icon }} {{ getLabel('editor', store.selected.editor || store.selected.source) }}</span>
-              <span>{{ getLabel('category', store.selected.category || t('uncategorized')) }}</span>
-            </div>
-            <h2>{{ i18n.skillText(store.selected, 'name') }}</h2>
-            <div class="badge-row">
-              <span
-                v-for="badge in detailBadges"
-                :key="badge"
-                class="badge"
-                :class="{ danger: badge === t('parseError'), warn: badge === t('redacted') }"
-              >{{ badge }}</span>
-            </div>
-            <p>{{ i18n.skillText(store.selected, 'description') }}</p>
+      <!-- 右侧侧面板（Detail Drawer） -->
+      <aside class="detail-drawer" :class="{ 'detail-drawer-show': store.selected }">
+        <div v-if="store.selected" class="detail-content">
+          <!-- 关闭按钮 -->
+          <button
+            class="detail-close-btn"
+            @click="store.selected = null"
+            title="关闭详情 (ESC)"
+          >✕</button>
+
+          <!-- 标题 -->
+          <h2 class="detail-title">{{ i18n.skillText(store.selected, 'name') }}</h2>
+
+          <!-- 描述 -->
+          <div class="detail-description">
+            {{ i18n.skillText(store.selected, 'desc') }}
           </div>
-          <button class="detail-close-btn" @click="store.selectedId = null" title="Close (Esc)">✕</button>
-        </div>
 
-        <!-- ACTIONS -->
-        <div class="detail-actions">
-          <button @click="store.copySelected('path', { copied: t('copied'), bytes: t('bytes') })" class="action-btn">💬 {{ t('copyPath') }}</button>
-          <button @click="store.copySelected('dir', { copied: t('copied'), bytes: t('bytes') })" class="action-btn">📂 {{ t('copyDir') }}</button>
-          <button @click="store.copySelected('rel', { copied: t('copied'), bytes: t('bytes') })" class="action-btn">🔗 {{ t('copyRel') }}</button>
-          <button @click="store.copySelected('prompt', { copied: t('copied'), bytes: t('bytes') })" class="action-btn">📋 {{ t('copyPrompt') }}</button>
-          <button @click="store.openSelected('cursor', { opened: t('opened') })" class="action-btn">🎯 {{ t('openCursor') }}</button>
-          <button @click="store.openSelected('finder', { opened: t('opened') })" class="action-btn">🔍 {{ t('reveal') }}</button>
-          <button @click="translateCurrentSkill" :disabled="translating || !store.selected" class="action-btn translate-btn" :class="{ loading: translating }">{{ translating ? '⏳...' : '🌐' }}</button>
-        </div>
+          <!-- 路径信息（新增） -->
+          <div v-if="store.selected.paths?.abs" class="detail-path-section">
+            <label class="detail-label">📁 路径</label>
+            <div class="path-display">
+              <code class="path-code">{{ store.selected.paths.abs }}</code>
+              <button
+                class="btn-copy"
+                @click="copyPath(store.selected.paths.abs)"
+                title="复制路径"
+              >📋</button>
+            </div>
+          </div>
 
-        <div v-if="store.notice" class="notice">{{ store.notice }}</div>
+          <!-- 标签 -->
+          <div v-if="detailBadges.length" class="detail-badges">
+            <span v-for="badge in detailBadges" :key="badge" class="badge">{{ badge }}</span>
+          </div>
 
-        <!-- SCROLLABLE CONTENT -->
-        <div class="detail-scroll">
-          <!-- USAGE CARD -->
-          <section class="usage-card">
-            <div class="usage-head">
-              <span>{{ t('usage') }}</span>
-              <h3>{{ t('howToUse') }}</h3>
-            </div>
-            <div class="usage-prompt"><code>{{ usagePrompt }}</code></div>
-            <div class="usage-grid">
-              <div>
-                <strong>{{ t('appliesTo') }}</strong>
-                <p>{{ getTranslatedDescription() || '-' }}</p>
-              </div>
-              <div>
-                <strong>{{ t('quickFacts') }}</strong>
-                <p>{{ getLabel('editor', store.selected.editor || store.selected.source) }} · {{ getLabel('kind', store.selected.kind) }}<span v-if="store.selected.product"> · {{ store.selected.product }}</span></p>
-              </div>
-            </div>
-            <div class="usage-block" v-if="store.selected.params?.length">
-              <strong>{{ t('params') }}</strong>
-              <div class="param-table">
-                <div v-for="p in store.selected.params" :key="p.name">
-                  <code>{{ p.name }}</code>
-                  <span>{{ p.type || '-' }}</span>
-                  <b v-if="p.required">{{ t('required') }}</b>
-                  <p>{{ p.description || p.default || '-' }}</p>
-                </div>
-              </div>
-            </div>
-            <div class="usage-block" v-if="store.selected.triggers?.length">
-              <strong>{{ t('triggers') }}</strong>
-              <span class="tag" v-for="tag in store.selected.triggers.slice(0, 12)" :key="tag">{{ tag }}</span>
-            </div>
-            <div class="usage-block" v-if="store.selected.links?.length">
-              <strong>{{ t('links') }}</strong>
-              <a class="usage-link" v-for="link in store.selected.links" :key="link.url" :href="link.url" target="_blank" rel="noreferrer">{{ link.label || link.url }}</a>
-            </div>
-          </section>
-
-          <!-- METADATA -->
-          <dl class="kv">
-            <div>
-              <dt>{{ t('path') }}</dt>
-              <dd><code>{{ store.selected.paths?.abs }}</code></dd>
-            </div>
-            <div v-for="([label, value]) in detailMeta" :key="label">
-              <dt>{{ label }}</dt>
+          <!-- 元数据 -->
+          <div class="detail-meta">
+            <div v-for="[key, value] in detailMeta" :key="key" class="meta-row">
+              <dt>{{ key }}</dt>
               <dd>{{ value }}</dd>
             </div>
-            <div v-if="store.selected.parseError" class="kv-error">
-              <dt>{{ t('parseError') }}</dt>
-              <dd>{{ store.selected.parseError }}</dd>
-            </div>
-            <div v-if="store.selected.triggers?.length">
-              <dt>{{ t('triggers') }}</dt>
-              <dd>
-                <span class="tag" v-for="trig in store.selected.triggers.slice(0, 8)" :key="trig">{{ trig }}</span>
-              </dd>
-            </div>
-          </dl>
+          </div>
 
-          <!-- MARKDOWN CONTENT -->
-          <article class="markdown" v-html="detailHtml"></article>
+          <!-- 用法示例 -->
+          <div class="detail-usage">
+            <label class="detail-label">💡 使用方法</label>
+            <code class="usage-code">{{ usagePrompt }}</code>
+          </div>
+
+          <!-- 内容预览 -->
+          <div v-if="detailHtml" class="detail-markdown">
+            <label class="detail-label">📄 内容</label>
+            <div class="markdown" v-html="detailHtml"></div>
+          </div>
         </div>
-      </section>
+
+        <!-- 空状态 -->
+        <div v-else class="detail-empty">
+          <p>选择一个技能查看详情</p>
+        </div>
+      </aside>
     </div>
-  </Teleport>
+  </div>
 </template>
+
+<style scoped>
+/* === 整体布局 === */
+.shell-v2 {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #fff;
+  color: #182033;
+}
+
+/* === 顶部搜索栏 === */
+.topbar-v2 {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.search-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f3f4f6;
+}
+
+.search-icon {
+  flex: 0 0 auto;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: #374151;
+  font-size: 14px;
+}
+
+.search-input::placeholder {
+  color: #d1d5db;
+}
+
+.search-clear-btn {
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.search-clear-btn:hover {
+  color: #374151;
+}
+
+.action-buttons {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+}
+
+.btn-action {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-action:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-action-primary {
+  background: #8b5cf6;
+  color: #fff;
+  border-color: #8b5cf6;
+}
+
+.btn-action-primary:hover:not(:disabled) {
+  background: #7c3aed;
+  border-color: #7c3aed;
+}
+
+/* === 快速过滤 Chips === */
+.filter-chips-section {
+  flex: 0 0 auto;
+  padding: 8px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 16px;
+  background: #fff;
+  color: #374151;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.chip:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.chip-active {
+  background: #8b5cf6;
+  color: #fff;
+  border-color: #8b5cf6;
+}
+
+.chip-more {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.active-filters {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filters-label {
+  font-size: 11px;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.chip-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chip-filter:hover {
+  background: #fca5a5;
+  border-color: #ef4444;
+}
+
+.chip-remove {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* === 主要布局 === */
+.main-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 0;
+  gap: 0;
+  overflow: hidden;
+  transition: grid-template-columns 0.3s ease;
+}
+
+.main-layout:has(.detail-drawer-show) {
+  grid-template-columns: 1fr 350px;
+}
+
+/* === 列表区域 === */
+.list-area {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid #e5e7eb;
+}
+
+.list-header {
+  flex: 0 0 auto;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.list-title {
+  font-weight: 600;
+  color: #374151;
+}
+
+.list-view-mode {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.list-content-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 12px;
+  align-content: flex-start;
+}
+
+/* === 技能卡片 === */
+.skill-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 120px;
+  overflow: hidden;
+}
+
+.skill-card:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.skill-card-selected {
+  background: #f3f0ff;
+  border: 2px solid #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  padding: 11px;
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.card-source {
+  flex: 0 0 auto;
+  font-size: 14px;
+}
+
+.card-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 13px;
+  color: #182033;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.card-description {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
+}
+
+.card-footer {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 11px;
+}
+
+.card-kind {
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #f0f1f3;
+  color: #6b7280;
+}
+
+.card-product {
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #f0f1f3;
+  color: #6b7280;
+}
+
+/* === 树视图 === */
+.tree-view {
+  padding: 12px;
+}
+
+/* === 右侧侧面板 === */
+.detail-drawer {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  border-left: 1px solid #e5e7eb;
+  width: 0;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.detail-drawer-show {
+  width: 350px;
+  opacity: 1;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+}
+
+.detail-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.detail-close-btn:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.detail-title {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 16px 12px 12px 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #182033;
+  border-bottom: 1px solid #f0f1f3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-description {
+  flex: 0 0 auto;
+  padding: 12px;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.4;
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.detail-label {
+  display: block;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 12px;
+  margin-bottom: 6px;
+  padding: 0 12px;
+}
+
+.detail-path-section {
+  flex: 0 0 auto;
+  padding: 12px;
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.path-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.path-code {
+  flex: 1;
+  min-width: 0;
+  display: block;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: #f9fafb;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 1px solid #e5e7eb;
+}
+
+.btn-copy {
+  flex: 0 0 auto;
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 4px 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.btn-copy:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.detail-badges {
+  flex: 0 0 auto;
+  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 3px;
+  background: #f0f1f3;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.detail-meta {
+  flex: 0 0 auto;
+  padding: 12px;
+  font-size: 12px;
+  border-bottom: 1px solid #f0f1f3;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.meta-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.meta-row dt {
+  color: #6b7280;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.meta-row dd {
+  margin: 0;
+  color: #374151;
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detail-usage {
+  flex: 0 0 auto;
+  padding: 12px;
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.usage-code {
+  display: block;
+  padding: 8px;
+  border-radius: 4px;
+  background: #f9fafb;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.detail-markdown {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px;
+  font-size: 12px;
+}
+
+.markdown {
+  line-height: 1.6;
+  color: #374151;
+}
+
+.markdown h1, .markdown h2, .markdown h3, .markdown h4, .markdown h5, .markdown h6 {
+  margin: 12px 0 6px;
+  color: #182033;
+  font-weight: 600;
+}
+
+.markdown h1 { font-size: 18px; }
+.markdown h2 { font-size: 16px; }
+.markdown h3 { font-size: 14px; }
+.markdown h4 { font-size: 13px; }
+
+.markdown p {
+  margin: 6px 0;
+}
+
+.markdown pre {
+  background: #1f2937;
+  color: #f3f4f6;
+  padding: 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 6px 0;
+}
+
+.markdown code {
+  background: #f9fafb;
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #7c3aed;
+}
+
+.markdown pre code {
+  background: transparent;
+  color: #f3f4f6;
+  padding: 0;
+}
+
+.detail-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 13px;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+/* === 响应式 === */
+@media (max-width: 1024px) {
+  .main-layout:has(.detail-drawer-show) {
+    grid-template-columns: 0.5fr 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .topbar-v2 {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+    padding: 8px 12px;
+  }
+
+  .search-section {
+    flex: 1;
+  }
+
+  .action-buttons {
+    flex: 1;
+  }
+
+  .filter-chips-section {
+    padding: 6px 12px;
+  }
+
+  .main-layout:has(.detail-drawer-show) {
+    grid-template-columns: 0;
+  }
+
+  .list-area {
+    border-right: none;
+  }
+
+  .detail-drawer-show {
+    width: 100%;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+  }
+}
+
+@media (max-width: 480px) {
+  .list-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-drawer-show {
+    animation: slideUp 0.3s ease;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+</style>
