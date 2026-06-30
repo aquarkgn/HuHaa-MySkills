@@ -9,90 +9,115 @@ import fs from 'node:fs';
 import YAML from 'yaml';
 import { configFile } from '../../../bin/lib/paths.mjs';
 import { scanMarkdownSkills } from './adapters/markdown-skill.mjs';
+import { scanDirectorySkills } from './adapters/directory-skill.mjs';
 import { scanFileDocs } from './adapters/file-docs.mjs';
 import { scanMcpConfigs } from './adapters/mcp-config.mjs';
 import { scanHermesPlugins } from './adapters/hermes-plugin.mjs';
 import { expandRoots, expandTilde } from './utils.mjs';
 
 const ADAPTERS = {
-  hermes: async (cfg, limits) => scanMarkdownSkills({
-    source: 'hermes',
-    roots: cfg.roots || [],
-    fileGlob: '**/SKILL.md',
+  // Tier 1: Tool adapters (return items with tier='tool', brand set)
+  hermes: async (cfg, limits) => {
+    const result = await scanMarkdownSkills({
+      source: 'hermes',
+      roots: cfg.roots || [],
+      fileGlob: '**/SKILL.md',
+      limits,
+    });
+    result.items.forEach(it => {
+      it.tier = 'tool';
+      it.brand = 'hermes';
+    });
+    return result;
+  },
+  
+  'claude-code': async (cfg, limits) => {
+    const result = await scanMarkdownSkills({
+      source: 'claude-code',
+      roots: cfg.roots || [],
+      fileGlob: '**/SKILL.md',
+      limits,
+    });
+    result.items.forEach(it => {
+      it.tier = 'tool';
+      it.brand = 'claude';
+    });
+    return result;
+  },
+  
+  codex: async (cfg, limits) => {
+    const result = await scanFileDocs({
+      source: 'codex',
+      editor: 'Codex',
+      kind: 'instruction',
+      files: cfg.files || [],
+      roots: cfg.roots || [],
+      globs: normalizeGlobs(cfg, ['AGENTS.md']),
+      limits,
+    });
+    result.items.forEach(it => {
+      it.tier = 'tool';
+      it.brand = 'codex';
+    });
+    return result;
+  },
+  
+  cursor: async (cfg, limits) => {
+    const result = await scanFileDocs({
+      source: 'cursor',
+      editor: 'Cursor',
+      kind: 'instruction',
+      files: cfg.files || [],
+      roots: cfg.roots || [],
+      globs: normalizeGlobs(cfg, ['.cursorrules', '.cursor/rules/**/*.{md,mdc}']),
+      limits,
+    });
+    result.items.forEach(it => {
+      it.tier = 'tool';
+      it.brand = 'cursor';
+    });
+    return result;
+  },
+
+  'hermes-plugin': async (cfg, limits) => {
+    const result = await scanHermesPlugins({
+      source: 'hermes-plugin',
+      editor: 'Hermes Agent',
+      roots: cfg.roots || [],
+      limits,
+    });
+    result.items.forEach(it => {
+      it.tier = 'tool';
+      it.brand = 'hermes';
+    });
+    return result;
+  },
+
+  // Tier 2: Directory-based skills (already returns tier='directory', dirName)
+  'directory-skill': async (cfg, limits) => scanDirectorySkills({
+    paths: cfg.paths || [],
+    globs: normalizeGlobs(cfg, ['**/SKILL.md']),
     limits,
   }),
-  'claude-code': async (cfg, limits) => scanMarkdownSkills({
-    source: 'claude-code',
-    roots: cfg.roots || [],
-    fileGlob: '**/SKILL.md',
-    limits,
-  }),
-  codex: async (cfg, limits) => scanFileDocs({
-    source: 'codex',
-    editor: 'Codex',
-    kind: 'instruction',
-    files: cfg.files || [],
-    roots: cfg.roots || [],
-    globs: normalizeGlobs(cfg, ['AGENTS.md']),
-    limits,
-  }),
-  cursor: async (cfg, limits) => scanFileDocs({
-    source: 'cursor',
-    editor: 'Cursor',
-    kind: 'instruction',
-    files: cfg.files || [],
-    roots: cfg.roots || [],
-    globs: normalizeGlobs(cfg, ['.cursorrules', '.cursor/rules/**/*.{md,mdc}']),
-    limits,
-  }),
-  'mcp-config': async (cfg, limits) => scanMcpConfigs({
-    source: 'mcp-config',
-    editor: 'MCP',
-    files: cfg.files || [],
-    limits,
-  }),
-  'hermes-plugin': async (cfg, limits) => scanHermesPlugins({
-    source: 'hermes-plugin',
-    editor: 'Hermes Agent',
-    roots: cfg.roots || [],
-    limits,
-  }),
-  'project-runbook': async (cfg, limits) => scanFileDocs({
-    source: 'project-runbook',
-    editor: 'Project Docs',
-    kind: 'runbook',
-    files: cfg.files || [],
-    roots: cfg.roots || [],
-    globs: normalizeGlobs(cfg, ['docs/RUNBOOK-*.md', 'AGENTS.md', 'CLAUDE.md', '.cursorrules', '.cursor/rules/**/*.{md,mdc}']),
-    limits,
-  }),
-  'skills': async (cfg, limits) => scanFileDocs({
-    source: 'skills',
-    editor: 'Skills Hub',
-    kind: 'skill',
-    files: cfg.files || [],
-    roots: cfg.roots || [],
-    globs: normalizeGlobs(cfg, ['*.md', '*/SKILL.md', '**/SKILL.md']),
-    limits,
-  }),
-  'mcp': async (cfg, limits) => scanFileDocs({
-    source: 'mcp',
-    editor: 'MCP Hub',
-    kind: 'mcp-tool',
-    files: cfg.files || [],
-    roots: cfg.roots || [],
-    globs: normalizeGlobs(cfg, ['*.md', '*.json', '*.yaml', '*.yml', '**/manifest.*']),
-    limits,
-  }),
-  'skill': async (cfg, limits) => scanFileDocs({
-    source: 'skill',
-    editor: 'Skill Hub',
-    kind: 'skill',
-    files: cfg.files || [],
-    roots: cfg.roots || [],
-    globs: normalizeGlobs(cfg, ['*.md', '*/SKILL.md', '**/SKILL.md']),
-    limits,
-  }),
+
+  // Tier 3: Other sources (assign tier='other')
+  'project-runbook': async (cfg, limits) => {
+    const result = await scanFileDocs({
+      source: 'project-runbook',
+      editor: 'Project Docs',
+      kind: 'runbook',
+      files: cfg.files || [],
+      roots: cfg.roots || [],
+      globs: normalizeGlobs(cfg, ['docs/RUNBOOK-*.md', 'AGENTS.md', 'CLAUDE.md', '.cursorrules', '.cursor/rules/**/*.{md,mdc}']),
+      limits,
+    });
+    result.items.forEach(it => {
+      it.tier = 'other';
+    });
+    return result;
+  },
+
+  // Removed: 'mcp-config', 'mcp', 'skills', 'skill' — no longer scanned
   // Future: obsidian
 };
 
@@ -159,7 +184,11 @@ export async function getWatchTargets() {
     if (!src?.enabled) continue;
     for (const f of src.files || []) targets.add(expandTilde(f));
 
-    const roots = await expandRoots(src.roots || []);
+    // directory-skill uses 'paths' instead of 'roots'
+    const roots = name === 'directory-skill'
+      ? await expandRoots(src.paths || [])
+      : await expandRoots(src.roots || []);
+
     const globs = normalizeGlobs(src, defaultWatchGlobs(name));
     for (const root of roots) {
       for (const g of globs) targets.add(`${root}/${g}`);
@@ -173,12 +202,8 @@ function defaultWatchGlobs(name) {
   switch (name) {
     case 'hermes':
     case 'claude-code':
+    case 'directory-skill':
       return ['**/SKILL.md'];
-    case 'skills':
-    case 'skill':
-      return ['*.md', '*/SKILL.md', '**/SKILL.md'];
-    case 'mcp':
-      return ['*.md', '*.json', '*.yaml', '*.yml', '**/manifest.*'];
     case 'hermes-plugin':
       return ['**/{plugin.yaml,plugin.yml,plugin.json,manifest.json,package.json,README.md,readme.md}'];
     case 'project-runbook':

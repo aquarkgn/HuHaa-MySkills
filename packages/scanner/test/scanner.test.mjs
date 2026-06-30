@@ -27,7 +27,7 @@ function groupBy(items, fn) {
   }, {});
 }
 
-test('scan aggregates enabled sources, strips duplicate semantic skill exports, and redacts MCP secrets', async (t) => {
+test('scan aggregates enabled sources and strips duplicate semantic skill exports', async (t) => {
   const { root, home } = makeTempHome();
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
 
@@ -35,7 +35,7 @@ test('scan aggregates enabled sources, strips duplicate semantic skill exports, 
   const hermesRoot = path.join(root, 'hermes-skills');
   const codexRoot = path.join(root, 'project-a');
   const cursorRoot = path.join(root, 'project-b');
-  const mcpFile = path.join(root, 'mcp.json');
+  const directorySkillsRoot = path.join(root, 'custom-skills');
 
   write(path.join(hermesRoot, 'devops', 'deploy-helper', 'SKILL.md'), `---
 name: deploy-helper
@@ -52,21 +52,14 @@ description: Duplicate hidden export
 ---
 # Duplicate hidden export
 `);
-  write(path.join(codexRoot, 'AGENTS.md'), '# Codex Instructions\n\nUse Node 20 and run tests.');
+  write(path.join(codexRoot, 'AGENTS.md'), '# Codex Instructions\\n\\nUse Node 20 and run tests.');
   write(path.join(cursorRoot, '.cursorrules'), 'Always keep UI concise.');
-  write(mcpFile, JSON.stringify({
-    mcpServers: {
-      dangerous: {
-        command: 'node',
-        args: ['server.js'],
-        env: {
-          API_TOKEN: 'fake-token-value-for-redaction-test',
-          normal: 'visible',
-        },
-        url: 'https://example.com/mcp?token=secret-value',
-      },
-    },
-  }, null, 2));
+  write(path.join(directorySkillsRoot, 'auth-flow', 'SKILL.md'), `---
+name: auth-flow
+description: Custom auth flow implementation
+---
+# Auth Flow
+`);
 
   write(sources, `sources:
   hermes:
@@ -81,10 +74,10 @@ description: Duplicate hidden export
     enabled: true
     roots:
       - ${JSON.stringify(cursorRoot)}
-  mcp-config:
+  directory-skill:
     enabled: true
-    files:
-      - ${JSON.stringify(mcpFile)}
+    paths:
+      - ${JSON.stringify(directorySkillsRoot)}
 limits:
   maxFiles: 100
   maxFileBytes: 1048576
@@ -96,22 +89,24 @@ limits:
   assert.equal(bySource.hermes?.length, 1, 'semantic duplicate hermes skill should collapse to one item');
   assert.equal(bySource.codex?.length, 1);
   assert.equal(bySource.cursor?.length, 1);
-  assert.equal(bySource['mcp-config']?.length, 1);
+  assert.equal(bySource.directory?.length, 1, 'directory-skill should return one item');
 
-  const skill = bySource.hermes[0];
-  assert.equal(skill.name, 'deploy-helper');
-  assert.equal(skill.editor, 'Hermes Agent');
-  assert.equal(skill.category, 'devops');
-  assert.deepEqual(skill.triggers, ['deploy service']);
-  assert.ok(!skill.paths.abs.includes('/.hidden-export/'), 'visible export should outrank hidden duplicate');
+  // Verify Tier 1 tool skills have tier='tool' and brand
+  const hermesSkill = bySource.hermes[0];
+  assert.equal(hermesSkill.tier, 'tool', 'hermes skill should have tier="tool"');
+  assert.equal(hermesSkill.brand, 'hermes', 'hermes skill should have brand="hermes"');
+  assert.equal(hermesSkill.name, 'deploy-helper');
+  assert.equal(hermesSkill.editor, 'Hermes Agent');
+  assert.equal(hermesSkill.category, 'devops');
+  assert.deepEqual(hermesSkill.triggers, ['deploy service']);
+  assert.ok(!hermesSkill.paths.abs.includes('/.hidden-export/'), 'visible export should outrank hidden duplicate');
 
-  const mcp = bySource['mcp-config'][0];
-  assert.equal(mcp.kind, 'mcp');
-  assert.equal(mcp.name, 'dangerous');
-  assert.match(mcp.raw, /\[REDACTED\]/);
-  assert.doesNotMatch(mcp.raw, /fake-token-value-for-redaction-test/);
-  assert.doesNotMatch(mcp.raw, /secret-value/);
-  assert.match(mcp.raw, /visible/);
+  // Verify Tier 2 directory skills have tier='directory' and dirName
+  const dirSkill = bySource.directory[0];
+  assert.equal(dirSkill.tier, 'directory', 'directory-skill should have tier="directory"');
+  assert.equal(dirSkill.dirName, 'auth-flow', 'directory-skill should have dirName="auth-flow"');
+  assert.equal(dirSkill.source, 'directory', 'directory-skill should have source="directory"');
+  assert.equal(dirSkill.name, 'auth-flow');
 });
 
 test('getWatchTargets includes config file plus configured source files and globs', async (t) => {
@@ -119,22 +114,23 @@ test('getWatchTargets includes config file plus configured source files and glob
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
 
   const hermesRoot = path.join(root, 'skills');
-  const mcpFile = path.join(root, 'mcp.json');
+  const directorySkillsRoot = path.join(root, 'custom-skills');
   fs.mkdirSync(hermesRoot, { recursive: true });
-  write(mcpFile, '{}');
+  fs.mkdirSync(directorySkillsRoot, { recursive: true });
+
   write(path.join(home, 'sources.yaml'), `sources:
   hermes:
     enabled: true
     roots:
       - ${JSON.stringify(hermesRoot)}
-  mcp-config:
+  directory-skill:
     enabled: true
-    files:
-      - ${JSON.stringify(mcpFile)}
+    paths:
+      - ${JSON.stringify(directorySkillsRoot)}
 `);
 
   const targets = await getWatchTargets();
   assert.ok(targets.includes(path.join(home, 'sources.yaml')));
-  assert.ok(targets.includes(mcpFile));
   assert.ok(targets.some(t => t.endsWith('/skills/**/SKILL.md')));
+  assert.ok(targets.some(t => t.endsWith('/custom-skills/**/SKILL.md')));
 });

@@ -1,14 +1,18 @@
+'use client'
+
 import { useMemo } from 'react'
 import Fuse from 'fuse.js'
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { SkillDetail } from './SkillDetail'
 import { cn } from '@/lib/cn'
 import { isNoneEditor, itemEditorKey } from '@/lib/editors'
-import type { SkillItem } from '@/types'
+import { useSkillIcons, groupByTier, getTierIconMap, type SkillItem } from '@/hooks/useSkillIcons'
+import type { SkillTier } from '@/types/skill'
 
 interface SkillsViewProps {
   items: SkillItem[]
   editorFilter: string | null
+  tierFilter: 'tool' | 'directory' | 'other' | null  // NEW: Tier filter
   query: string
   onQuery: (q: string) => void
   kindFilter: string | null
@@ -23,6 +27,7 @@ export { itemEditorKey }
 export function SkillsView({
   items,
   editorFilter,
+  tierFilter,
   query,
   onQuery,
   kindFilter,
@@ -37,34 +42,53 @@ export function SkillsView({
     return items.filter((it) => itemEditorKey(it) === editorFilter)
   }, [items, editorFilter])
 
-  // 2) kind chips 选项（来自当前 editor 子集）
+  // 1.5) Tier 过滤（从外部 Sidebar 控制）
+  const byTier = useMemo(() => {
+    if (tierFilter === null) return byEditor
+    return byEditor.filter((it) => (it.tier || 'other') === tierFilter)
+  }, [byEditor, tierFilter])
+
+  // 2) kind chips 选项（来自当前 editor 和 tier 子集）
   const kinds = useMemo(() => {
     const m = new Map<string, number>()
-    for (const it of byEditor) m.set(it.kind, (m.get(it.kind) ?? 0) + 1)
+    for (const it of byTier) m.set(it.kind, (m.get(it.kind) ?? 0) + 1)
     return [...m.entries()].sort((a, b) => b[1] - a[1])
-  }, [byEditor])
+  }, [byTier])
 
-  // 3) Fuse 搜索（在 editor 子集上）
+  // 3) Fuse 搜索（在 editor + tier 子集上）
   const fuse = useMemo(
     () =>
-      new Fuse(byEditor, {
-        keys: ['name', 'title', 'description', 'category', 'brand', 'tags'],
+      new Fuse(byTier, {
+        keys: ['name', 'title', 'description', 'category', 'brand', 'dirName', 'tags'],
         threshold: 0.4,
         ignoreLocation: true,
       }),
-    [byEditor]
+    [byTier],
   )
 
   const filtered = useMemo(() => {
-    let list = query.trim() ? fuse.search(query).map((r) => r.item) : byEditor
+    let list = query.trim() ? fuse.search(query).map((r) => r.item) : byTier
     if (kindFilter) list = list.filter((it) => it.kind === kindFilter)
     return list
-  }, [byEditor, fuse, query, kindFilter])
+  }, [byTier, fuse, query, kindFilter])
 
   const selected = useMemo(
     () => filtered.find((it) => it.id === selectedId) ?? null,
-    [filtered, selectedId]
+    [filtered, selectedId],
   )
+
+  // NEW: Get tier statistics for display
+  const tierStats = useMemo(() => {
+    const stats: Record<SkillTier, number> = { tool: 0, directory: 0, other: 0 }
+    for (const it of byEditor) {
+      const tier = (it.tier || 'other') as SkillTier
+      stats[tier]++
+    }
+    return stats
+  }, [byEditor])
+
+  // NEW: Get tier icon map for display
+  const tierIcons = useMemo(() => getTierIconMap(), [])
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -73,37 +97,64 @@ export function SkillsView({
         type="search"
         value={query}
         onChange={(e) => onQuery(e.target.value)}
-        placeholder="搜索技能、插件、MCP…"
+        placeholder="搜索技能、插件、自定义…"
         className="h-10 w-full rounded-md border border-border bg-input px-3 text-body-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
 
-      {/* kind 次筛选 chips */}
-      <div className="flex flex-wrap gap-1.5">
-        <button
-          onClick={() => onKind(null)}
-          className={cn(
-            'rounded-full px-2.5 py-0.5 text-caption transition-colors',
-            kindFilter === null
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:text-foreground'
-          )}
-        >
-          全部
-        </button>
-        {kinds.map(([k, c]) => (
+      {/* Tier filter chips — 现在由 Sidebar 控制，这里仅显示当前过滤状态 */}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap gap-1.5">
           <button
-            key={k}
-            onClick={() => onKind(k)}
+            disabled
             className={cn(
-              'rounded-full px-2.5 py-0.5 text-caption transition-colors',
-              kindFilter === k
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:text-foreground'
+              'rounded-full px-2.5 py-0.5 text-caption transition-colors opacity-60',
+              'bg-muted text-muted-foreground',
             )}
           >
-            {k} {c}
+            全部 ({byEditor.length})
           </button>
-        ))}
+          {tierIcons.map(({ tier, icon, label }) => (
+            <button
+              key={tier}
+              disabled
+              className={cn(
+                'rounded-full px-2.5 py-0.5 text-caption transition-colors opacity-60',
+                'bg-muted text-muted-foreground',
+              )}
+            >
+              {icon} {label} ({tierStats[tier as SkillTier]})
+            </button>
+          ))}
+        </div>
+
+        {/* kind chips (secondary filter) */}
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            onClick={() => onKind(null)}
+            className={cn(
+              'rounded-full px-2.5 py-0.5 text-caption transition-colors',
+              kindFilter === null
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:text-foreground',
+            )}
+          >
+            全部类型
+          </button>
+          {kinds.map(([k, c]) => (
+            <button
+              key={k}
+              onClick={() => onKind(k)}
+              className={cn(
+                'rounded-full px-2.5 py-0.5 text-caption transition-colors',
+                kindFilter === k
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {k} ({c})
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 列表 + 详情 */}
@@ -113,31 +164,63 @@ export function SkillsView({
           {filtered.length === 0 && (
             <p className="text-body-sm text-muted-foreground">没有匹配的条目</p>
           )}
-          {filtered.map((it) => (
-            <button key={it.id} onClick={() => onSelect(it.id)} className="text-left">
-              <Card
-                className={cn(
-                  'cursor-pointer transition-colors hover:border-primary',
-                  it.id === selectedId ? 'border-primary bg-primary-soft' : ''
-                )}
-              >
-                <CardHeader>
-                  <CardTitle>{it.title || it.name}</CardTitle>
-                  <CardDescription>
-                    {it.description || it.preview || '（无描述）'}
-                  </CardDescription>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    <span className="rounded-sm bg-muted px-1.5 py-0.5 text-caption text-muted-foreground">
-                      {it.kind}
-                    </span>
-                    <span className="rounded-sm bg-muted px-1.5 py-0.5 text-caption text-muted-foreground">
-                      {itemEditorKey(it)}
-                    </span>
-                  </div>
-                </CardHeader>
-              </Card>
-            </button>
-          ))}
+          {filtered.map((it) => {
+            const icons = useSkillIcons(it)
+            return (
+              <button key={it.id} onClick={() => onSelect(it.id)} className="text-left">
+                <Card
+                  className={cn(
+                    'cursor-pointer transition-colors hover:border-primary',
+                    it.id === selectedId ? 'border-primary bg-primary-soft' : '',
+                  )}
+                >
+                  <CardHeader>
+                    {/* NEW: Display with tier/brand icon */}
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">{icons.tierIcon}</span>
+                      <span>{it.title || it.name}</span>
+                    </CardTitle>
+
+                    {/* Tier 2 specific: show dirName as secondary label */}
+                    {icons.isTier2 && it.dirName && (
+                      <p className="text-caption text-muted-foreground">
+                        目录: <code className="rounded bg-muted px-1.5 py-0.5">{it.dirName}</code>
+                      </p>
+                    )}
+
+                    <CardDescription>
+                      {it.description || it.preview || '（无描述）'}
+                    </CardDescription>
+
+                    {/* Tags and metadata */}
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {/* Kind tag */}
+                      <span className="rounded-sm bg-muted px-1.5 py-0.5 text-caption text-muted-foreground">
+                        {it.kind}
+                      </span>
+
+                      {/* Tier label (NEW) */}
+                      <span
+                        className={cn(
+                          'rounded-sm px-1.5 py-0.5 text-caption font-medium',
+                          icons.isTier1 && 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200',
+                          icons.isTier2 && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200',
+                          icons.isTier3 && 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+                        )}
+                      >
+                        {icons.tierLabel}
+                      </span>
+
+                      {/* Editor/Source */}
+                      <span className="rounded-sm bg-muted px-1.5 py-0.5 text-caption text-muted-foreground">
+                        {itemEditorKey(it)}
+                      </span>
+                    </div>
+                  </CardHeader>
+                </Card>
+              </button>
+            )
+          })}
         </section>
 
         <section className="min-h-0 overflow-y-auto">

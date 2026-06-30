@@ -30,6 +30,7 @@ export interface SkillItem {
     | 'project'
     | 'project-runbook'
     | 'hermes-plugin'
+    | 'directory'
     | 'mcp-config';
 
   /** machine name (frontmatter.name or file basename) */
@@ -85,4 +86,21 @@ export interface SkillItem {
 
   /** present when frontmatter / format parse failed; UI shows red badge */
   parseError?: string;
+
+  // NEW FIELDS for Skills Tab Redesign v0.3.3
+  /** Tier 1/2/3 categorization — controls display logic and icon in UI */
+  tier?: 'tool' | 'directory' | 'other';
+
+  /** Parent directory name (Tier 2 only) — used for display label */
+  dirName?: string;
+
+  /** i18n translation metadata (if present) */
+  i18n?: {
+    zh?: {
+      title?: string;
+      description?: string;
+    };
+    translatedAt?: string;
+    translationModel?: string;
+  };
 }

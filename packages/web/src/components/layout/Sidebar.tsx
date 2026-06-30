@@ -1,4 +1,4 @@
-import { LayoutDashboard, Settings, Layers } from 'lucide-react'
+import { LayoutDashboard, Settings, Layers, Wrench, Folder, Gear } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { getEditorMeta, isNoneEditor } from '@/lib/editors'
 import type { Stats } from '@/types'
@@ -6,22 +6,29 @@ import type { Stats } from '@/types'
 interface SidebarProps {
   view: 'dashboard' | 'skills' | 'settings'
   editorFilter: string | null
+  tierFilter: 'tool' | 'directory' | 'other' | null  // NEW: Tier filter
   stats: Stats | null
   onDashboard: () => void
   onSettings: () => void
   /** key=null 表示「全部技能」 */
   onEditor: (key: string | null) => void
+  /** NEW: Tier filter handler */
+  onTier: (tier: 'tool' | 'directory' | 'other' | null) => void
 }
 
 export function Sidebar({
   view,
   editorFilter,
+  tierFilter,
   stats,
   onDashboard,
   onSettings,
   onEditor,
+  onTier,
 }: SidebarProps) {
   const byEditor = stats?.byEditor ?? {}
+  const byTier = stats?.byTier ?? {}  // NEW: Tier statistics
+
   // 真实 editor 项（过滤 (none)），按数量降序
   const editors = Object.entries(byEditor)
     .filter(([k]) => !isNoneEditor(k))
@@ -37,6 +44,12 @@ export function Sidebar({
         : 'text-muted-foreground hover:bg-muted hover:text-foreground'
     )
 
+  const tierIcons = [
+    { tier: 'tool' as const, icon: '🔧', label: 'Official Tools' },
+    { tier: 'directory' as const, icon: '📁', label: 'Custom Skills' },
+    { tier: 'other' as const, icon: '⚙️', label: 'Other Sources' },
+  ]
+
   return (
     <aside className="sidebar">
       <button onClick={onDashboard} className={rowCls(view === 'dashboard')}>
@@ -46,15 +59,44 @@ export function Sidebar({
         </span>
       </button>
 
+      {/* 技能分类 (Tier) */}
+      <p className="mt-3 px-3 text-caption text-muted-foreground/70">技能分类</p>
+
+      <button
+        onClick={() => onTier(null)}
+        className={rowCls(view === 'skills' && tierFilter === null)}
+      >
+        <span className="flex items-center gap-2">
+          <Layers size={16} />
+          全部分类
+        </span>
+        <span className="text-caption opacity-80">{total}</span>
+      </button>
+
+      {tierIcons.map(({ tier, icon, label }) => {
+        const count = byTier[tier] ?? 0
+        const active = view === 'skills' && tierFilter === tier
+        return (
+          <button key={tier} onClick={() => onTier(tier)} className={rowCls(active)}>
+            <span className="flex items-center gap-2">
+              <span className="text-base">{icon}</span>
+              <span>{label}</span>
+            </span>
+            <span className="text-caption opacity-80">{count}</span>
+          </button>
+        )
+      })}
+
+      {/* 技能来源 (Editor) */}
       <p className="mt-3 px-3 text-caption text-muted-foreground/70">技能来源</p>
 
       <button
         onClick={() => onEditor(null)}
-        className={rowCls(view === 'skills' && editorFilter === null)}
+        className={rowCls(view === 'skills' && editorFilter === null && tierFilter === null)}
       >
         <span className="flex items-center gap-2">
           <Layers size={16} />
-          全部技能
+          全部来源
         </span>
         <span className="text-caption opacity-80">{total}</span>
       </button>

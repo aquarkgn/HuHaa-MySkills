@@ -15,6 +15,7 @@ export interface UIState {
   module: ModuleKey
   view: View
   editorFilter: string | null
+  tierFilter: 'tool' | 'directory' | 'other' | null  // NEW: Tier filter
   kindFilter: string | null
   query: string
   selectedId: string | null
@@ -25,6 +26,7 @@ export type Action =
   | { type: 'dashboard' }
   | { type: 'settings' }
   | { type: 'editor'; key: string | null }
+  | { type: 'tier'; tier: 'tool' | 'directory' | 'other' | null }  // NEW: Tier action
   | { type: 'query'; query: string }
   | { type: 'kind'; kind: string | null }
   | { type: 'select'; id: string }
@@ -33,6 +35,7 @@ export const initialState: UIState = {
   module: 'skills',
   view: 'dashboard',
   editorFilter: null,
+  tierFilter: null,  // NEW
   kindFilter: null,
   query: '',
   selectedId: null,
@@ -49,6 +52,9 @@ export function reducer(state: UIState, action: Action): UIState {
     case 'editor':
       // 切换来源：进入技能视图，重置 kind/选中
       return { ...state, view: 'skills', editorFilter: action.key, kindFilter: null, selectedId: null }
+    case 'tier':
+      // NEW: 切换分类：进入技能视图，重置 kind/选中
+      return { ...state, view: 'skills', tierFilter: action.tier, kindFilter: null, selectedId: null }
     case 'query':
       return { ...state, query: action.query }
     case 'kind':
@@ -126,6 +132,7 @@ export default function App() {
       <SkillsView
         items={items}
         editorFilter={ui.editorFilter}
+        tierFilter={ui.tierFilter}
         query={ui.query}
         onQuery={(q) => dispatch({ type: 'query', query: q })}
         kindFilter={ui.kindFilter}
@@ -147,10 +154,12 @@ export default function App() {
       <Sidebar
         view={ui.view}
         editorFilter={ui.editorFilter}
+        tierFilter={ui.tierFilter}
         stats={stats}
         onDashboard={() => dispatch({ type: 'dashboard' })}
         onSettings={() => dispatch({ type: 'settings' })}
         onEditor={(key) => dispatch({ type: 'editor', key })}
+        onTier={(tier) => dispatch({ type: 'tier', tier })}
       />
       <main className="main-pane">{renderMain()}</main>
     </div>
