@@ -6,13 +6,12 @@ import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/ca
 import { SkillDetail } from './SkillDetail'
 import { cn } from '@/lib/cn'
 import { isNoneEditor, itemEditorKey } from '@/lib/editors'
-import { useSkillIcons, groupByTier, getTierIconMap, type SkillItem } from '@/hooks/useSkillIcons'
-import type { SkillTier } from '@/types/skill'
+import { useSkillIcons } from '@/hooks/useSkillIcons'
+import type { SkillItem } from '@/types'
 
 interface SkillsViewProps {
   items: SkillItem[]
   editorFilter: string | null
-  tierFilter: 'tool' | 'directory' | 'other' | null  // NEW: Tier filter
   query: string
   onQuery: (q: string) => void
   kindFilter: string | null
@@ -27,7 +26,6 @@ export { itemEditorKey }
 export function SkillsView({
   items,
   editorFilter,
-  tierFilter,
   query,
   onQuery,
   kindFilter,
@@ -42,53 +40,34 @@ export function SkillsView({
     return items.filter((it) => itemEditorKey(it) === editorFilter)
   }, [items, editorFilter])
 
-  // 1.5) Tier 过滤（从外部 Sidebar 控制）
-  const byTier = useMemo(() => {
-    if (tierFilter === null) return byEditor
-    return byEditor.filter((it) => (it.tier || 'other') === tierFilter)
-  }, [byEditor, tierFilter])
-
-  // 2) kind chips 选项（来自当前 editor 和 tier 子集）
+  // 2) kind chips 选项（来自当前 editor 子集）
   const kinds = useMemo(() => {
     const m = new Map<string, number>()
-    for (const it of byTier) m.set(it.kind, (m.get(it.kind) ?? 0) + 1)
+    for (const it of byEditor) m.set(it.kind, (m.get(it.kind) ?? 0) + 1)
     return [...m.entries()].sort((a, b) => b[1] - a[1])
-  }, [byTier])
+  }, [byEditor])
 
-  // 3) Fuse 搜索（在 editor + tier 子集上）
+  // 3) Fuse 搜索（在 editor 子集上）
   const fuse = useMemo(
     () =>
-      new Fuse(byTier, {
+      new Fuse(byEditor, {
         keys: ['name', 'title', 'description', 'category', 'brand', 'dirName', 'tags'],
         threshold: 0.4,
         ignoreLocation: true,
       }),
-    [byTier],
+    [byEditor],
   )
 
   const filtered = useMemo(() => {
-    let list = query.trim() ? fuse.search(query).map((r) => r.item) : byTier
+    let list = query.trim() ? fuse.search(query).map((r) => r.item) : byEditor
     if (kindFilter) list = list.filter((it) => it.kind === kindFilter)
     return list
-  }, [byTier, fuse, query, kindFilter])
+  }, [byEditor, fuse, query, kindFilter])
 
   const selected = useMemo(
     () => filtered.find((it) => it.id === selectedId) ?? null,
     [filtered, selectedId],
   )
-
-  // NEW: Get tier statistics for display
-  const tierStats = useMemo(() => {
-    const stats: Record<SkillTier, number> = { tool: 0, directory: 0, other: 0 }
-    for (const it of byEditor) {
-      const tier = (it.tier || 'other') as SkillTier
-      stats[tier]++
-    }
-    return stats
-  }, [byEditor])
-
-  // NEW: Get tier icon map for display
-  const tierIcons = useMemo(() => getTierIconMap(), [])
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -101,60 +80,33 @@ export function SkillsView({
         className="h-10 w-full rounded-md border border-border bg-input px-3 text-body-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
 
-      {/* Tier filter chips — 现在由 Sidebar 控制，这里仅显示当前过滤状态 */}
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap gap-1.5">
+      {/* kind chips (secondary filter) */}
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          onClick={() => onKind(null)}
+          className={cn(
+            'rounded-full px-2.5 py-0.5 text-caption transition-colors',
+            kindFilter === null
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground hover:text-foreground',
+          )}
+        >
+          全部类型
+        </button>
+        {kinds.map(([k, c]) => (
           <button
-            disabled
-            className={cn(
-              'rounded-full px-2.5 py-0.5 text-caption transition-colors opacity-60',
-              'bg-muted text-muted-foreground',
-            )}
-          >
-            全部 ({byEditor.length})
-          </button>
-          {tierIcons.map(({ tier, icon, label }) => (
-            <button
-              key={tier}
-              disabled
-              className={cn(
-                'rounded-full px-2.5 py-0.5 text-caption transition-colors opacity-60',
-                'bg-muted text-muted-foreground',
-              )}
-            >
-              {icon} {label} ({tierStats[tier as SkillTier]})
-            </button>
-          ))}
-        </div>
-
-        {/* kind chips (secondary filter) */}
-        <div className="flex flex-wrap gap-1.5">
-          <button
-            onClick={() => onKind(null)}
+            key={k}
+            onClick={() => onKind(k)}
             className={cn(
               'rounded-full px-2.5 py-0.5 text-caption transition-colors',
-              kindFilter === null
+              kindFilter === k
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground hover:text-foreground',
             )}
           >
-            全部类型
+            {k} ({c})
           </button>
-          {kinds.map(([k, c]) => (
-            <button
-              key={k}
-              onClick={() => onKind(k)}
-              className={cn(
-                'rounded-full px-2.5 py-0.5 text-caption transition-colors',
-                kindFilter === k
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {k} ({c})
-            </button>
-          ))}
-        </div>
+        ))}
       </div>
 
       {/* 列表 + 详情 */}
