@@ -17,7 +17,7 @@ const require = createRequire(import.meta.url);
 
 // Load paths helper
 const pathsLib = require('./lib/paths.mjs');
-const { homeDir, configFile, cacheFile, stateFile, ensureHomeDir, writeJson } = pathsLib;
+const { homeDir, configFile, cacheFile, stateFile, ensureHomeDir, writeJson, readJson } = pathsLib;
 
 // Load port helper
 const { pickPort } = require('./lib/port.mjs');
@@ -38,11 +38,13 @@ const cmd = process.argv[2] || 'start';
 
 const handlers = {
   start: cmdStart,
+  stop: cmdStop,
   scan: cmdScan,
   stats: cmdStats,
   duplicates: cmdDuplicates,
   init: cmdInit,
   purge: cmdPurge,
+  uninstall: cmdUninstall,
   dev: cmdDev,
   sync: cmdSync,
   help: cmdHelp,
@@ -73,11 +75,13 @@ Usage:
 
 Commands:
   start     Scan + start server + open browser (runs in background by default)
+  stop      Stop the background server
   scan      Scan only, dump IR JSON to stdout
   stats     Scan + print human-readable summary (counts / brands / errors / samples)
   duplicates Scan + print duplicate diagnostics by name/content/path
   init      Write default sources.yaml to ~/.config/huhaa-myskills/
   purge     Remove all user data under ~/.config/huhaa-myskills/
+  uninstall Stop service + uninstall global npm package (prompts before deleting user data)
   sync      Sync current skills to selected editors
   dev       Dev mode (Vite + nodemon)
 
@@ -122,6 +126,80 @@ async function cmdPurge() {
   fs.rmSync(dir, { recursive: true, force: true });
   console.log(`[purge] removed ${dir}`);
   console.log('[purge] code dir is untouched. delete the repo manually if needed.');
+}
+
+async function cmdStop() {
+  const state = readJson(stateFile());
+  if (!state || !state.pid) {
+    console.log('[stop] 未发现运行中的实例（无 state.json 记录）');
+    return false;
+  }
+  if (!isProcessRunning(state.pid)) {
+    console.log('[stop] 实例未运行，清理残留状态文件');
+    try { fs.unlinkSync(stateFile()); } catch {}
+    return false;
+  }
+  try {
+    process.kill(state.pid, 'SIGTERM');
+    console.log(`✓ 已停止 HuHaa-MySkills (pid ${state.pid}, port ${state.port ?? '未知'})`);
+  } catch (err) {
+    console.error(`[stop] 停止失败: ${err.message}`);
+    return false;
+  }
+  try { fs.unlinkSync(stateFile()); } catch {}
+  return true;
+}
+
+async function cmdUninstall() {
+  const readline = await import('node:readline');
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const question = (q) => new Promise(resolve => rl.question(q, resolve));
+
+  const dir = homeDir();
+  console.log('\n[uninstall] 即将卸载 HuHaa-MySkills，将执行以下操作：');
+  console.log('  1. 停止运行中的后台服务');
+  console.log(`  2. 删除用户数据目录: ${dir}`);
+  console.log('  3. 卸载全局 npm 包: huhaa-myskills');
+  console.log('\n⚠️  此操作不可恢复，代码仓库本身不会被删除。');
+
+  const ans = await question('\n是否全部卸载？输入 y 确认，其它键取消: ');
+  rl.close();
+
+  if (ans.trim().toLowerCase() !== 'y') {
+    console.log('[uninstall] 已取消，未做任何更改。');
+    return;
+  }
+
+  // 1. 停止后台服务
+  console.log('\n[1/3] 停止后台服务...');
+  await cmdStop();
+
+  // 2. 删除用户数据目录
+  console.log('\n[2/3] 删除用户数据目录...');
+  if (fs.existsSync(dir)) {
+    fs.rmSync(dir, { recursive: true, force: true });
+    console.log(`✓ 已删除 ${dir}`);
+  } else {
+    console.log(`[uninstall] 目录不存在，跳过: ${dir}`);
+  }
+
+  // 3. 卸载全局 npm 包
+  console.log('\n[3/3] 卸载全局 npm 包...');
+  const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  await new Promise((resolve) => {
+    const child = spawn(npmCmd, ['uninstall', '-g', 'huhaa-myskills'], { stdio: 'inherit' });
+    child.on('close', (code) => {
+      if (code === 0) console.log('✓ 已卸载全局 npm 包 huhaa-myskills');
+      else console.warn(`[uninstall] npm 退出码 ${code}（若未全局安装可忽略）`);
+      resolve();
+    });
+    child.on('error', () => {
+      console.warn('[uninstall] 未找到 npm 命令，跳过全局包卸载');
+      resolve();
+    });
+  });
+
+  console.log('\n[uninstall] 完成 ✓');
 }
 
 async function cmdScan() {
@@ -274,11 +352,11 @@ async function cmdStart() {
   const preferred = parseInt(process.env.PORT || '11520', 10);
   const port = await pickPort(preferred, 10);
   if (!port) {
-    console.error(`[start] no free port in ${preferred}..${preferred + 10}, abort.`);
+    console.error(`[start] ${preferred}..${preferred + 10} 范围内无空闲端口，已中止。`);
     process.exit(1);
   }
   if (port !== preferred) {
-    console.warn(`[start] port ${preferred} busy, using ${port} instead.`);
+    console.warn(`[start] 端口 ${preferred} 被占用，改用 ${port}。`);
   }
 
   const homeDirectory = homeDir();
@@ -298,8 +376,8 @@ async function startBackgroundServer(port, logFile, homeDirectory) {
   try {
     const stateData = JSON.parse(fs.readFileSync(stateFile(), 'utf8'));
     if (stateData.pid && isProcessRunning(stateData.pid)) {
-      console.log(`✓ HuHaa-MySkills already running on http://localhost:${stateData.port}`);
-      console.log(`📝 Logs: ${logFile}`);
+      console.log(`✓ HuHaa-MySkills 已在运行: http://localhost:${stateData.port}`);
+      console.log(`📝 日志: ${logFile}`);
       return;
     }
   } catch {
@@ -327,10 +405,10 @@ async function startBackgroundServer(port, logFile, homeDirectory) {
   // 关闭日志文件描述符（子进程已继承）
   fs.closeSync(logFd);
 
-  console.log(`✓ HuHaa-MySkills running in background at http://localhost:${port}`);
-  console.log(`📝 Logs: ${logFile}`);
-  console.log(`💡 To view logs: tail -f ${logFile}`);
-  console.log(`💡 To stop: pkill -f "huhaa-myskills start"`);
+  console.log(`✓ HuHaa-MySkills 已在后台运行: http://localhost:${port}`);
+  console.log(`📝 日志: ${logFile}`);
+  console.log(`💡 查看日志: tail -f ${logFile}`);
+  console.log(`💡 停止服务: huhaa-myskills stop`);
 }
 
 function isProcessRunning(pid) {
@@ -348,10 +426,10 @@ async function runServer(port, logFile, homeDirectory) {
   const { startServer } = await import(path.join(PKGS_ROOT, 'server/src/index.mjs'));
   await startServer({ port });
 
-  console.log(`\n  HuHaa-MySkills running:  http://localhost:${port}\n`);
-  console.log(`  data dir: ${homeDirectory}`);
-  console.log(`  logs: ${logFile}`);
-  console.log(`  Ctrl+C to stop.\n`);
+  console.log(`\n  HuHaa-MySkills 运行中:  http://localhost:${port}\n`);
+  console.log(`  数据目录: ${homeDirectory}`);
+  console.log(`  日志: ${logFile}`);
+  console.log(`  按 Ctrl+C 停止。\n`);
 
   openBrowser(`http://localhost:${port}`);
 
@@ -364,7 +442,7 @@ async function runServer(port, logFile, homeDirectory) {
 }
 
 async function cmdDev() {
-  console.log('[dev] dev mode comes in P3. running start for now.');
+  console.log('[dev] 开发模式将在 P3 提供，暂时执行 start。');
   await cmdStart();
 }
 

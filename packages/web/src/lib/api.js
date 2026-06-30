@@ -1,43 +1,71 @@
-export async function getJson(url) {
-  let res;
-  try {
-    res = await fetch(url, { headers: { accept: 'application/json' } });
-  } catch (e) {
-    throw new Error(`GET ${url} failed: ${e.message || e}`);
-  }
+/**
+ * API 客户端模块
+ * 用于与后端通信
+ */
 
-  const text = await res.text();
-  let data = null;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    throw new Error(`GET ${url} returned non-JSON (${res.status}): ${text.slice(0, 160)}`);
-  }
+const API_BASE = '/api'
 
-  if (!res.ok) throw new Error(data?.error || `GET ${url} failed: ${res.status} ${res.statusText}`);
-  return data;
+export async function fetchSkills() {
+  try {
+    const response = await fetch(`${API_BASE}/skills`)
+    if (!response.ok) throw new Error('Failed to fetch skills')
+    return await response.json()
+  } catch (error) {
+    console.error('Error fetching skills:', error)
+    throw error
+  }
 }
 
-export async function postJson(url, body) {
-  let res;
+export async function getSkillDetail(id) {
   try {
-    res = await fetch(url, {
+    const response = await fetch(`${API_BASE}/skills/${id}`)
+    if (!response.ok) throw new Error('Failed to fetch skill detail')
+    return await response.json()
+  } catch (error) {
+    console.error('Error fetching skill detail:', error)
+    throw error
+  }
+}
+
+export async function createSkill(data) {
+  try {
+    const response = await fetch(`${API_BASE}/skills`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify(body),
-    });
-  } catch (e) {
-    throw new Error(`POST ${url} failed: ${e.message || e}`);
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    if (!response.ok) throw new Error('Failed to create skill')
+    return await response.json()
+  } catch (error) {
+    console.error('Error creating skill:', error)
+    throw error
   }
+}
 
-  const text = await res.text();
-  let data = null;
+export async function updateSkill(id, data) {
   try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    throw new Error(`POST ${url} returned non-JSON (${res.status}): ${text.slice(0, 160)}`);
+    const response = await fetch(`${API_BASE}/skills/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    if (!response.ok) throw new Error('Failed to update skill')
+    return await response.json()
+  } catch (error) {
+    console.error('Error updating skill:', error)
+    throw error
   }
+}
 
-  if (!res.ok) throw new Error(data?.error || `POST ${url} failed: ${res.status} ${res.statusText}`);
-  return data;
+export async function deleteSkill(id) {
+  try {
+    const response = await fetch(`${API_BASE}/skills/${id}`, {
+      method: 'DELETE'
+    })
+    if (!response.ok) throw new Error('Failed to delete skill')
+    return await response.json()
+  } catch (error) {
+    console.error('Error deleting skill:', error)
+    throw error
+  }
 }

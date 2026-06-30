@@ -31,11 +31,13 @@
   ],
   "scripts": {
     "start": "node bin/huhaa-myskills.mjs start",
+    "stop": "node bin/huhaa-myskills.mjs stop",
     "scan": "node bin/huhaa-myskills.mjs scan",
     "stats": "node bin/huhaa-myskills.mjs stats",
     "duplicates": "node bin/huhaa-myskills.mjs duplicates",
     "init": "node bin/huhaa-myskills.mjs init",
     "purge": "node bin/huhaa-myskills.mjs purge",
+    "uninstall": "node bin/huhaa-myskills.mjs uninstall",
     "dev": "node bin/huhaa-myskills.mjs dev",
     "dev-bg": "bash scripts/start-dev.sh",
     "sync": "node bin/huhaa-myskills.mjs sync",

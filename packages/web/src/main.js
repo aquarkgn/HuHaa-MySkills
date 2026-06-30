@@ -1,6 +1,9 @@
-import { createApp } from 'vue';
-import { createPinia } from 'pinia';
-import App from './App.vue';
-import './styles.css';
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 
-createApp(App).use(createPinia()).mount('#app');
+const app = createApp({
+  template: '<div id="app"></div>'
+})
+
+app.use(createPinia())
+app.mount('#app')
