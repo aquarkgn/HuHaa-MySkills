@@ -6,21 +6,32 @@
     <title>HuHaa-MySkills</title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="apple-touch-icon" href="/favicon-192x192.png">
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/favicon-192x192.png" />
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
 
     <!-- PWA -->
-    <link rel="manifest" href="/site.webmanifest">
-    <meta name="theme-color" content="#7c3aed">
-    <meta name="description" content="一个高效的技能、规则和提示管理工具">
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#3B82F6" />
+    <meta name="description" content="本地技能 / 插件 / MCP 聚合中心" />
+
+    <!-- 防止暗色模式首屏闪烁：渲染前读取偏好并应用 .dark -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('huhaa-theme');
+          var dark =
+            t === 'dark' ||
+            (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

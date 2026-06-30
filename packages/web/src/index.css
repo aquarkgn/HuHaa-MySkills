@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────── 设计 token ───────────────────────────
+   颜色为 HSL 通道值，配合 tailwind.config.ts 的 hsl(var(--x)) 使用。
+   取自 docs/Frontend-Theme-Design.md。 */
+:root {
+  /* Light Mode（默认） */
+  --color-background: 0 0% 100%;
+  --color-foreground: 220 9% 12%;
+  --color-card: 0 0% 100%;
+  --color-card-foreground: 220 9% 12%;
+  --color-border: 220 13% 91%;
+  --color-input: 220 13% 96%;
+  --color-ring: 215 100% 46%;
+  --color-primary: 215 100% 46%;
+  --color-primary-foreground: 0 0% 100%;
+  --color-secondary: 217 33% 17%;
+  --color-secondary-foreground: 210 40% 96%;
+  --color-destructive: 0 84% 60%;
+  --color-destructive-foreground: 0 0% 100%;
+  --color-muted: 220 13% 95%;
+  --color-muted-foreground: 217 11% 45%;
+  --color-accent: 38 92% 50%;
+  --color-accent-foreground: 220 9% 12%;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
+}
+
+.dark {
+  --color-background: 222 47% 11%;
+  --color-foreground: 210 40% 96%;
+  --color-card: 217 33% 14%;
+  --color-card-foreground: 210 40% 96%;
+  --color-border: 217 33% 20%;
+  --color-input: 217 33% 17%;
+  --color-ring: 215 100% 46%;
+  --color-primary: 215 100% 46%;
+  --color-primary-foreground: 0 0% 100%;
+  --color-secondary: 210 40% 96%;
+  --color-secondary-foreground: 217 33% 17%;
+  --color-destructive: 0 84% 60%;
+  --color-destructive-foreground: 0 0% 100%;
+  --color-muted: 217 33% 17%;
+  --color-muted-foreground: 215 14% 65%;
+  --color-accent: 38 92% 50%;
+  --color-accent-foreground: 220 9% 12%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body,
+  #app {
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* ─────────────────────── 三栏外壳布局 ───────────────────────
+   类名 sidebar / topbar / detail 同时被 build/verify.mjs 的
+   CSS 冒烟断言引用，重命名需同步修改 verify。 */
+@layer components {
+  .app-shell {
+    @apply grid h-full;
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: 56px 1fr;
+    grid-template-areas:
+      'sidebar topbar'
+      'sidebar main';
+  }
+  .sidebar {
+    grid-area: sidebar;
+    @apply flex flex-col gap-2 overflow-y-auto border-r border-border bg-card p-4;
+  }
+  .topbar {
+    grid-area: topbar;
+    @apply flex items-center justify-between border-b border-border bg-card px-6;
+  }
+  .main-pane {
+    grid-area: main;
+    @apply overflow-y-auto p-6;
+  }
+  .detail {
+    @apply rounded-lg border border-border bg-card p-6 text-card-foreground;
+  }
+}
