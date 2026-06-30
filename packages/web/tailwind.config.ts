@@ -10,12 +10,14 @@ const config: Config = {
       colors: {
         background: 'hsl(var(--color-background) / <alpha-value>)',
         foreground: 'hsl(var(--color-foreground) / <alpha-value>)',
+        sidebar: 'hsl(var(--color-sidebar) / <alpha-value>)',
         border: 'hsl(var(--color-border) / <alpha-value>)',
         input: 'hsl(var(--color-input) / <alpha-value>)',
         ring: 'hsl(var(--color-ring) / <alpha-value>)',
         primary: {
           DEFAULT: 'hsl(var(--color-primary) / <alpha-value>)',
           foreground: 'hsl(var(--color-primary-foreground) / <alpha-value>)',
+          soft: 'hsl(var(--color-primary-soft) / <alpha-value>)',
         },
         secondary: {
           DEFAULT: 'hsl(var(--color-secondary) / <alpha-value>)',

@@ -5,6 +5,7 @@ export type SkillKind =
   | 'skill'
   | 'plugin'
   | 'mcp'
+  | 'mcp-tool'
   | 'runbook'
   | 'instruction'
   | 'config'

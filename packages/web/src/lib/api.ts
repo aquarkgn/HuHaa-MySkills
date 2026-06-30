@@ -19,6 +19,16 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
+/** 容忍非 2xx 的 POST：copy/open 在非法输入时返回 {ok:false,error}（4xx/5xx），需读取该 body */
+async function postTolerant<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  return res.json() as Promise<T>
+}
+
 /** 列表：返回不含 raw 的 SkillItem[] */
 export function fetchSkills(): Promise<SkillItem[]> {
   return get<SkillItem[]>('/skills')
@@ -39,12 +49,29 @@ export function reload(): Promise<{ ok: boolean; items: number }> {
   return post('/reload')
 }
 
+/** 后端 pickCopyText 支持的 what 取值（packages/server/src/index.mjs:352） */
+export type CopyWhat = 'path' | 'dir' | 'rel' | 'name' | 'raw' | 'prompt'
+export type OpenWith = 'default' | 'cursor' | 'finder'
+
+export interface CopyResult {
+  ok: boolean
+  bytes?: number
+  what?: string
+  error?: string
+}
+export interface OpenResult {
+  ok: boolean
+  opened?: string
+  with?: string
+  error?: string
+}
+
 /** 复制技能内容 / 路径到剪贴板（由后端执行） */
-export function copy(id: string, what: 'path' | 'content' = 'path') {
-  return post('/copy', { id, what })
+export function copy(id: string, what: CopyWhat = 'path'): Promise<CopyResult> {
+  return postTolerant<CopyResult>('/copy', { id, what })
 }
 
 /** 用指定编辑器 / 访达打开技能文件 */
-export function open(id: string, withApp: 'cursor' | 'finder' = 'finder') {
-  return post('/open', { id, with: withApp })
+export function open(id: string, withApp: OpenWith = 'default'): Promise<OpenResult> {
+  return postTolerant<OpenResult>('/open', { id, with: withApp })
 }

@@ -36,6 +36,8 @@ function write(file, text) {
 async function main() {
   try {
     run('npm', ['run', 'build:web']);
+    run('npm', ['run', 'typecheck:web']);
+    run('npm', ['run', 'test:web']);
     run('node', ['--test', ...testFiles]);
 
     const skillRoot = path.join(tempRoot, 'skills');

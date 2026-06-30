@@ -1,10 +1,64 @@
-import { useEffect, useMemo, useState } from 'react'
-import Fuse from 'fuse.js'
+import { useCallback, useEffect, useReducer, useState } from 'react'
 import { Sidebar } from '@/components/layout/Sidebar'
-import { Topbar } from '@/components/layout/Topbar'
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Topbar, type ModuleKey } from '@/components/layout/Topbar'
+import { DashboardView } from '@/components/views/DashboardView'
+import { SkillsView } from '@/components/views/SkillsView'
+import { SettingsView } from '@/components/views/SettingsView'
+import { ComingSoon } from '@/components/ComingSoon'
+import { useLiveReload } from '@/hooks/useLiveReload'
 import { fetchSkills, fetchStats, reload } from '@/lib/api'
 import type { SkillItem, Stats } from '@/types'
+
+export type View = 'dashboard' | 'skills' | 'settings'
+
+export interface UIState {
+  module: ModuleKey
+  view: View
+  editorFilter: string | null
+  kindFilter: string | null
+  query: string
+  selectedId: string | null
+}
+
+export type Action =
+  | { type: 'module'; module: ModuleKey }
+  | { type: 'dashboard' }
+  | { type: 'settings' }
+  | { type: 'editor'; key: string | null }
+  | { type: 'query'; query: string }
+  | { type: 'kind'; kind: string | null }
+  | { type: 'select'; id: string }
+
+export const initialState: UIState = {
+  module: 'skills',
+  view: 'dashboard',
+  editorFilter: null,
+  kindFilter: null,
+  query: '',
+  selectedId: null,
+}
+
+export function reducer(state: UIState, action: Action): UIState {
+  switch (action.type) {
+    case 'module':
+      return { ...state, module: action.module }
+    case 'dashboard':
+      return { ...state, view: 'dashboard' }
+    case 'settings':
+      return { ...state, view: 'settings' }
+    case 'editor':
+      // 切换来源：进入技能视图，重置 kind/选中
+      return { ...state, view: 'skills', editorFilter: action.key, kindFilter: null, selectedId: null }
+    case 'query':
+      return { ...state, query: action.query }
+    case 'kind':
+      return { ...state, kindFilter: action.kind }
+    case 'select':
+      return { ...state, selectedId: action.id }
+    default:
+      return state
+  }
+}
 
 export default function App() {
   const [items, setItems] = useState<SkillItem[]>([])
@@ -12,10 +66,7 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reloading, setReloading] = useState(false)
-
-  const [query, setQuery] = useState('')
-  const [activeKind, setActiveKind] = useState<string | null>(null)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [ui, dispatch] = useReducer(reducer, initialState)
 
   async function load() {
     setLoading(true)
@@ -35,6 +86,18 @@ export default function App() {
     load()
   }, [])
 
+  // SSE 静默刷新：文件变更时不闪「加载中」，只更新数据
+  const refresh = useCallback(async () => {
+    try {
+      const [skills, s] = await Promise.all([fetchSkills(), fetchStats()])
+      setItems(skills)
+      setStats(s)
+    } catch {
+      // 静默：实时刷新失败不打断当前界面
+    }
+  }, [])
+  useLiveReload(refresh)
+
   async function handleReload() {
     setReloading(true)
     try {
@@ -45,115 +108,51 @@ export default function App() {
     }
   }
 
-  // Fuse.js 模糊搜索索引
-  const fuse = useMemo(
-    () =>
-      new Fuse(items, {
-        keys: ['name', 'title', 'description', 'category', 'brand', 'tags'],
-        threshold: 0.4,
-        ignoreLocation: true,
-      }),
-    [items]
-  )
-
-  const filtered = useMemo(() => {
-    let list = query.trim() ? fuse.search(query).map((r) => r.item) : items
-    if (activeKind) list = list.filter((it) => it.kind === activeKind)
-    return list
-  }, [items, fuse, query, activeKind])
-
-  const selected = useMemo(
-    () => filtered.find((it) => it.id === selectedId) ?? null,
-    [filtered, selectedId]
-  )
+  function renderMain() {
+    if (ui.module !== 'skills') {
+      return <ComingSoon title={ui.module === 'commands' ? '命令' : '编辑器'} />
+    }
+    if (loading) return <p className="text-body-sm text-muted-foreground">加载中…</p>
+    if (error) {
+      return (
+        <div className="detail border-destructive">
+          <p className="text-body-sm text-destructive">加载失败：{error}</p>
+        </div>
+      )
+    }
+    if (ui.view === 'dashboard') return <DashboardView stats={stats} items={items} />
+    if (ui.view === 'settings') return <SettingsView />
+    return (
+      <SkillsView
+        items={items}
+        editorFilter={ui.editorFilter}
+        query={ui.query}
+        onQuery={(q) => dispatch({ type: 'query', query: q })}
+        kindFilter={ui.kindFilter}
+        onKind={(k) => dispatch({ type: 'kind', kind: k })}
+        selectedId={ui.selectedId}
+        onSelect={(id) => dispatch({ type: 'select', id })}
+      />
+    )
+  }
 
   return (
     <div className="app-shell">
-      <Sidebar stats={stats} activeKind={activeKind} onSelectKind={setActiveKind} />
       <Topbar
-        query={query}
-        onQueryChange={setQuery}
+        module={ui.module}
+        onModule={(m) => dispatch({ type: 'module', module: m })}
         onReload={handleReload}
         reloading={reloading}
       />
-
-      <main className="main-pane">
-        {loading && <p className="text-body-sm text-muted-foreground">加载中…</p>}
-        {error && (
-          <div className="detail border-destructive">
-            <p className="text-body-sm text-destructive">加载失败：{error}</p>
-          </div>
-        )}
-
-        {!loading && !error && (
-          <div className="grid grid-cols-[1fr_1.2fr] gap-6">
-            {/* 列表 */}
-            <section className="flex flex-col gap-3">
-              <p className="text-caption text-muted-foreground">
-                共 {filtered.length} 项
-              </p>
-              {filtered.length === 0 && (
-                <p className="text-body-sm text-muted-foreground">没有匹配的条目</p>
-              )}
-              {filtered.map((it) => (
-                <Card
-                  key={it.id}
-                  onClick={() => setSelectedId(it.id)}
-                  className={
-                    'cursor-pointer transition-colors hover:border-primary ' +
-                    (it.id === selectedId ? 'border-primary' : '')
-                  }
-                >
-                  <CardHeader>
-                    <CardTitle>{it.title || it.name}</CardTitle>
-                    <CardDescription>
-                      {it.description || it.preview || '（无描述）'}
-                    </CardDescription>
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      <span className="rounded-sm bg-muted px-1.5 py-0.5 text-caption text-muted-foreground">
-                        {it.kind}
-                      </span>
-                      {it.editor && (
-                        <span className="rounded-sm bg-accent/15 px-1.5 py-0.5 text-caption text-accent-foreground">
-                          {it.editor}
-                        </span>
-                      )}
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
-            </section>
-
-            {/* 详情 */}
-            <section>
-              {selected ? (
-                <div className="detail">
-                  <h2 className="text-h3 text-foreground">
-                    {selected.title || selected.name}
-                  </h2>
-                  <p className="mt-2 text-body-sm text-muted-foreground">
-                    {selected.description || '（无描述）'}
-                  </p>
-                  <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-body-sm">
-                    <dt className="text-muted-foreground">类型</dt>
-                    <dd>{selected.kind}</dd>
-                    <dt className="text-muted-foreground">来源</dt>
-                    <dd>{selected.source}</dd>
-                    <dt className="text-muted-foreground">路径</dt>
-                    <dd className="break-all font-mono text-caption">
-                      {selected.paths?.abs}
-                    </dd>
-                  </dl>
-                </div>
-              ) : (
-                <div className="detail text-muted-foreground">
-                  <p className="text-body-sm">从左侧选择一项查看详情</p>
-                </div>
-              )}
-            </section>
-          </div>
-        )}
-      </main>
+      <Sidebar
+        view={ui.view}
+        editorFilter={ui.editorFilter}
+        stats={stats}
+        onDashboard={() => dispatch({ type: 'dashboard' })}
+        onSettings={() => dispatch({ type: 'settings' })}
+        onEditor={(key) => dispatch({ type: 'editor', key })}
+      />
+      <main className="main-pane">{renderMain()}</main>
     </div>
   )
 }
