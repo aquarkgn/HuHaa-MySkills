@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Search, ExternalLink } from 'lucide-react'
 import { useOtherSkills } from '@/hooks/useOtherSkills'
 import { cn } from '@/lib/cn'
-import type { OtherSkill } from '@/types/other-skill'
 
 interface OtherSkillsViewProps {
   query?: string

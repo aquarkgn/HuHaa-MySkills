@@ -16,7 +16,7 @@ import {
   sortByTier,
   groupByTier,
 } from '@/hooks/useSkillIcons'
-import type { SkillItem } from '@/types/skill'
+import type { SkillItem } from '@/types'
 
 describe('useSkillIcons', () => {
   // Helper to create mock SkillItem

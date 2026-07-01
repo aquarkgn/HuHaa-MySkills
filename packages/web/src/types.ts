@@ -5,12 +5,8 @@ export type SkillKind =
   | 'skill'
   | 'plugin'
   | 'mcp'
-  | 'mcp-tool'
   | 'runbook'
-  | 'instruction'
-  | 'config'
   | 'doc'
-  | 'agent-rule'
 
 export interface SkillItem {
   id: string
@@ -19,22 +15,24 @@ export interface SkillItem {
   name: string
   title?: string
   description?: string
-  category?: string
-  editor?: string
+  category?: string[]
+  tier?: string
   brand?: string
+  dirName?: string
+  editor?: string
   product?: string
   triggers?: string[]
   tags?: string[]
-  paths: {
+  paths?: {
     abs: string
     rel?: string
     rootKind: 'home' | 'project' | 'icloud'
   }
-  preview: string
+  preview?: string
   /** /api/skills 列表接口会剥离 raw，仅 /api/skills/:id 返回 */
   raw?: string
   links?: { label: string; url: string }[]
-  updatedAt: string
+  updatedAt?: string
   parseError?: string
 }
 

@@ -20,7 +20,7 @@ const item: SkillItem = {
   title: 'autoplan',
   description: 'Auto-review pipeline',
   paths: { abs: '/Users/x/.claude/skills/autoplan/SKILL.md', rootKind: 'home' },
-  preview: '',
+  preview: '预览内容',
   updatedAt: '2026-01-01',
 }
 
@@ -35,7 +35,7 @@ describe('SkillDetail（P7 markdown 正文）', () => {
     render(<SkillDetail item={item} />)
     // 元数据
     expect(screen.getByText('Claude Code')).toBeInTheDocument()
-    expect(screen.getByText(item.paths.abs)).toBeInTheDocument()
+    expect(screen.getByText((item.paths as NonNullable<typeof item.paths>).abs)).toBeInTheDocument()
     expect(screen.getByText('复制正文')).toBeInTheDocument()
     // markdown 渲染（异步加载后出现）
     expect(await screen.findByText('正文标题')).toBeInTheDocument()

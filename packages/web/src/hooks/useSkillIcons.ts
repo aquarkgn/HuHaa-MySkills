@@ -13,7 +13,7 @@
  *   const { tierIcon, tierLabel, brandIcon, isTier } = useSkillIcons(skill);
  */
 
-import type { SkillItem } from '@/types/skill';
+import type { SkillItem } from '@/types';
 
 interface IconMapping {
   /** Emoji icon for display */
