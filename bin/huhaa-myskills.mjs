@@ -45,6 +45,7 @@ const handlers = {
   init: cmdInit,
   purge: cmdPurge,
   uninstall: cmdUninstall,
+  restart: cmdRestart,
   dev: cmdDev,
   sync: cmdSync,
   help: cmdHelp,
@@ -76,6 +77,7 @@ Usage:
 Commands:
   start     Scan + start server + open browser (runs in background by default)
   stop      Stop the background server
+  restart   Restart the background server (kill + restart)
   scan      Scan only, dump IR JSON to stdout
   stats     Scan + print human-readable summary (counts / brands / errors / samples)
   duplicates Scan + print duplicate diagnostics by name/content/path
@@ -83,7 +85,7 @@ Commands:
   purge     Remove all user data under ~/.config/huhaa-myskills/
   uninstall Stop service + uninstall global npm package (prompts before deleting user data)
   sync      Sync current skills to selected editors
-  dev       Dev mode (Vite + nodemon)
+  dev       Dev mode: Vite frontend hot reload (connect to backend separately)
 
 Options:
   -v, --version       Show version
@@ -148,6 +150,39 @@ async function cmdStop() {
   }
   try { fs.unlinkSync(stateFile()); } catch {}
   return true;
+}
+
+async function cmdRestart() {
+  const isForeground = process.argv.includes('--foreground') || process.argv.includes('-f');
+  const state = readJson(stateFile());
+  
+  if (!state || !state.pid) {
+    console.log('[restart] 未发现运行中的实例，启动新服务...');
+    await cmdStart();
+    return;
+  }
+  
+  if (!isProcessRunning(state.pid)) {
+    console.log('[restart] 旧实例未运行，清理状态并启动新服务...');
+    try { fs.unlinkSync(stateFile()); } catch {}
+    await cmdStart();
+    return;
+  }
+  
+  // Kill old process
+  try {
+    process.kill(state.pid, 'SIGTERM');
+    console.log(`[restart] 已停止旧实例 (PID ${state.pid})`);
+  } catch (err) {
+    console.error(`[restart] 停止失败: ${err.message}`);
+  }
+  
+  try { fs.unlinkSync(stateFile()); } catch {}
+  
+  // Wait and restart
+  await new Promise(resolve => setTimeout(resolve, 500));
+  console.log('[restart] 启动新实例...');
+  await cmdStart();
 }
 
 async function cmdUninstall() {
@@ -442,8 +477,11 @@ async function runServer(port, logFile, homeDirectory) {
 }
 
 async function cmdDev() {
-  console.log('[dev] 开发模式将在 P3 提供，暂时执行 start。');
-  await cmdStart();
+  console.log('[dev] Frontend dev mode delegated to packages/web.');
+  console.log('[dev] Run: npm run dev (frontend on 11521)');
+  console.log('[dev] In another terminal: npm run start (backend on 11520)');
+  console.log('[dev] Or: npm run restart (if backend already running)');
+  process.exit(0);
 }
 
 async function cmdSync() {
