@@ -65,20 +65,26 @@ refactor(types): 统一 API 类型定义
 
 **核心原则**: 主目录保持干净整齐，禁止生成不相关文档和临时文件。
 
-### ✅ 允许的根目录文件
+### ✅ 仅允许的根目录文件
 
 ```
 HuHaa-MySkills/
-├── README.md                    ✅ 项目主文档
-├── CLAUDE.md                    ✅ AI 助手协作规则（本文件）
+├── README.md                    ✅ 项目导航文档（仅此）
+├── CLAUDE.md                    ✅ AI 协作规则（仅此）
 ├── package.json                 ✅ 项目依赖配置
 ├── package-lock.json            ✅ 依赖锁定
 ├── .gitignore                   ✅ Git 配置
 ├── .env.example                 ✅ 环境变量示例
 │
-├── docs/                        ✅ 规范文档目录
-│   ├── Frontend-Engineering.md  (规范)
-│   └── hermes_docs_project_plan.md (需求)
+├── docs/                        ✅ 规范文档目录（仅规范，无计划/执行文档）
+│   ├── Frontend-Engineering.md  规范
+│   ├── hermes_docs_project_plan.md  需求规划
+│   └── assets/
+│
+├── .hermes/plans/               ✅ 项目开发计划和执行文档
+│   ├── PROGRESS.md              当前进度追踪
+│   ├── SKILL_SCANNING_RULE_v2.md 新规划
+│   └── ...（待审查的计划）
 │
 ├── packages/                    ✅ 工程代码
 ├── .git/                        ✅ Git 历史
@@ -106,15 +112,30 @@ HuHaa-MySkills/
 
 ### 📝 规则详解
 
-1. **所有项目文档必须在 `docs/` 目录内**
-   - 规范文档: `docs/Frontend-Engineering.md`
-   - 需求文档: `docs/hermes_docs_project_plan.md`
-   - 其他文档不允许在根目录
+1. **根目录仅允许两个文档文件**
+   - ✅ `README.md` — 项目导航（指向 docs/）
+   - ✅ `CLAUDE.md` — AI 协作规则
+   - ❌ 其他所有文档禁止在根目录
+
+2. **docs/ 目录仅放规范文档**
+   - ✅ Frontend-Engineering.md（技术规范）
+   - ✅ hermes_docs_project_plan.md（需求规划）
+   - ❌ 禁止放项目开发计划（如 SKILL_SCANNING_RULE_*.md）
+   - ❌ 禁止放执行总结、验证报告、阶段完成文档
+   
+3. **.hermes/plans/ 目录放项目计划和执行文档**
+   - ✅ 项目开发计划（规则设计文档）
+   - ✅ 进度追踪文档（PROGRESS.md）
+   - ✅ 执行总结、审查指南（待审查的计划）
+   - ❌ 禁止放规范文档、需求文档
 
 2. **禁止生成临时或中间文档**
-   - 执行报告、验证摘要、阶段文档都归档
-   - 执行过程中产生的文件必须删除或移入 docs/
-   - 不允许留下任何 REPORT、SUMMARY、PLAN 等文件
+   - 执行报告、验证总结、阶段文档 → 应在 `.hermes/plans/` 目录
+   - 开发计划、规则设计文档 → 应在 `.hermes/plans/` 目录
+   - 规范文档（前端/工程规范）→ 只能在 `docs/` 目录
+   - 需求文档（项目规划） → 只能在 `docs/` 目录
+   
+   **核心原则**: 文档放在对应的专属目录，不允许跨越边界
 
 3. **构建和输出目录自动忽略**
    - `dist/` `build/` `coverage/` 等在 `.gitignore` 中
@@ -122,9 +143,12 @@ HuHaa-MySkills/
 
 4. **提交前检查清单**
    ```bash
-   # 提交前必须检查根目录
-   ls -1 | grep -E "^\w+\.(md|txt)$" | wc -l
-   # 应该只返回: README.md, CLAUDE.md (共 2 个)
+   # 提交前必须检查根目录仅有这两个 .md 文件
+   ls -1 *.md 2>/dev/null | sort
+   # 输出必须是:
+   #   CLAUDE.md
+   #   README.md
+   # 共 2 个。不能更多、不能更少
    
    # 如有其他 .md 或 .txt，必须:
    # - 移入 docs/ 目录, 或
