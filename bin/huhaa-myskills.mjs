@@ -385,6 +385,23 @@ async function cmdStart() {
   await ensureConfigOrInit();
   const isForeground = process.argv.includes('--foreground') || process.argv.includes('-f');
   const preferred = parseInt(process.env.PORT || '11520', 10);
+
+  // 后台模式下先做幂等检查：已有实例在运行则直接返回，
+  // 避免 pickPort 误判端口被占用而打印"改用其它端口"的误导信息。
+  if (!isForeground) {
+    try {
+      const stateData = JSON.parse(fs.readFileSync(stateFile(), 'utf8'));
+      if (stateData.pid && isProcessRunning(stateData.pid)) {
+        const logFile = path.join(homeDir(), 'huhaa.log');
+        console.log(`✓ HuHaa-MySkills 已在运行: http://localhost:${stateData.port}`);
+        console.log(`📝 日志: ${logFile}`);
+        return;
+      }
+    } catch {
+      // 状态文件不存在或无效，继续正常启动流程
+    }
+  }
+
   const port = await pickPort(preferred, 10);
   if (!port) {
     console.error(`[start] ${preferred}..${preferred + 10} 范围内无空闲端口，已中止。`);

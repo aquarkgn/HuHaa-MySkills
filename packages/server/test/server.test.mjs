@@ -6,6 +6,11 @@ import test from 'node:test';
 
 import { startServer } from '../src/index.mjs';
 
+// 动态读取根 package.json 的版本号，避免每次升版本导致断言失效
+const PKG_VERSION = JSON.parse(
+  fs.readFileSync(new URL('../../../package.json', import.meta.url), 'utf8')
+).version;
+
 function makeTempHome() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'huhaa-server-test-'));
   const home = path.join(root, 'home');
@@ -54,7 +59,7 @@ test('server exposes health, list, detail, stats, and reload state without raw i
     ok: true,
     port: 0,
     items: 1,
-    version: '0.3.2',
+    version: PKG_VERSION,
     phase: 'P6',
   });
 
