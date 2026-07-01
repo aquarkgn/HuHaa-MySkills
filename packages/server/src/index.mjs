@@ -193,6 +193,7 @@ export async function startServer({ port = 11520 } = {}) {
   app.get('/api/other-skills', async (req, reply) => {
     try {
       const { scanSkills } = await import('../../../packages/scanner/src/adapters/skill-adapter.mjs');
+      const { resolveIconRef } = await import('../../../packages/scanner/src/icon/icon-extractor.mjs');
 
       // Parse query parameters
       const roots = req.query.roots
@@ -200,6 +201,8 @@ export async function startServer({ port = 11520 } = {}) {
         : [];
       const fileGlob = req.query.fileGlob || '**/SKILL.md';
       const source = req.query.source || 'other-skills';
+      const stage = req.query.stage === 'mini' ? 'mini' : 'full';
+      const useSpotlight = req.query.useSpotlight === '1' || req.query.useSpotlight === 'true';
       const maxFiles = Math.min(parseInt(req.query.maxFiles || '100', 10), 5000);
       const maxFileBytes = Math.min(parseInt(req.query.maxFileBytes || '1048576', 10), 10 * 1024 * 1024);
 
@@ -217,31 +220,45 @@ export async function startServer({ port = 11520 } = {}) {
         source,
         roots,
         fileGlob,
+        stage,
+        useSpotlight,
         limits: { maxFiles, maxFileBytes },
       });
 
-      // Transform items to the required format:
-      // { skills: [ { id, name, description, category, kind, brand, tags, path, frontmatter } ] }
-      const skills = items.map(item => ({
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        category: item.category,
-        kind: item.kind,
-        brand: item.brand,
-        tags: item.tags,
-        path: item.paths?.abs,
-        frontmatter: {
-          title: item.title,
-          triggers: item.triggers,
-          links: item.links,
-          product: item.product,
-          editor: item.editor,
-          source: item.source,
-          updatedAt: item.updatedAt,
-          parseError: item.parseError,
-        },
-      }));
+      // Transform items to the required format. 'mini' stage returns lightweight
+      // rows (fast first paint, R7.1); 'full' includes the frontmatter block.
+      const skills = items.map(item => {
+        const { iconUrl, iconFallback } = resolveIconRef(
+          { icon: item.icon, brand: item.brand, source: item.source },
+          64,
+        );
+        const base = {
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          category: item.category,
+          kind: item.kind,
+          brand: item.brand,
+          path: item.paths?.abs,
+          iconUrl,
+          iconFallback,
+        };
+        if (stage === 'mini') return base;
+        return {
+          ...base,
+          tags: item.tags,
+          frontmatter: {
+            title: item.title,
+            triggers: item.triggers,
+            links: item.links,
+            product: item.product,
+            editor: item.editor,
+            source: item.source,
+            updatedAt: item.updatedAt,
+            parseError: item.parseError,
+          },
+        };
+      });
 
       return {
         ok: true,
@@ -259,6 +276,28 @@ export async function startServer({ port = 11520 } = {}) {
         ok: false,
         error: e.message,
       };
+    }
+  });
+
+  // Real application icon for a skill's brand/source (R6). Serves a cached PNG
+  // extracted from the matching .app bundle; 404 JSON when no app is found so
+  // the frontend can fall back to an emoji.
+  app.get('/api/icons/:brand', async (req, reply) => {
+    try {
+      const { getIconForBrand } = await import('../../../packages/scanner/src/icon/icon-extractor.mjs');
+      const brand = decodeURIComponent(req.params.brand || '');
+      const size = Math.min(Math.max(parseInt(req.query.size || '64', 10) || 64, 32), 128);
+      const pngPath = await getIconForBrand(brand, size);
+      if (!pngPath || !fs.existsSync(pngPath)) {
+        reply.code(404);
+        return { ok: false, fallback: true, brand };
+      }
+      reply.type('image/png');
+      reply.header('cache-control', 'public, max-age=86400');
+      return fs.createReadStream(pngPath);
+    } catch (e) {
+      reply.code(500);
+      return { ok: false, error: e.message };
     }
   });
 

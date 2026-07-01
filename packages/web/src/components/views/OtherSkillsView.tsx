@@ -1,8 +1,40 @@
 import { useState } from 'react'
 import { Search, ExternalLink, Tag, Code } from 'lucide-react'
-import { useOtherSkills, type OtherSkillsOptions } from '@/hooks/useOtherSkills'
+import { useOtherSkills, getSkillEmoji, type OtherSkillsOptions } from '@/hooks/useOtherSkills'
 import { cn } from '@/lib/cn'
 import type { OtherSkill } from '@/types/other-skill'
+
+/**
+ * 技能图标 —— 优先展示真实应用图标 (iconUrl)，加载失败回退 emoji。
+ * 对标 Pearcleaner 的真实应用图标展示。
+ */
+function SkillIcon({ skill, size = 20 }: { skill: OtherSkill; size?: number }) {
+  const [failed, setFailed] = useState(false)
+  const emoji = getSkillEmoji(skill)
+
+  if (skill.iconUrl && !failed) {
+    return (
+      <img
+        src={skill.iconUrl}
+        alt=""
+        width={size}
+        height={size}
+        loading="lazy"
+        onError={() => setFailed(true)}
+        className="rounded-[4px] object-contain shrink-0"
+        style={{ width: size, height: size }}
+      />
+    )
+  }
+  return (
+    <span
+      className="inline-flex items-center justify-center shrink-0"
+      style={{ width: size, height: size, fontSize: size * 0.85 }}
+    >
+      {emoji}
+    </span>
+  )
+}
 
 interface OtherSkillsViewProps {
   query?: string
@@ -91,18 +123,21 @@ export function OtherSkillsView({
                         key={skill.id}
                         onClick={() => onSelect?.(skill.id)}
                         className={cn(
-                          'w-full text-left rounded-md px-3 py-2 text-body-sm transition-colors',
+                          'flex w-full items-start gap-2 text-left rounded-md px-3 py-2 text-body-sm transition-colors',
                           selectedId === skill.id
                             ? 'bg-primary-soft text-primary'
                             : 'text-foreground hover:bg-muted'
                         )}
                       >
-                        <div className="font-medium">{skill.title || skill.name}</div>
-                        {skill.description && (
-                          <div className="text-caption text-muted-foreground truncate">
-                            {skill.description}
-                          </div>
-                        )}
+                        <SkillIcon skill={skill} size={20} />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium truncate">{skill.title || skill.name}</div>
+                          {skill.description && (
+                            <div className="text-caption text-muted-foreground truncate">
+                              {skill.description}
+                            </div>
+                          )}
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -118,7 +153,10 @@ export function OtherSkillsView({
         <div className="hidden w-2/3 flex-col gap-4 overflow-y-auto rounded-md border border-input bg-muted/30 p-4 sm:flex">
           {/* 标题和描述 */}
           <div>
-            <h2 className="text-heading-md">{selectedSkill.title || selectedSkill.name}</h2>
+            <div className="flex items-center gap-3">
+              <SkillIcon skill={selectedSkill} size={32} />
+              <h2 className="text-heading-md">{selectedSkill.title || selectedSkill.name}</h2>
+            </div>
             {selectedSkill.description && (
               <p className="mt-2 text-body-sm text-muted-foreground">
                 {selectedSkill.description}

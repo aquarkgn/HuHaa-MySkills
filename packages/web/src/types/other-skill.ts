@@ -47,7 +47,9 @@ export interface OtherSkill {
   brand?: string                    // 品牌标识（用于 icon）
   source?: string                   // 来源（hermes、claude-code、cursor 等）
   description?: string              // 简短描述
-  icon?: string                     // 自定义 icon
+  icon?: string                     // 自定义 icon（emoji 或字符）
+  iconUrl?: string                  // 真实应用图标 URL（如 /api/icons/cursor?size=64）
+  iconFallback?: string             // 图标加载失败时的 emoji 兜底
   tags?: string[]                   // 搜索标签
   docs?: string                     // 文档链接
   links?: Array<{                   // 相关链接

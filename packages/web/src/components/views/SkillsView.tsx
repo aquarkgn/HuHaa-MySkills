@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import Fuse from 'fuse.js'
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { SkillDetail } from './SkillDetail'
@@ -8,6 +8,42 @@ import { cn } from '@/lib/cn'
 import { isNoneEditor, itemEditorKey } from '@/lib/editors'
 import { useSkillIcons } from '@/hooks/useSkillIcons'
 import type { SkillItem } from '@/types'
+
+/**
+ * 技能图标组件（R6 真实应用图标）
+ * 优先展示真实应用图标，加载失败自动回退到 tier/brand emoji。
+ * 对标 Pearcleaner 的真实应用图标展示逻辑。
+ */
+function SkillIcon({ item, size = 20 }: { item: SkillItem; size?: number }) {
+  const [hasError, setHasError] = useState(false)
+  const icons = useSkillIcons(item)
+  // Tier 1 工具优先使用真实应用图标；其余 Tier 使用 tier emoji
+  const iconUrl = item.brand && icons.isTier1 ? `/api/icons/${encodeURIComponent(item.brand)}?size=${size}` : null
+
+  if (iconUrl && !hasError) {
+    return (
+      <img
+        src={iconUrl}
+        alt=""
+        width={size}
+        height={size}
+        loading="lazy"
+        onError={() => setHasError(true)}
+        className="shrink-0 rounded-sm object-contain"
+        style={{ width: size, height: size }}
+      />
+    )
+  }
+
+  return (
+    <span
+      className="inline-flex shrink-0 items-center justify-center"
+      style={{ width: size, height: size, fontSize: size * 0.85 }}
+    >
+      {icons.brandIcon}
+    </span>
+  )
+}
 
 interface SkillsViewProps {
   items: SkillItem[]
@@ -127,9 +163,9 @@ export function SkillsView({
                   )}
                 >
                   <CardHeader>
-                    {/* NEW: Display with tier/brand icon */}
+                    {/* R6：真实应用图标（对标 Pearcleaner），加载失败自动回退 emoji */}
                     <CardTitle className="flex items-center gap-2">
-                      <span className="text-lg">{icons.tierIcon}</span>
+                      <SkillIcon item={it} size={24} />
                       <span>{it.title || it.name}</span>
                     </CardTitle>
 

@@ -82,6 +82,22 @@ function getIcon(skill: OtherSkill, groupBy?: GroupBy): string {
 }
 
 /**
+ * 单个技能的 emoji 兜底（真实图标 iconUrl 加载失败时使用）
+ * 优先级: iconFallback > brand > category > source > 默认
+ */
+export function getSkillEmoji(skill: OtherSkill): string {
+  if (skill.iconFallback) return skill.iconFallback
+  if (skill.icon && !skill.icon.includes(':')) return skill.icon
+  if (skill.brand && BRAND_ICONS[skill.brand]) return BRAND_ICONS[skill.brand]
+  const category = Array.isArray(skill.category) ? skill.category[0] : skill.category
+  if (category && CATEGORY_ICONS[category.toLowerCase()]) {
+    return CATEGORY_ICONS[category.toLowerCase()]
+  }
+  if (skill.source && SOURCE_ICONS[skill.source]) return SOURCE_ICONS[skill.source]
+  return BRAND_ICONS.default
+}
+
+/**
  * 搜索过滤逻辑
  */
 function matchesQuery(skill: OtherSkill, query: string): boolean {
@@ -230,60 +246,62 @@ export function useOtherSkills(options: OtherSkillsOptions = {}) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<OtherSkillsError | null>(null)
 
-  // 获取数据
-  useEffect(() => {
-    const fetchSkills = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
-
-        // 默认扫描 Hermes 技能目录
-        const defaultRoots = '~/.hermes/skills'
-        const url = new URL(`${window.location.origin}${API_BASE}/other-skills`)
-        url.searchParams.set('roots', defaultRoots)
-        url.searchParams.set('fileGlob', '**/SKILL.md')
-
-        const response = await fetch(url.toString())
-        if (!response.ok) {
-          throw new OtherSkillsError(
-            'FETCH_FAILED',
-            `Failed to fetch skills: ${response.statusText}`,
-            response.status
-          )
-        }
-
-        const data = await response.json()
-
-        // 验证数据格式 - API 返回 { ok, skills, stats }
-        let skillsArray: OtherSkill[] = []
-        if (data.skills && Array.isArray(data.skills)) {
-          skillsArray = data.skills
-        } else if (Array.isArray(data)) {
-          skillsArray = data
-        } else {
-          throw new OtherSkillsError(
-            'INVALID_FORMAT',
-            'Expected skills array or {ok, skills} response'
-          )
-        }
-
-        setSkills(skillsArray)
-      } catch (err) {
-        const error =
-          err instanceof OtherSkillsError
-            ? err
-            : new OtherSkillsError(
-                'UNKNOWN_ERROR',
-                err instanceof Error ? err.message : 'Unknown error'
-              )
-        setError(error)
-        setSkills([])
-      } finally {
-        setIsLoading(false)
+  // 两阶段加载 (R7.1)：先取轻量 mini 列表快速渲染，再后台取 full 升级。
+  const loadSkills = async (opts?: { noStore?: boolean }) => {
+    const defaultRoots = '~/.hermes/skills'
+    const buildUrl = (stage: 'mini' | 'full') => {
+      const url = new URL(`${window.location.origin}${API_BASE}/other-skills`)
+      url.searchParams.set('roots', defaultRoots)
+      url.searchParams.set('fileGlob', '**/SKILL.md')
+      url.searchParams.set('stage', stage)
+      return url.toString()
+    }
+    const fetchStage = async (stage: 'mini' | 'full'): Promise<OtherSkill[]> => {
+      const response = await fetch(buildUrl(stage), opts?.noStore ? { cache: 'no-store' } : undefined)
+      if (!response.ok) {
+        throw new OtherSkillsError(
+          'FETCH_FAILED',
+          `Failed to fetch skills: ${response.statusText}`,
+          response.status
+        )
       }
+      const data = await response.json()
+      if (data.skills && Array.isArray(data.skills)) return data.skills
+      if (Array.isArray(data)) return data
+      throw new OtherSkillsError('INVALID_FORMAT', 'Expected skills array or {ok, skills} response')
     }
 
-    fetchSkills()
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      // 阶段 1：mini —— 立即渲染列表
+      const mini = await fetchStage('mini')
+      setSkills(mini)
+      setIsLoading(false)
+
+      // 阶段 2：full —— 后台补全 tags/links 等详情字段
+      try {
+        const full = await fetchStage('full')
+        setSkills(full)
+      } catch {
+        // full 失败不影响已渲染的 mini 列表
+      }
+    } catch (err) {
+      const e =
+        err instanceof OtherSkillsError
+          ? err
+          : new OtherSkillsError('UNKNOWN_ERROR', err instanceof Error ? err.message : 'Unknown error')
+      setError(e)
+      setSkills([])
+      setIsLoading(false)
+    }
+  }
+
+  // 获取数据
+  useEffect(() => {
+    loadSkills()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // 处理搜索、排序、过滤、分组
@@ -349,53 +367,7 @@ export function useOtherSkills(options: OtherSkillsOptions = {}) {
 
   // 手动刷新
   const refetch = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      // 默认扫描 Hermes 技能目录
-      const defaultRoots = '~/.hermes/skills'
-      const url = new URL(`${window.location.origin}${API_BASE}/other-skills`)
-      url.searchParams.set('roots', defaultRoots)
-      url.searchParams.set('fileGlob', '**/SKILL.md')
-
-      const response = await fetch(url.toString(), {
-        cache: 'no-store',
-      })
-      if (!response.ok) {
-        throw new OtherSkillsError(
-          'FETCH_FAILED',
-          `Failed to fetch skills: ${response.statusText}`,
-          response.status
-        )
-      }
-
-      const data = await response.json()
-      if (!data.skills || !Array.isArray(data.skills)) {
-        // 兼容之前返回数组的格式
-        if (!Array.isArray(data)) {
-          throw new OtherSkillsError(
-            'INVALID_FORMAT',
-            'Expected skills array or {ok, skills} response'
-          )
-        }
-        setSkills(data)
-      } else {
-        setSkills(data.skills)
-      }
-    } catch (err) {
-      const error =
-        err instanceof OtherSkillsError
-          ? err
-          : new OtherSkillsError(
-              'UNKNOWN_ERROR',
-              err instanceof Error ? err.message : 'Unknown error'
-            )
-      setError(error)
-      setSkills([])
-    } finally {
-      setIsLoading(false)
-    }
+    await loadSkills({ noStore: true })
   }
 
   return {
