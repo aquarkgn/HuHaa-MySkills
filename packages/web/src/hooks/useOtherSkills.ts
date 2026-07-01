@@ -1,95 +1,415 @@
-import { useMemo } from 'react'
-import { OtherSkill, OtherSkillCategory, OtherSkillGroup } from '@/types/other-skill'
+import { useEffect, useState, useMemo } from 'react'
+import {
+  OtherSkill,
+  OtherSkillGroup,
+  OtherSkillsOptions,
+  GroupBy,
+  SortBy,
+  SortOrder,
+} from '@/types/other-skill'
 
-const OTHER_SKILLS: OtherSkill[] = [
-  // 命令类
-  {
-    id: 'cmd-ls',
-    name: 'ls / 列表',
-    category: OtherSkillCategory.COMMAND,
-    description: '查看目录文件列表',
-    tags: ['文件系统', 'CLI'],
-    examples: ['ls -la', 'ls -lh /path/to/dir'],
-  },
-  {
-    id: 'cmd-find',
-    name: 'find / 搜索',
-    category: OtherSkillCategory.COMMAND,
-    description: '递归搜索文件',
-    tags: ['文件系统', '搜索', 'CLI'],
-    examples: ['find . -name "*.ts"', 'find /path -type f'],
-  },
-  // 编辑器类
-  {
-    id: 'editor-vscode',
-    name: 'VS Code',
-    category: OtherSkillCategory.EDITOR,
-    description: 'Visual Studio Code 集成开发环境',
-    tags: ['编辑器', '代码'],
-    docs: 'https://code.visualstudio.com',
-  },
-  // 工具类
-  {
-    id: 'tool-docker',
-    name: 'Docker',
-    category: OtherSkillCategory.TOOL,
-    description: '容器化部署工具',
-    tags: ['DevOps', '容器'],
-    examples: ['docker run', 'docker build'],
-  },
-  // AI 类
-  {
-    id: 'ai-claude',
-    name: 'Claude',
-    category: OtherSkillCategory.AI,
-    description: 'Anthropic 的 AI 助手',
-    tags: ['AI', '对话'],
-  },
-]
+// API 基础 URL
+const API_BASE = '/api'
 
-const CATEGORY_META: Record<OtherSkillCategory, { label: string; icon: string }> = {
-  [OtherSkillCategory.COMMAND]: { label: '命令', icon: '⌨️' },
-  [OtherSkillCategory.EDITOR]: { label: '编辑器', icon: '📝' },
-  [OtherSkillCategory.TOOL]: { label: '工具', icon: '🔧' },
-  [OtherSkillCategory.CLOUD]: { label: '云服务', icon: '☁️' },
-  [OtherSkillCategory.AI]: { label: 'AI 能力', icon: '🤖' },
+/**
+ * 品牌到 icon 的映射
+ */
+const BRAND_ICONS: Record<string, string> = {
+  hermes: '⚡',
+  'claude-code': '🤖',
+  cursor: '🖱️',
+  codex: '📋',
+  'vs-code': '📝',
+  vscode: '📝',
+  obsidian: '🧠',
+  docker: '🐳',
+  mcp: '🔌',
+  default: '⚙️',
 }
 
 /**
- * 获取其它技能列表，支持搜索和分类分组
+ * 分类到 icon 的映射
  */
-export function useOtherSkills(query: string = ''): OtherSkillGroup[] {
-  return useMemo(() => {
-    const filtered = query
-      ? OTHER_SKILLS.filter(
-          (skill) =>
-            skill.name.toLowerCase().includes(query.toLowerCase()) ||
-            skill.description.toLowerCase().includes(query.toLowerCase()) ||
-            skill.tags.some((tag) => tag.toLowerCase().includes(query.toLowerCase()))
-        )
-      : OTHER_SKILLS
+const CATEGORY_ICONS: Record<string, string> = {
+  command: '⌨️',
+  editor: '📝',
+  tool: '🔧',
+  cloud: '☁️',
+  ai: '🤖',
+  automation: '🤖',
+  development: '👨‍💻',
+  devops: '🚀',
+  default: '📌',
+}
 
-    // 按分类分组
-    const grouped: Record<OtherSkillCategory, OtherSkill[]> = {
-      [OtherSkillCategory.COMMAND]: [],
-      [OtherSkillCategory.EDITOR]: [],
-      [OtherSkillCategory.TOOL]: [],
-      [OtherSkillCategory.CLOUD]: [],
-      [OtherSkillCategory.AI]: [],
+/**
+ * 源到 icon 的映射
+ */
+const SOURCE_ICONS: Record<string, string> = {
+  hermes: '⚡',
+  'claude-code': '🤖',
+  cursor: '🖱️',
+  codex: '📋',
+  obsidian: '🧠',
+  'project-runbook': '📚',
+  'directory-skill': '📁',
+  'mcp-config': '🔌',
+  default: '📌',
+}
+
+/**
+ * 获取 icon - 优先级: custom > brand > category > source
+ */
+function getIcon(skill: OtherSkill, groupBy?: GroupBy): string {
+  if (skill.icon) return skill.icon
+
+  switch (groupBy) {
+    case GroupBy.BRAND:
+      return BRAND_ICONS[skill.brand || 'default'] || BRAND_ICONS.default
+    case GroupBy.SOURCE:
+      return SOURCE_ICONS[skill.source || 'default'] || SOURCE_ICONS.default
+    case GroupBy.CATEGORY:
+    default: {
+      const category = Array.isArray(skill.category)
+        ? skill.category[0]
+        : skill.category
+      return (
+        CATEGORY_ICONS[category?.toLowerCase() || 'default'] ||
+        CATEGORY_ICONS.default
+      )
+    }
+  }
+}
+
+/**
+ * 搜索过滤逻辑
+ */
+function matchesQuery(skill: OtherSkill, query: string): boolean {
+  if (!query) return true
+
+  const q = query.toLowerCase()
+  return (
+    skill.name.toLowerCase().includes(q) ||
+    (skill.title?.toLowerCase().includes(q) ?? false) ||
+    (skill.description?.toLowerCase().includes(q) ?? false) ||
+    (skill.tags?.some((tag) => tag.toLowerCase().includes(q)) ?? false) ||
+    (skill.brand?.toLowerCase().includes(q) ?? false) ||
+    (skill.source?.toLowerCase().includes(q) ?? false)
+  )
+}
+
+/**
+ * 按多个条件排序
+ */
+function sortSkills(items: OtherSkill[], sortBy?: SortBy, sortOrder?: SortOrder): OtherSkill[] {
+  const order = sortOrder === SortOrder.DESC ? -1 : 1
+  const field = sortBy || SortBy.NAME
+
+  return [...items].sort((a, b) => {
+    let aVal: any
+    let bVal: any
+
+    switch (field) {
+      case SortBy.NAME:
+        aVal = (a.title || a.name).toLowerCase()
+        bVal = (b.title || b.name).toLowerCase()
+        break
+      case SortBy.UPDATED:
+        aVal = a.updatedAt || ''
+        bVal = b.updatedAt || ''
+        break
+      case SortBy.CATEGORY: {
+        const aCats = Array.isArray(a.category) ? a.category : a.category ? [a.category] : []
+        const bCats = Array.isArray(b.category) ? b.category : b.category ? [b.category] : []
+        aVal = aCats[0]
+        bVal = bCats[0]
+        break
+      }
+      default:
+        aVal = a.name
+        bVal = b.name
     }
 
-    filtered.forEach((skill) => {
-      grouped[skill.category].push(skill)
-    })
-
-    // 转换为 OtherSkillGroup
-    return Object.entries(grouped)
-      .map(([category, items]) => ({
-        category: category as OtherSkillCategory,
-        label: CATEGORY_META[category as OtherSkillCategory].label,
-        icon: CATEGORY_META[category as OtherSkillCategory].icon,
-        items,
-      }))
-      .filter((group) => group.items.length > 0)
-  }, [query])
+    if (aVal < bVal) return -1 * order
+    if (aVal > bVal) return 1 * order
+    return 0
+  })
 }
+
+/**
+ * 核心分组逻辑
+ */
+function groupSkills(
+  items: OtherSkill[],
+  groupBy: GroupBy = GroupBy.CATEGORY
+): OtherSkillGroup[] {
+  if (groupBy === GroupBy.NONE) {
+    return [
+      {
+        groupKey: 'all',
+        label: 'All Skills',
+        icon: '📌',
+        items,
+        count: items.length,
+      },
+    ]
+  }
+
+  const groups: Map<string, OtherSkill[]> = new Map()
+
+  items.forEach((skill) => {
+    let key: string
+
+    switch (groupBy) {
+      case GroupBy.BRAND:
+        key = skill.brand || 'unknown'
+        break
+      case GroupBy.SOURCE:
+        key = skill.source || 'unknown'
+        break
+      case GroupBy.CATEGORY:
+      default: {
+        // 支持多分类，使用第一个
+        const cats = Array.isArray(skill.category)
+          ? skill.category
+          : skill.category
+          ? [skill.category]
+          : ['unclassified']
+        key = cats[0] || 'unclassified'
+      }
+    }
+
+    if (!groups.has(key)) {
+      groups.set(key, [])
+    }
+    groups.get(key)!.push(skill)
+  })
+
+  return Array.from(groups.entries())
+    .map(([key, items]: [string, OtherSkill[]]) => {
+      const firstSkill = items[0]
+      return {
+        groupKey: key,
+        label: key.charAt(0).toUpperCase() + key.slice(1),
+        icon: getIcon(firstSkill, groupBy),
+        items,
+        count: items.length,
+      }
+    })
+    .filter((g) => g.count > 0)
+}
+
+/**
+ * API 错误类型
+ */
+export class OtherSkillsError extends Error {
+  constructor(
+    public code: string,
+    message: string,
+    public statusCode?: number
+  ) {
+    super(message)
+    this.name = 'OtherSkillsError'
+  }
+}
+
+/**
+ * useOtherSkills Hook - 获取、搜索、排序、分组其它技能
+ *
+ * 特性：
+ * - 从 /api/other-skills 获取真实数据
+ * - 支持搜索、排序、分组
+ * - 加载状态和错误处理
+ * - 自动 memoization
+ *
+ * @param options 搜索和过滤选项
+ * @returns { items, groups, isLoading, error, refetch }
+ */
+export function useOtherSkills(options: OtherSkillsOptions = {}) {
+  const [skills, setSkills] = useState<OtherSkill[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<OtherSkillsError | null>(null)
+
+  // 获取数据
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+
+        // 默认扫描 Hermes 技能目录
+        const defaultRoots = '~/.hermes/skills'
+        const url = new URL(`${window.location.origin}${API_BASE}/other-skills`)
+        url.searchParams.set('roots', defaultRoots)
+        url.searchParams.set('fileGlob', '**/SKILL.md')
+
+        const response = await fetch(url.toString())
+        if (!response.ok) {
+          throw new OtherSkillsError(
+            'FETCH_FAILED',
+            `Failed to fetch skills: ${response.statusText}`,
+            response.status
+          )
+        }
+
+        const data = await response.json()
+
+        // 验证数据格式 - API 返回 { ok, skills, stats }
+        let skillsArray: OtherSkill[] = []
+        if (data.skills && Array.isArray(data.skills)) {
+          skillsArray = data.skills
+        } else if (Array.isArray(data)) {
+          skillsArray = data
+        } else {
+          throw new OtherSkillsError(
+            'INVALID_FORMAT',
+            'Expected skills array or {ok, skills} response'
+          )
+        }
+
+        setSkills(skillsArray)
+      } catch (err) {
+        const error =
+          err instanceof OtherSkillsError
+            ? err
+            : new OtherSkillsError(
+                'UNKNOWN_ERROR',
+                err instanceof Error ? err.message : 'Unknown error'
+              )
+        setError(error)
+        setSkills([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchSkills()
+  }, [])
+
+  // 处理搜索、排序、过滤、分组
+  const { items, groups } = useMemo(() => {
+    let filtered = skills
+
+    // 1. 按查询词搜索
+    if (options.query) {
+      filtered = filtered.filter((skill) => matchesQuery(skill, options.query!))
+    }
+
+    // 2. 按品牌过滤
+    if (options.filterBrand) {
+      filtered = filtered.filter((skill) => skill.brand === options.filterBrand)
+    }
+
+    // 3. 按分类过滤
+    if (options.filterCategory) {
+      filtered = filtered.filter((skill) => {
+        const cats = Array.isArray(skill.category)
+          ? skill.category
+          : skill.category
+          ? [skill.category]
+          : []
+        return cats.includes(options.filterCategory!)
+      })
+    }
+
+    // 4. 按来源过滤
+    if (options.filterSource) {
+      filtered = filtered.filter((skill) => skill.source === options.filterSource)
+    }
+
+    // 5. 排序
+    filtered = sortSkills(filtered, options.sortBy, options.sortOrder)
+
+    // 6. 分页
+    if (options.limit || options.offset) {
+      const start = options.offset || 0
+      const end = options.limit ? start + options.limit : undefined
+      filtered = filtered.slice(start, end)
+    }
+
+    // 7. 分组
+    const groupedSkills = groupSkills(filtered, options.groupBy)
+
+    return {
+      items: filtered,
+      groups: groupedSkills,
+    }
+  }, [
+    skills,
+    options.query,
+    options.sortBy,
+    options.sortOrder,
+    options.groupBy,
+    options.filterBrand,
+    options.filterCategory,
+    options.filterSource,
+    options.limit,
+    options.offset,
+  ])
+
+  // 手动刷新
+  const refetch = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      // 默认扫描 Hermes 技能目录
+      const defaultRoots = '~/.hermes/skills'
+      const url = new URL(`${window.location.origin}${API_BASE}/other-skills`)
+      url.searchParams.set('roots', defaultRoots)
+      url.searchParams.set('fileGlob', '**/SKILL.md')
+
+      const response = await fetch(url.toString(), {
+        cache: 'no-store',
+      })
+      if (!response.ok) {
+        throw new OtherSkillsError(
+          'FETCH_FAILED',
+          `Failed to fetch skills: ${response.statusText}`,
+          response.status
+        )
+      }
+
+      const data = await response.json()
+      if (!data.skills || !Array.isArray(data.skills)) {
+        // 兼容之前返回数组的格式
+        if (!Array.isArray(data)) {
+          throw new OtherSkillsError(
+            'INVALID_FORMAT',
+            'Expected skills array or {ok, skills} response'
+          )
+        }
+        setSkills(data)
+      } else {
+        setSkills(data.skills)
+      }
+    } catch (err) {
+      const error =
+        err instanceof OtherSkillsError
+          ? err
+          : new OtherSkillsError(
+              'UNKNOWN_ERROR',
+              err instanceof Error ? err.message : 'Unknown error'
+            )
+      setError(error)
+      setSkills([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return {
+    items,
+    groups,
+    isLoading,
+    error,
+    refetch,
+    /** 总数 */
+    total: skills.length,
+    /** 过滤后数 */
+    filtered: items.length,
+  }
+}
+
+export type { OtherSkillsOptions }
+export { GroupBy, SortBy, SortOrder }

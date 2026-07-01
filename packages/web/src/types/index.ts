@@ -47,6 +47,16 @@ export interface Stats {
   byBrand: Record<string, number>
   labels?: Record<string, unknown>
 }
-// OtherSkill 类型导出
-export type { OtherSkill, OtherSkillGroup } from './other-skill'
-export { OtherSkillCategory } from './other-skill'
+
+// OtherSkill 类型导出 - 前端 Hook 改造后的新类型
+export type {
+  OtherSkill,
+  OtherSkillGroup,
+  OtherSkillsOptions,
+} from './other-skill'
+export {
+  OtherSkillCategory,
+  SortBy,
+  SortOrder,
+  GroupBy,
+} from './other-skill'

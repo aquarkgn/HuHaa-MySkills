@@ -190,6 +190,78 @@ export async function startServer({ port = 11520 } = {}) {
 
   app.get('/api/stats', async () => buildStats(irCache));
 
+  app.get('/api/other-skills', async (req, reply) => {
+    try {
+      const { scanSkills } = await import('../../../packages/scanner/src/adapters/skill-adapter.mjs');
+
+      // Parse query parameters
+      const roots = req.query.roots
+        ? req.query.roots.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+      const fileGlob = req.query.fileGlob || '**/SKILL.md';
+      const source = req.query.source || 'other-skills';
+      const maxFiles = Math.min(parseInt(req.query.maxFiles || '100', 10), 5000);
+      const maxFileBytes = Math.min(parseInt(req.query.maxFileBytes || '1048576', 10), 10 * 1024 * 1024);
+
+      // Validate roots
+      if (!roots.length) {
+        reply.code(400);
+        return {
+          ok: false,
+          error: 'missing query parameter: roots (comma-separated paths)',
+        };
+      }
+
+      // Scan skills
+      const { items, stats } = await scanSkills({
+        source,
+        roots,
+        fileGlob,
+        limits: { maxFiles, maxFileBytes },
+      });
+
+      // Transform items to the required format:
+      // { skills: [ { id, name, description, category, kind, brand, tags, path, frontmatter } ] }
+      const skills = items.map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        category: item.category,
+        kind: item.kind,
+        brand: item.brand,
+        tags: item.tags,
+        path: item.paths?.abs,
+        frontmatter: {
+          title: item.title,
+          triggers: item.triggers,
+          links: item.links,
+          product: item.product,
+          editor: item.editor,
+          source: item.source,
+          updatedAt: item.updatedAt,
+          parseError: item.parseError,
+        },
+      }));
+
+      return {
+        ok: true,
+        skills,
+        stats: {
+          ...stats,
+          scanned: items.length,
+          source,
+          fileGlob,
+        },
+      };
+    } catch (e) {
+      reply.code(500);
+      return {
+        ok: false,
+        error: e.message,
+      };
+    }
+  });
+
   app.get('/api/reload-state', async () => ({
     ok: !reloadState.lastError,
     ...reloadState,
