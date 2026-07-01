@@ -12,5 +12,10 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // 强制使用 React 开发版本用于测试
+    env: {
+      NODE_ENV: 'development',
+    },
   },
 })
+
