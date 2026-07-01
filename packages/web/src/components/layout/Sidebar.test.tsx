@@ -27,6 +27,7 @@ describe('Sidebar editor 导航（D2 + C6 临界缺口）', () => {
         stats={statsWith({ 'Claude Code': 3, Cursor: 1, '(none)': 2 })}
         onDashboard={noop}
         onSettings={noop}
+        onOtherSkills={noop}
         onEditor={noop}
       />
     )
@@ -46,6 +47,7 @@ describe('Sidebar editor 导航（D2 + C6 临界缺口）', () => {
         stats={statsWith({ '(none)': 5 })}
         onDashboard={noop}
         onSettings={noop}
+        onOtherSkills={noop}
         onEditor={noop}
       />
     )
@@ -62,6 +64,7 @@ describe('Sidebar editor 导航（D2 + C6 临界缺口）', () => {
         stats={statsWith({ 'Claude Code': 3 })}
         onDashboard={noop}
         onSettings={noop}
+        onOtherSkills={noop}
         onEditor={onEditor}
       />
     )

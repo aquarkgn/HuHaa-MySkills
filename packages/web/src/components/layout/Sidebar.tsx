@@ -1,14 +1,15 @@
-import { LayoutDashboard, Settings, Layers } from 'lucide-react'
+import { LayoutDashboard, Settings, Layers, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { getEditorMeta, isNoneEditor } from '@/lib/editors'
 import type { Stats } from '@/types'
 
 interface SidebarProps {
-  view: 'dashboard' | 'skills' | 'settings'
+  view: 'dashboard' | 'skills' | 'otherSkills' | 'settings'
   editorFilter: string | null
   stats: Stats | null
   onDashboard: () => void
   onSettings: () => void
+  onOtherSkills: () => void
   /** key=null 表示「全部技能」 */
   onEditor: (key: string | null) => void
 }
@@ -19,6 +20,7 @@ export function Sidebar({
   stats,
   onDashboard,
   onSettings,
+  onOtherSkills,
   onEditor,
 }: SidebarProps) {
   const byEditor = stats?.byEditor ?? {}
@@ -44,6 +46,13 @@ export function Sidebar({
         <span className="flex items-center gap-2">
           <LayoutDashboard size={16} />
           仪表盘
+        </span>
+      </button>
+
+      <button onClick={onOtherSkills} className={rowCls(view === 'otherSkills')}>
+        <span className="flex items-center gap-2">
+          <Sparkles size={16} />
+          其它技能
         </span>
       </button>
 
