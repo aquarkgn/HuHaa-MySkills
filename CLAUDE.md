@@ -1,24 +1,20 @@
 # CLAUDE.md — 项目 AI 助手协作规则
 
-> 本项目的 Claude Code 协作规范。详细规范查看 **[docs/INDEX.md](docs/INDEX.md)**
+> 本项目的 Claude Code 协作规范。详细规范查看 **[docs/**](docs/)** 目录下的文件。
+
+- /Users/mac/Project/HuHaa-MySkills/docs/Frontend-Spec.md — 前端规范文档
+- /Users/mac/Project/HuHaa-MySkills/docs/scan_skills_rules.md — 扫描技能规则
 
 ---
 
 ## 🎯 核心原则
 
 1. **全中文沟通** — 对话、提交信息、注释都用中文
-2. **一致性优先** — 遵循 `docs/Frontend-Engineering.md`
+2. **一致性优先** — 遵循 `docs/Frontend-Spec.md`
 3. **质量第一** — TypeScript strict、测试覆盖 >= 80%、代码审查通过
 4. **工程纪律** — 单一职责、最小改动、推送前 `/code-review`
 5. **文档优先** — 所有决策写入代码、文档或提交信息
 
----
-
-## 📚 规范查阅
-
-**快速问题 → 本文件**  
-**详细规范 → `docs/Frontend-Engineering.md`**  
-**全部导航 → `docs/INDEX.md`**
 
 ---
 
