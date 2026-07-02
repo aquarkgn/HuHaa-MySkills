@@ -26,21 +26,23 @@ function write(file, text) {
 
 async function bootFixtureServer(t) {
   const { root, home } = makeTempHome();
+  // v4.0 tier 扫描器使用 ~ 展开后的硬编码路径（~/.hermes/skills 等），
+  // 不再读取 sources.yaml 的 hermes.roots。把 HOME 指向临时目录，让 tier1
+  // 扫描器从 <home>/.hermes/skills/ 下找到 fixture skill。
+  const oldHome = process.env.HOME;
+  process.env.HOME = home;
+  t.after(() => { process.env.HOME = oldHome; });
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
 
-  const skillRoot = path.join(root, 'skills');
-  write(path.join(skillRoot, 'ops', 'quote-skill', 'SKILL.md'), `---
+  write(path.join(home, '.hermes', 'skills', 'quote-skill', 'SKILL.md'), `---
 name: quote's skill
 description: Skill used by API tests
 ---
 # API test skill
 `);
-  write(path.join(home, 'sources.yaml'), `sources:
-  hermes:
-    enabled: true
-    roots:
-      - ${JSON.stringify(skillRoot)}
-limits:
+  // sources.yaml 必须存在（loadConfig 返回 null 时 scan() 直接返回 []）。
+  // tier 扫描器不消费其 roots，但需要其 truthy 以继续扫描；保留 limits。
+  write(path.join(home, 'sources.yaml'), `limits:
   maxFiles: 100
   maxFileBytes: 1048576
 `);
@@ -76,7 +78,8 @@ test('server exposes health, list, detail, stats, and reload state without raw i
 
   const stats = await app.inject({ method: 'GET', url: '/api/stats' });
   assert.equal(stats.statusCode, 200);
-  assert.equal(JSON.parse(stats.body).bySource.hermes, 1);
+  // v4.0 tier 扫描器把 source 标为 'tier1-editor'，品牌（hermes）记录在 byBrand。
+  assert.equal(JSON.parse(stats.body).byBrand.hermes, 1);
 
   const reloadState = await app.inject({ method: 'GET', url: '/api/reload-state' });
   assert.equal(reloadState.statusCode, 200);
@@ -89,8 +92,13 @@ test('server copies invocation prompt through pbcopy using a whitelisted item id
   const bin = path.join(root, 'bin');
   const copiedFile = path.join(root, 'copied.txt');
   fs.mkdirSync(bin, { recursive: true });
-  write(path.join(bin, 'pbcopy'), `#!/usr/bin/env node\nimport fs from 'node:fs';\nlet s='';\nprocess.stdin.on('data', d => s += d);\nprocess.stdin.on('end', () => fs.writeFileSync(${JSON.stringify(copiedFile)}, s));\n`);
-  fs.chmodSync(path.join(bin, 'pbcopy'), 0o755);
+  // 服务器的 pbcopy() 按平台选择二进制：darwin→pbcopy / linux→xclip / win32→clip。
+  // 假二进制必须与目标平台同名，否则 spawn ENOENT。
+  const clipBin = process.platform === 'darwin' ? 'pbcopy'
+    : process.platform === 'win32' ? 'clip'
+    : 'xclip';
+  write(path.join(bin, clipBin), `#!/usr/bin/env node\nimport fs from 'node:fs';\nlet s='';\nprocess.stdin.on('data', d => s += d);\nprocess.stdin.on('end', () => fs.writeFileSync(${JSON.stringify(copiedFile)}, s));\n`);
+  fs.chmodSync(path.join(bin, clipBin), 0o755);
   const oldPath = process.env.PATH;
   process.env.PATH = `${bin}:${oldPath || ''}`;
   t.after(() => { process.env.PATH = oldPath; });

@@ -6,6 +6,8 @@
 // returns a flat IR list.
 
 import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
 import YAML from 'yaml';
 import { configFile } from '../../../bin/lib/paths.mjs';
 import { scanMarkdownSkills } from './adapters/markdown-skill.mjs';
@@ -14,6 +16,7 @@ import { scanFileDocs } from './adapters/file-docs.mjs';
 import { scanMcpConfigs } from './adapters/mcp-config.mjs';
 import { scanHermesPlugins } from './adapters/hermes-plugin.mjs';
 import { expandRoots, expandTilde } from './utils.mjs';
+import { scanTierSkills } from './adapters/scan-tier.mjs';
 
 const ADAPTERS = {
   // Tier 1: Tool adapters (return items with tier='tool', brand set)
@@ -129,6 +132,7 @@ function normalizeGlobs(cfg, defaults) {
 
 /**
  * Run all enabled adapters and return a flat IR list.
+ * v4.0: 使用三层优先级扫描器（Tier 1 编辑器 + Tier 2 用户 + Tier 3 其他）
  * @returns {Promise<import('./types').SkillItem[]>}
  */
 export async function scan() {
@@ -140,12 +144,48 @@ export async function scan() {
     maxFileBytes: cfg.limits?.maxFileBytes ?? 1024 * 1024,
   };
 
+  // ✅ v4.0: 调用三层优先级扫描器
+  try {
+    if (process.env.HUHAA_DEBUG) {
+      console.log('[scan] Calling scanTierSkills (Tier 1 → 2 → 3)...');
+    }
+
+    const tierResult = await scanTierSkills({
+      scanTier1: cfg.scanTier1 !== false,
+      scanTier2: cfg.scanTier2 !== false,
+      scanTier3: cfg.scanTier3 === true,
+      projectRoot: process.cwd(),
+      limits,
+    });
+
+    if (process.env.HUHAA_DEBUG) {
+      console.log('[scan] tierResult stats:', JSON.stringify(tierResult.stats, null, 2));
+    }
+
+    // tierResult.items 包含了所有合并的技能（已分层且去重）
+    return tierResult.items || [];
+  } catch (e) {
+    console.warn('[scan] Three-tier scanner failed:', e.message);
+    if (process.env.HUHAA_DEBUG) {
+      console.error('[scan] Error stack:', e.stack);
+    }
+    // 降级：如果三层扫描失败，使用旧的 adapter 模式
+    console.log('[scan] Falling back to legacy adapters...');
+    return scanLegacy(cfg, limits);
+  }
+}
+
+/**
+ * 降级方案：旧的 adapter 模式（当三层扫描失败时使用）
+ * v4.0: 补上 pathHash 和 tier 字段，便于前端分层菜单显示
+ */
+async function scanLegacy(cfg, limits) {
   const all = [];
   const stats = [];
   for (const [name, src] of Object.entries(cfg.sources || {})) {
     if (!src?.enabled) continue;
     const fn = ADAPTERS[name];
-    if (!fn) continue; // unknown adapter (e.g. mcp-config in P1) — skip silently
+    if (!fn) continue;
     try {
       const { items, stats: s } = await fn(src, limits);
       all.push(...items);
@@ -157,22 +197,42 @@ export async function scan() {
 
   const out = dedupeSemantic(all);
 
-  // Optional: translate skills to Chinese via LLM
-  if (process.env.HUHAA_TRANSLATE === '1') {
-    console.log('[scan] translating skills to Chinese...');
-    try {
-      const { translateSkill } = await import('../../../packages/server/src/translator.mjs');
-      const translated = await Promise.all(out.map(s => translateSkill(s, 'zh')));
-      return translated;
-    } catch (e) {
-      console.warn('[scan] translation failed:', e.message);
-    }
+  if (process.env.HUHAA_DEBUG) {
+    console.error('[scan] legacy stats:', JSON.stringify(stats, null, 2));
   }
 
-  if (process.env.HUHAA_DEBUG) {
-    console.error('[scan] stats:', JSON.stringify(stats, null, 2));
-  }
-  return out;
+  // 补上 v4.0 必需字段：tier（必须）、pathHash（必须）、editorBrand（可选）
+  // 注意：本文件是 ESM，crypto/path 已在顶部 import，不能用 require。
+  return out.map(item => {
+    // 计算 pathHash（如果有 filePath）
+    let pathHash = '';
+    if (item.paths?.abs) {
+      const normalized = path.resolve(item.paths.abs);
+      pathHash = crypto.createHash('md5').update(normalized).digest('hex');
+    } else if (item.id) {
+      pathHash = item.id; // 降级：用 id 作为 pathHash
+    }
+
+    // 分层逻辑
+    let tier = 'tier-1'; // 默认 tier-1（编辑器工具）
+    if (item.tier === 'directory') {
+      tier = 'tier-2'; // 用户目录技能
+    } else if (item.tier === 'other') {
+      tier = 'tier-3'; // 其他
+    }
+
+    // 提取 editorBrand
+    let editorBrand = item.brand || item.source;
+    if (editorBrand === 'claude-code') editorBrand = 'claude';
+    if (editorBrand === 'hermes-plugin') editorBrand = 'hermes';
+
+    return {
+      ...item,
+      tier, // 'tier-1' | 'tier-2' | 'tier-3'
+      pathHash, // MD5(filePath) 用于去重
+      editorBrand, // 品牌名，用于 Tier1 分组和图标
+    };
+  });
 }
 
 export async function getWatchTargets() {

@@ -94,6 +94,16 @@ export interface SkillItem {
   /** Parent directory name (Tier 2 only) — used for display label */
   dirName?: string;
 
+  // NEW FIELDS for v4.0 Priority Scan & Path Dedup
+  /** MD5(normalizedAbsPath) — used for deduplication and menu layering */
+  pathHash?: string;
+
+  /** v4.0 tier classification: tier-1 (editor tools), tier-2 (user), tier-3 (other) */
+  tierId?: 'tier-1' | 'tier-2' | 'tier-3';
+
+  /** v4.0 editor brand within Tier 1 (cursor, claude, hermes, etc.) */
+  editorBrand?: string;
+
   /** i18n translation metadata (if present) */
   i18n?: {
     zh?: {

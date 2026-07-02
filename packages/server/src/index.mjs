@@ -1,6 +1,7 @@
 // @huhaa/server — Fastify HTTP API + placeholder UI.
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import Fastify from 'fastify';
@@ -176,7 +177,37 @@ export async function startServer({ port = 11520 } = {}) {
 
   app.get('/api/skills', async () => {
     // strip `raw` — detail view fetches it separately
-    return irCache.map(stripRaw);
+    // v4.0: 补上 tier 和 editorBrand（如果不存在）
+
+    return irCache.map(item => {
+      const base = stripRaw(item);
+      
+      // 确保有 tier 字段
+      if (!base.tier || base.tier === 'tool') {
+        base.tier = 'tier-1'; // 默认 tier-1
+      } else if (base.tier === 'directory') {
+        base.tier = 'tier-2';
+      } else if (base.tier === 'other') {
+        base.tier = 'tier-3';
+      }
+      
+      // 确保有 editorBrand 字段
+      if (!base.editorBrand && base.source) {
+        base.editorBrand = base.source;
+        if (base.editorBrand === 'claude-code') base.editorBrand = 'claude';
+        if (base.editorBrand === 'hermes-plugin') base.editorBrand = 'hermes';
+      }
+      
+      // 确保有 pathHash 字段
+      if (!base.pathHash && base.paths?.abs) {
+        const normalized = path.resolve(base.paths.abs);
+        base.pathHash = crypto.createHash('md5').update(normalized).digest('hex');
+      } else if (!base.pathHash && base.id) {
+        base.pathHash = base.id;
+      }
+      
+      return base;
+    });
   });
 
   app.get('/api/skills/:id', async (req, reply) => {
@@ -475,16 +506,20 @@ function pickCopyText(item, what) {
 function buildInvocationPrompt(item) {
   const name = item.name || item.title || 'unknown';
   const abs = item.paths?.abs || '';
-  if (item.source === 'hermes') {
+  // v4.0 tier 扫描器把来源标签放在 item.brand（source 现在是内部扫描来源如 'tier1-editor'），
+  // 因此优先按 brand 判断，回退到 source 以兼容旧 IR。
+  const brand = item.brand || '';
+  const source = item.source || '';
+  if (brand === 'hermes' || source === 'hermes') {
     return `Use Hermes skill ${name}: skill_view(name='${escapeSingle(name)}')`;
   }
-  if (item.source === 'claude-code') {
+  if (brand === 'claude' || source === 'claude-code') {
     return `Use Claude Code skill ${name}. Local path: ${abs}`;
   }
-  if (item.source === 'codex') {
+  if (brand === 'codex' || source === 'codex') {
     return `Use Codex instructions from ${abs}`;
   }
-  if (item.source === 'cursor') {
+  if (brand === 'cursor' || source === 'cursor') {
     return `Use Cursor rule ${name}. Local path: ${abs}`;
   }
   if (item.kind === 'mcp') {

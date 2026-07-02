@@ -39,7 +39,7 @@
     "init": "node bin/huhaa-myskills.mjs init",
     "purge": "node bin/huhaa-myskills.mjs purge",
     "uninstall": "node bin/huhaa-myskills.mjs uninstall",
-    "dev": "node bin/huhaa-myskills.mjs start && cd packages/web && npm run dev",
+    "dev": "node bin/huhaa-myskills.mjs restart && cd packages/web && npm run dev",
     "dev-bg": "bash scripts/start-dev.sh",
     "sync": "node bin/huhaa-myskills.mjs sync",
     "build:web": "node build/build-web.mjs",
