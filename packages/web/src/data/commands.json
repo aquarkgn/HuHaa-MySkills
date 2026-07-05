@@ -349,54 +349,69 @@
     "subcommands": [
       {
         "name": "agents",
-        "desc_zh": "管理后台 agents。"
+        "desc_zh": "管理后台 agents。",
+        "helpStatus": "ready"
       },
       {
         "name": "auth",
-        "desc_zh": "管理认证。"
+        "desc_zh": "管理认证。",
+        "helpStatus": "missing"
       },
       {
         "name": "auto-mode",
-        "desc_zh": "检查 auto mode 分类器配置。"
+        "desc_zh": "检查 auto mode 分类器配置。",
+        "helpStatus": "missing"
       },
       {
         "name": "doctor",
-        "desc_zh": "检查 Claude Code 自动更新器和工作区健康状态。"
+        "desc_zh": "检查 Claude Code 自动更新器和工作区健康状态。",
+        "helpStatus": "ready"
       },
       {
         "name": "gateway",
-        "desc_zh": "运行企业认证和 telemetry gateway。"
+        "desc_zh": "运行企业认证和 telemetry gateway。",
+        "helpStatus": "missing"
       },
       {
         "name": "install",
-        "desc_zh": "安装 Claude Code native build。"
+        "desc_zh": "安装 Claude Code native build。",
+        "helpStatus": "missing"
       },
       {
         "name": "mcp",
-        "desc_zh": "配置和管理 MCP servers。"
+        "desc_zh": "配置和管理 MCP servers。",
+        "helpStatus": "ready"
       },
       {
         "name": "plugin|plugins",
-        "desc_zh": "管理 Claude Code 插件。"
+        "desc_zh": "管理 Claude Code 插件。",
+        "helpStatus": "ready"
       },
       {
         "name": "project",
-        "desc_zh": "管理 Claude Code 项目状态。"
+        "desc_zh": "管理 Claude Code 项目状态。",
+        "helpStatus": "missing"
       },
       {
         "name": "setup-token",
-        "desc_zh": "设置长期认证 token。"
+        "desc_zh": "设置长期认证 token。",
+        "helpStatus": "missing"
       },
       {
         "name": "ultrareview",
-        "desc_zh": "运行云端多 agent 代码审查并打印结果。"
+        "desc_zh": "运行云端多 agent 代码审查并打印结果。",
+        "helpStatus": "missing"
       },
       {
         "name": "update|upgrade",
-        "desc_zh": "检查并安装更新。"
+        "desc_zh": "检查并安装更新。",
+        "helpStatus": "missing"
       }
     ],
-    "iconBrand": "claude"
+    "iconBrand": "claude",
+    "raw": "~/Project/HuHaa-MySkills (main ✗) claude -h\nUsage: claude [options] [command] [prompt]\n\nClaude Code - starts an interactive session by default, use -p/--print for non-interactive output\n\nArguments:\n  prompt                                Your prompt\n\nOptions:\n  --add-dir <directories...>            Additional directories to allow tool access to\n  --agent <agent>                       Agent for the current session. Overrides the 'agent' setting.\n  --agents <json>                       JSON object defining custom agents (e.g. '{\"reviewer\": {\"description\": \"Reviews code\", \"prompt\": \"You are a code reviewer\"}}')\n  --allow-dangerously-skip-permissions  Enable bypassing all permission checks as an option, without it being enabled by default. Recommended only for sandboxes with no internet access.\n  --allowedTools, --allowed-tools <tools...>\n      Comma or space-separated list of tool names to allow (e.g. \"Bash(git *) Edit\")\n  --append-system-prompt <prompt>       Append a system prompt to the default system prompt\n  --ax-screen-reader                    Render screen-reader friendly output (flat text, no decorative borders or animations).\n  --bg, --background                    Start the session as a background agent and return immediately (manage with `claude agents`)\n  --bare                                Minimal mode: skip hooks, LSP, plugin sync, attribution, auto-memory, background prefetches, keychain reads, and CLAUDE.md auto-discovery. Sets\n                                        CLAUDE_CODE_SIMPLE=1. Anthropic auth is strictly ANTHROPIC_API_KEY or apiKeyHelper via --settings (OAuth and keychain are never read). 3P providers\n                                        (Bedrock/Vertex/Foundry) use their own credentials. Skills still resolve via /skill-name. Explicitly provide context via: --system-prompt[-file],\n                                        --append-system-prompt[-file], --add-dir (CLAUDE.md dirs), --mcp-config, --settings, --agents, --plugin-dir.\n  --betas <betas...>                    Beta headers to include in API requests (API key users only)\n  --brief                               Enable SendUserMessage tool for agent-to-user communication\n  --chrome                              Enable Claude in Chrome integration\n  -c, --continue                        Continue the most recent conversation in the current directory\n  --dangerously-skip-permissions        Bypass all permission checks. Recommended only for sandboxes with no internet access.\n  -d, --debug [filter]                  Enable debug mode with optional category filtering (e.g., \"api,hooks\" or \"!1p,!file\")\n  --debug-file <path>                   Write debug logs to a specific file path (implicitly enables debug mode)\n  --disable-slash-commands              Disable all skills\n  --disallowedTools, --disallowed-tools <tools...>\n      Comma or space-separated list of tool names to deny (e.g. \"Bash(git *) Edit\")\n  --effort <level>                      Effort level for the current session (low, medium, high, xhigh, max)\n  --exclude-dynamic-system-prompt-sections\n      Move per-machine sections (cwd, env info, memory paths, git status) from the system prompt into the first user message. Improves cross-user prompt-cache reuse. Only applies with the default system\n      prompt (ignored with --system-prompt). (default: false)\n  --fallback-model <model>              Enable automatic fallback to specified model(s) when the default model is overloaded or not available. Accepts a comma-separated list to try each in order.\n                                        Re-tries the primary at the start of each user turn. (only works with --print)\n  --file <specs...>                     File resources to download at startup. Format: file_id:relative_path (e.g., --file file_abc:doc.txt file_def:img.png)\n  --fork-session                        When resuming, create a new session ID instead of reusing the original (use with --resume or --continue)\n  --from-pr [value]                     Resume a session linked to a PR by PR number/URL, or open interactive picker with optional search term\n  -h, --help                            Display help for command\n  --ide                                 Automatically connect to IDE on startup if exactly one valid IDE is available\n  --include-hook-events                 Include all hook lifecycle events in the output stream (only works with --output-format=stream-json)\n  --include-partial-messages            Include partial message chunks as they arrive (only works with --print and --output-format=stream-json)\n  --input-format <format>               Input format (only works with --print): \"text\" (default), or \"stream-json\" (realtime streaming input) (choices: \"text\", \"stream-json\")\n  --json-schema <schema>                JSON Schema for structured output validation. Example: {\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\"}},\"required\":[\"name\"]}\n  --max-budget-usd <amount>             Maximum dollar amount to spend on API calls (only works with --print)\n  --mcp-config <configs...>             Load MCP servers from JSON files or strings (space-separated)\n  --model <model>                       Model for the current session. Provide an alias for the latest model (e.g. 'fable', 'opus', or 'sonnet') or a model's full name (e.g. 'claude-fable-5').\n  -n, --name <name>                     Set a display name for this session (shown in the prompt box, /resume picker, and terminal title)\n  --no-chrome                           Disable Claude in Chrome integration\n  --no-session-persistence              Disable session persistence - sessions will not be saved to disk and cannot be resumed (only works with --print)\n  --output-format <format>              Output format (only works with --print): \"text\" (default), \"json\" (single result), or \"stream-json\" (realtime streaming) (choices: \"text\", \"json\", \"stream-json\")\n  --permission-mode <mode>              Permission mode to use for the session (choices: \"acceptEdits\", \"auto\", \"bypassPermissions\", \"default\", \"dontAsk\", \"plan\")\n  --plugin-dir <path>                   Load a plugin from a directory or .zip for this session only (repeatable: --plugin-dir A --plugin-dir B.zip) (default: [])\n  --plugin-url <url>                    Fetch a plugin .zip from a URL for this session only (repeatable: --plugin-url A --plugin-url B) (default: [])\n  -p, --print                           Print response and exit (useful for pipes). Note: The workspace trust dialog is skipped when Claude is run in non-interactive mode (via -p, or when stdout is not a\n                                        TTY, e.g. piped or redirected output). Only use this in directories you trust. Settings files that fail validation are silently ignored in this mode (no error\n                                        dialog is shown).\n  --prompt-suggestions [value]          Enable prompt suggestions. In print/SDK mode, emits a prompt_suggestion message after each turn with a predicted next user prompt (choices: \"true\", \"false\", \"1\",\n                                        \"0\", \"yes\", \"no\", \"on\", \"off\", preset: \"true\")\n  --remote-control [name]               Start an interactive session with Remote Control enabled (optionally named)\n  --remote-control-session-name-prefix <prefix>\n      Prefix for auto-generated Remote Control session names (default: hostname)\n  --replay-user-messages                Re-emit user messages from stdin back on stdout for acknowledgment (only works with --input-format=stream-json and --output-format=stream-json)\n  -r, --resume [value]                  Resume a conversation by session ID, or open interactive picker with optional search term\n  --safe-mode                           Start with all customizations (CLAUDE.md, skills, plugins, hooks, MCP servers, custom commands and agents, output styles, workflows, custom themes, keybindings,\n                                        and more) disabled — useful for troubleshooting a broken configuration. Admin-managed (policy) settings still apply. Auth, model selection, built-in tools, and\n                                        permissions work normally. Sets CLAUDE_CODE_SAFE_MODE=1.\n  --session-id <uuid>                   Use a specific session ID for the conversation (must be a valid UUID)\n  --setting-sources <sources>           Comma-separated list of setting sources to load (user, project, local).\n  --settings <file-or-json>             Path to a settings JSON file or a JSON string to load additional settings from\n  --strict-mcp-config                   Only use MCP servers from --mcp-config, ignoring all other MCP configurations\n  --system-prompt <prompt>              System prompt to use for the session\n  --tmux                                Create a tmux session for the worktree (requires --worktree). Uses iTerm2 native panes when available; use --tmux=classic for traditional tmux.\n  --tools <tools...>                    Specify the list of available tools from the built-in set. Use \"\" to disable all tools, \"default\" to use all tools, or specify tool names (e.g. \"Bash,Edit,Read\").\n  --verbose                             Override verbose mode setting from config\n  -v, --version                         Output the version number\n  -w, --worktree [name]                 Create a new git worktree for this session (optionally specify a name)\n\nCommands:\n  agents [options]                      Manage background agents\n  auth                                  Manage authentication\n  auto-mode                             Inspect auto mode classifier configuration\n  doctor                                Check the health of your Claude Code auto-updater. Note: The workspace trust dialog is skipped and stdio servers from .mcp.json are spawned for health checks. Only\n                                        use this command in directories you trust.\n  gateway [options]                     Run the enterprise auth/telemetry gateway\n  install [options] [target]            Install Claude Code native build. Use [target] to specify version (stable, latest, or specific version)\n  mcp                                   Configure and manage MCP servers\n  plugin|plugins                        Manage Claude Code plugins\n  project                               Manage Claude Code project state\n  setup-token                           Set up a long-lived authentication token (requires Claude subscription)\n  ultrareview [options] [target]        Run a cloud-hosted multi-agent code review of the current branch (or a PR number / base branch) and print the findings\n  update|upgrade                        Check for updates and install if available",
+    "capturedAt": "2026-07-05",
+    "sourcePath": "source/claude.cmd"
   },
   {
     "brand": "code",
@@ -646,22 +661,29 @@
     "subcommands": [
       {
         "name": "chat",
-        "desc_zh": "在当前工作目录传入 prompt 并运行 chat 会话。"
+        "desc_zh": "在当前工作目录传入 prompt 并运行 chat 会话。",
+        "helpStatus": "ready"
       },
       {
         "name": "serve-web",
-        "desc_zh": "启动一个在浏览器中显示编辑器 UI 的服务。"
+        "desc_zh": "启动一个在浏览器中显示编辑器 UI 的服务。",
+        "helpStatus": "ready"
       },
       {
         "name": "agent",
-        "desc_zh": "启动并交互 AI agent hosts。"
+        "desc_zh": "启动并交互 AI agent hosts。",
+        "helpStatus": "ready"
       },
       {
         "name": "tunnel",
-        "desc_zh": "通过安全 tunnel 让当前机器可被 vscode.dev 或其他机器访问。"
+        "desc_zh": "通过安全 tunnel 让当前机器可被 vscode.dev 或其他机器访问。",
+        "helpStatus": "missing"
       }
     ],
-    "iconBrand": "vscode"
+    "iconBrand": "vscode",
+    "raw": "~/Project/HuHaa-MySkills (main ✗) code -h\nVisual Studio Code 1.126.0\n\nUsage: code [options] [paths...]\n\nTo read from stdin, append '-' (e.g. 'ps aux | grep code | code -')\n\nOptions\n  -d --diff <file> <file>                    Compare two files with each other.\n  -m --merge <path1> <path2> <base> <result> Perform a three-way merge by providing paths for two modified versions of a file, the common origin of both modified versions and the output file to save\n                                             merge results.\n  -a --add <folder>                          Add folder(s) to the last active window.\n  --remove <folder>                          Remove folder(s) from the last active window.\n  -g --goto <file:line[:character]>          Open a file at the path on the specified line and character position.\n  -n --new-window                            Force to open a new window.\n  -r --reuse-window                          Force to open a file or folder in an already opened window.\n  --agents                                   Opens the agents window.\n  -w --wait                                  Wait for the files to be closed before returning.\n  --locale <locale>                          The locale to use (e.g. en-US or zh-TW).\n  --user-data-dir <dir>                      Specifies the directory that user data is kept in. Can be used to open multiple distinct instances of Code.\n  --profile <profileName>                    Opens the provided folder or workspace with the given profile and associates the profile with the workspace. If the profile does not exist, a new empty one\n                                             is created.\n  -h --help                                  Print usage.\n\nExtensions Management\n  --extensions-dir <dir>              Set the root path for extensions.\n  --list-extensions                   List the installed extensions.\n  --show-versions                     Show versions of installed extensions, when using --list-extensions.\n  --category <category>               Filters installed extensions by provided category, when using --list-extensions.\n  --install-extension <ext-id | path> Installs or updates an extension. The argument is either an extension id or a path to a VSIX. The identifier of an extension is '${publisher}.${name}'. Use\n                                      '--force' argument to update to latest version. To install a specific version provide '@${version}'. For example: 'vscode.csharp@1.2.3'.\n  --pre-release                       Installs the pre-release version of the extension, when using --install-extension\n  --uninstall-extension <ext-id>      Uninstalls an extension.\n  --update-extensions                 Update the installed extensions.\n  --enable-proposed-api <ext-id>      Enables proposed API features for extensions. Can receive one or more extension IDs to enable individually.\n\nModel Context Protocol\n  --add-mcp <json> Adds a Model Context Protocol server definition to the user profile. Accepts JSON input in the form '{\"name\":\"server-name\",\"command\":...}'\n\nTroubleshooting\n  -v --version                            Print version.\n  --verbose                               Print verbose output (implies --wait).\n  --log <level>                           Log level to use. Default is 'info'. Allowed values are 'critical', 'error', 'warn', 'info', 'debug', 'trace', 'off'. You can also configure the log level of an\n                                          extension by passing extension id and log level in the following format: '${publisher}.${name}:${logLevel}'. For example: 'vscode.csharp:trace'. Can receive one\n                                          or more such entries.\n  -s --status                             Print process usage and diagnostics information.\n  --prof-startup                          Run CPU profiler during startup.\n  --disable-extensions                    Disable all installed extensions. This option is not persisted and is effective only when the command opens a new window.\n  --disable-extension <ext-id>            Disable the provided extension. This option is not persisted and is effective only when the command opens a new window.\n  --sync <on | off>                       Turn sync on or off.\n  --inspect-extensions <port>             Allow debugging and profiling of extensions. Check the developer tools for the connection URI.\n  --inspect-brk-extensions <port>         Allow debugging and profiling of extensions with the extension host being paused after start. Check the developer tools for the connection URI.\n  --disable-lcd-text                      Disable LCD font rendering.\n  --disable-gpu                           Disable GPU hardware acceleration.\n  --disable-chromium-sandbox              Use this option only when there is requirement to launch the application as sudo user on Linux or when running as an elevated user in an applocker environment\n                                          on Windows.\n  --locate-shell-integration-path <shell> Print the path to a terminal shell integration script. Allowed values are 'bash', 'pwsh', 'zsh' or 'fish'.\n  --telemetry                             Shows all telemetry events which VS code collects.\n  --transient                             Run with temporary data and extension directories, as if launched for the first time.\n\nSubcommands\n  chat         Pass in a prompt to run in a chat session in the current working directory.\n  serve-web    Run a server that displays the editor UI in browsers.\n  agent        Start and interact with AI agent hosts.\n  tunnel       Make the current machine accessible from vscode.dev or other machines through a secure tunnel.",
+    "capturedAt": "2026-07-05",
+    "sourcePath": "source/code.cmd"
   },
   {
     "brand": "codex",
@@ -813,109 +835,137 @@
     "subcommands": [
       {
         "name": "exec",
-        "desc_zh": "非交互式运行 Codex。"
+        "desc_zh": "非交互式运行 Codex。",
+        "helpStatus": "ready"
       },
       {
         "name": "review",
-        "desc_zh": "非交互式运行代码审查。"
+        "desc_zh": "非交互式运行代码审查。",
+        "helpStatus": "ready"
       },
       {
         "name": "login",
-        "desc_zh": "管理登录。"
+        "desc_zh": "管理登录。",
+        "helpStatus": "ready"
       },
       {
         "name": "logout",
-        "desc_zh": "移除已保存的认证凭据。"
+        "desc_zh": "移除已保存的认证凭据。",
+        "helpStatus": "missing"
       },
       {
         "name": "mcp",
-        "desc_zh": "管理外部 MCP servers。"
+        "desc_zh": "管理外部 MCP servers。",
+        "helpStatus": "ready"
       },
       {
         "name": "plugin",
-        "desc_zh": "管理 Codex 插件。"
+        "desc_zh": "管理 Codex 插件。",
+        "helpStatus": "ready"
       },
       {
         "name": "mcp-server",
-        "desc_zh": "以 stdio MCP server 方式启动 Codex。"
+        "desc_zh": "以 stdio MCP server 方式启动 Codex。",
+        "helpStatus": "missing"
       },
       {
         "name": "app-server",
-        "desc_zh": "实验性 app server 或相关工具。"
+        "desc_zh": "实验性 app server 或相关工具。",
+        "helpStatus": "missing"
       },
       {
         "name": "remote-control",
-        "desc_zh": "管理启用 remote control 的 app-server daemon。"
+        "desc_zh": "管理启用 remote control 的 app-server daemon。",
+        "helpStatus": "missing"
       },
       {
         "name": "app",
-        "desc_zh": "启动 Codex desktop app。"
+        "desc_zh": "启动 Codex desktop app。",
+        "helpStatus": "missing"
       },
       {
         "name": "completion",
-        "desc_zh": "生成 shell completion 脚本。"
+        "desc_zh": "生成 shell completion 脚本。",
+        "helpStatus": "missing"
       },
       {
         "name": "update",
-        "desc_zh": "更新 Codex 到最新版。"
+        "desc_zh": "更新 Codex 到最新版。",
+        "helpStatus": "missing"
       },
       {
         "name": "doctor",
-        "desc_zh": "诊断本地 Codex 安装、配置、认证和运行时健康。"
+        "desc_zh": "诊断本地 Codex 安装、配置、认证和运行时健康。",
+        "helpStatus": "missing"
       },
       {
         "name": "sandbox",
-        "desc_zh": "在 Codex 提供的 sandbox 中运行命令。"
+        "desc_zh": "在 Codex 提供的 sandbox 中运行命令。",
+        "helpStatus": "missing"
       },
       {
         "name": "debug",
-        "desc_zh": "调试工具。"
+        "desc_zh": "调试工具。",
+        "helpStatus": "missing"
       },
       {
         "name": "apply",
-        "desc_zh": "把 Codex agent 最新 diff 用 git apply 应用到本地工作区。"
+        "desc_zh": "把 Codex agent 最新 diff 用 git apply 应用到本地工作区。",
+        "helpStatus": "missing"
       },
       {
         "name": "resume",
-        "desc_zh": "恢复之前的交互会话。"
+        "desc_zh": "恢复之前的交互会话。",
+        "helpStatus": "missing"
       },
       {
         "name": "archive",
-        "desc_zh": "按 id 或名称归档已保存会话。"
+        "desc_zh": "按 id 或名称归档已保存会话。",
+        "helpStatus": "missing"
       },
       {
         "name": "delete",
-        "desc_zh": "按 id 或名称永久删除已保存会话。"
+        "desc_zh": "按 id 或名称永久删除已保存会话。",
+        "helpStatus": "missing"
       },
       {
         "name": "unarchive",
-        "desc_zh": "取消归档已保存会话。"
+        "desc_zh": "取消归档已保存会话。",
+        "helpStatus": "missing"
       },
       {
         "name": "fork",
-        "desc_zh": "从之前的交互会话派生新会话。"
+        "desc_zh": "从之前的交互会话派生新会话。",
+        "helpStatus": "missing"
       },
       {
         "name": "cloud",
-        "desc_zh": "实验性浏览 Codex Cloud 任务并把变更应用到本地。"
+        "desc_zh": "实验性浏览 Codex Cloud 任务并把变更应用到本地。",
+        "helpStatus": "missing"
       },
       {
         "name": "exec-server",
-        "desc_zh": "实验性运行独立 exec-server 服务。"
+        "desc_zh": "实验性运行独立 exec-server 服务。",
+        "helpStatus": "missing"
       },
       {
         "name": "features",
-        "desc_zh": "检查 feature flags。"
+        "desc_zh": "检查 feature flags。",
+        "helpStatus": "missing"
       },
       {
         "name": "help",
-        "desc_zh": "打印本消息或指定子命令帮助。"
+        "desc_zh": "打印本消息或指定子命令帮助。",
+        "helpStatus": "missing"
       }
     ],
-    "iconBrand": "codex"
+    "iconBrand": "codex",
+    "raw": "~/Project/HuHaa-MySkills (main ✗) codex -h\nCodex CLI\n\nUsage: codex [OPTIONS] [PROMPT]\n       codex [OPTIONS] <COMMAND> [ARGS]\n\nCommands:\n  exec            Run Codex non-interactively [aliases: e]\n  review          Run a code review non-interactively\n  login           Manage login\n  logout          Remove stored authentication credentials\n  mcp             Manage external MCP servers for Codex\n  plugin          Manage Codex plugins\n  mcp-server      Start Codex as an MCP server (stdio)\n  app-server      [experimental] Run the app server or related tooling\n  remote-control  [experimental] Manage the app-server daemon with remote control enabled\n  app             Launch the Codex desktop app (opens the app installer if missing)\n  completion      Generate shell completion scripts\n  update          Update Codex to the latest version\n  doctor          Diagnose local Codex installation, config, auth, and runtime health\n  sandbox         Run commands within a Codex-provided sandbox\n  debug           Debugging tools\n  apply           Apply the latest diff produced by Codex agent as a `git apply` to your local working tree [aliases: a]\n  resume          Resume a previous interactive session (picker by default; use --last to continue the most recent)\n  archive         Archive a saved session by id or session name\n  delete          Permanently delete a saved session by id or session name\n  unarchive       Unarchive a saved session by id or session name\n  fork            Fork a previous interactive session (picker by default; use --last to fork the most recent)\n  cloud           [EXPERIMENTAL] Browse tasks from Codex Cloud and apply changes locally\n  exec-server     [EXPERIMENTAL] Run the standalone exec-server service\n  features        Inspect feature flags\n  help            Print this message or the help of the given subcommand(s)\n\nArguments:\n  [PROMPT]  Optional user prompt to start the session\n\nOptions:\n  -c, --config <key=value>                        Override a configuration value that would otherwise be loaded from `~/.codex/config.toml`. Use a dotted path (`foo.bar.baz`) to override nested values.\n                                                  The `value` portion is parsed as TOML. If it fails to parse as TOML, the raw string is used as a literal\n      --enable <FEATURE>                          Enable a feature (repeatable). Equivalent to `-c features.<name>=true`\n      --disable <FEATURE>                         Disable a feature (repeatable). Equivalent to `-c features.<name>=false`\n      --remote <ADDR>                             Connect the TUI to a remote app server endpoint\n      --remote-auth-token-env <ENV_VAR>           Name of the environment variable containing the bearer token to send to a remote app server websocket\n      --strict-config                             Error out when config.toml contains fields that are not recognized by this version of Codex\n  -i, --image <FILE>...                           Optional image(s) to attach to the initial prompt\n  -m, --model <MODEL>                             Model the agent should use\n      --oss                                       Use open-source provider\n      --local-provider <OSS_PROVIDER>             Specify which local provider to use (lmstudio or ollama). If not specified with --oss, will use config default or show selection\n  -p, --profile <CONFIG_PROFILE_V2>               Layer $CODEX_HOME/<name>.config.toml on top of the base user config\n  -s, --sandbox <SANDBOX_MODE>                    Select the sandbox policy to use when executing model-generated shell commands [possible values: read-only, workspace-write, danger-full-access]\n      --dangerously-bypass-approvals-and-sandbox  Skip all confirmation prompts and execute commands without sandboxing. EXTREMELY DANGEROUS. Intended solely for running in environments that are\n                                                  externally sandboxed\n      --dangerously-bypass-hook-trust             Run enabled hooks without requiring persisted hook trust for this invocation. DANGEROUS. Intended only for automation that already vets hook sources\n  -C, --cd <DIR>                                  Tell the agent to use the specified directory as its working root\n      --add-dir <DIR>                             Additional directories that should be writable alongside the primary workspace\n  -a, --ask-for-approval <APPROVAL_POLICY>        Configure when the model requires human approval before executing a command [possible values: untrusted, on-failure, on-request, never]\n      --search                                    Enable live web search. When enabled, the native Responses `web_search` tool is available to the model (no per‑call approval)\n      --no-alt-screen                             Disable alternate screen mode\n  -h, --help                                      Print help (see more with '--help')\n  -V, --version                                   Print version",
+    "capturedAt": "2026-07-05",
+    "sourcePath": "source/codex.cmd"
   },
   {
-    "brand": "gstach",
+    "brand": "gstack",
     "summary_zh": "gstack skill pack 安装器，用于全局或项目级安装、升级、诊断、列出和启停技能。",
     "groups": [
       {
@@ -985,42 +1035,54 @@
     "subcommands": [
       {
         "name": "install",
-        "desc_zh": "全局安装 gstack。"
+        "desc_zh": "全局安装 gstack。",
+        "helpStatus": "missing"
       },
       {
         "name": "init",
-        "desc_zh": "把 gstack 添加到当前项目。"
+        "desc_zh": "把 gstack 添加到当前项目。",
+        "helpStatus": "missing"
       },
       {
         "name": "uninstall",
-        "desc_zh": "移除 gstack，可用 --project 只移除当前仓库。"
+        "desc_zh": "移除 gstack，可用 --project 只移除当前仓库。",
+        "helpStatus": "missing"
       },
       {
         "name": "upgrade",
-        "desc_zh": "拉取最新版并重建。"
+        "desc_zh": "拉取最新版并重建。",
+        "helpStatus": "missing"
       },
       {
         "name": "doctor",
-        "desc_zh": "诊断安装问题。"
+        "desc_zh": "诊断安装问题。",
+        "helpStatus": "ready"
       },
       {
         "name": "status",
-        "desc_zh": "显示安装版本、hosts 和设置。"
+        "desc_zh": "显示安装版本、hosts 和设置。",
+        "helpStatus": "ready"
       },
       {
         "name": "list",
-        "desc_zh": "列出可用 skills。"
+        "desc_zh": "列出可用 skills。",
+        "helpStatus": "ready"
       },
       {
         "name": "enable",
-        "desc_zh": "在当前项目启用指定 skill。"
+        "desc_zh": "在当前项目启用指定 skill。",
+        "helpStatus": "ready"
       },
       {
         "name": "disable",
-        "desc_zh": "在当前项目禁用指定 skill。"
+        "desc_zh": "在当前项目禁用指定 skill。",
+        "helpStatus": "missing"
       }
     ],
-    "iconBrand": "gstach"
+    "iconBrand": "gstack",
+    "raw": "~/Project/HuHaa-MySkills (main ✗) gstack -h\ngstack — installer for Garry Tan's gstack skill pack\n\nUsage:\n  npx @garrytan/gstack                   interactive wizard\n  npx @garrytan/gstack <command> [opts]\n\nCommands:\n  install        Install gstack globally (~/.claude/skills/gstack)\n  init           Add gstack to the current project (team mode)\n  uninstall      Remove gstack (global; add --project for just this repo)\n  upgrade        Pull latest gstack and rebuild\n  doctor         Diagnose install issues\n  status         Show install version, hosts, and settings\n  list           List available skills\n  enable <name>  Enable a skill in the current project\n  disable <name> Disable a skill in the current project\n\nCommon options:\n  --host <id>    Register with host (repeatable, comma-separated).\n                 Valid: claude, codex, factory, opencode, kiro\n  --prefix       Use gstack-* skill names\n  --no-prefix    Use flat skill names (default)\n  --no-claude-md Don't write gstack section to CLAUDE.md\n  --yes, -y      Skip confirmation prompts\n  --reinstall    Remove existing install before installing\n  --quiet, -q    Suppress non-essential output\n  --tier <t>     init only: \"required\" or \"optional\" (default: required)\n  --no-commit    init only: stage but don't commit changes\n  --project      uninstall only: remove from current project, not global\n  --keep-claude-md  uninstall only: leave CLAUDE.md section in place\n\nExamples:\n  npx @garrytan/gstack install --host claude,codex\n  npx @garrytan/gstack init --tier optional\n  npx @garrytan/gstack uninstall --project --yes\n  npx @garrytan/gstack doctor",
+    "capturedAt": "2026-07-05",
+    "sourcePath": "source/gstack.cmd"
   },
   {
     "brand": "hermes",
@@ -1139,213 +1201,268 @@
     "subcommands": [
       {
         "name": "chat",
-        "desc_zh": "与 agent 进行交互式聊天。"
+        "desc_zh": "与 agent 进行交互式聊天。",
+        "helpStatus": "missing"
       },
       {
         "name": "model",
-        "desc_zh": "选择默认模型和 provider。"
+        "desc_zh": "选择默认模型和 provider。",
+        "helpStatus": "missing"
       },
       {
         "name": "fallback",
-        "desc_zh": "管理主模型失败时尝试的 fallback providers。"
+        "desc_zh": "管理主模型失败时尝试的 fallback providers。",
+        "helpStatus": "missing"
       },
       {
         "name": "secrets",
-        "desc_zh": "管理外部 secret 来源。"
+        "desc_zh": "管理外部 secret 来源。",
+        "helpStatus": "missing"
       },
       {
         "name": "migrate",
-        "desc_zh": "迁移退役模型或废弃设置的配置。"
+        "desc_zh": "迁移退役模型或废弃设置的配置。",
+        "helpStatus": "missing"
       },
       {
         "name": "gateway",
-        "desc_zh": "管理 messaging gateway。"
+        "desc_zh": "管理 messaging gateway。",
+        "helpStatus": "missing"
       },
       {
         "name": "proxy",
-        "desc_zh": "运行到 OAuth providers 的本地 OpenAI-compatible proxy。"
+        "desc_zh": "运行到 OAuth providers 的本地 OpenAI-compatible proxy。",
+        "helpStatus": "missing"
       },
       {
         "name": "lsp",
-        "desc_zh": "管理 Language Server Protocol。"
+        "desc_zh": "管理 Language Server Protocol。",
+        "helpStatus": "missing"
       },
       {
         "name": "setup",
-        "desc_zh": "运行交互式设置向导。"
+        "desc_zh": "运行交互式设置向导。",
+        "helpStatus": "missing"
       },
       {
         "name": "postinstall",
-        "desc_zh": "为 pip 安装补齐 node、browser、ripgrep、ffmpeg 等非 Python 依赖。"
+        "desc_zh": "为 pip 安装补齐 node、browser、ripgrep、ffmpeg 等非 Python 依赖。",
+        "helpStatus": "missing"
       },
       {
         "name": "whatsapp",
-        "desc_zh": "设置 WhatsApp 集成。"
+        "desc_zh": "设置 WhatsApp 集成。",
+        "helpStatus": "missing"
       },
       {
         "name": "slack",
-        "desc_zh": "Slack 集成助手。"
+        "desc_zh": "Slack 集成助手。",
+        "helpStatus": "missing"
       },
       {
         "name": "send",
-        "desc_zh": "向已配置平台发送消息。"
+        "desc_zh": "向已配置平台发送消息。",
+        "helpStatus": "missing"
       },
       {
         "name": "login",
-        "desc_zh": "登录 inference provider。"
+        "desc_zh": "登录 inference provider。",
+        "helpStatus": "missing"
       },
       {
         "name": "logout",
-        "desc_zh": "清除 inference provider 认证。"
+        "desc_zh": "清除 inference provider 认证。",
+        "helpStatus": "missing"
       },
       {
         "name": "auth",
-        "desc_zh": "管理 pooled provider credentials。"
+        "desc_zh": "管理 pooled provider credentials。",
+        "helpStatus": "missing"
       },
       {
         "name": "status",
-        "desc_zh": "显示所有组件状态。"
+        "desc_zh": "显示所有组件状态。",
+        "helpStatus": "missing"
       },
       {
         "name": "cron",
-        "desc_zh": "管理 cron jobs。"
+        "desc_zh": "管理 cron jobs。",
+        "helpStatus": "missing"
       },
       {
         "name": "webhook",
-        "desc_zh": "管理动态 webhook subscriptions。"
+        "desc_zh": "管理动态 webhook subscriptions。",
+        "helpStatus": "missing"
       },
       {
         "name": "portal",
-        "desc_zh": "设置 Nous Portal。"
+        "desc_zh": "设置 Nous Portal。",
+        "helpStatus": "missing"
       },
       {
         "name": "kanban",
-        "desc_zh": "多 profile 协作看板。"
+        "desc_zh": "多 profile 协作看板。",
+        "helpStatus": "missing"
       },
       {
         "name": "hooks",
-        "desc_zh": "检查和管理 shell-script hooks。"
+        "desc_zh": "检查和管理 shell-script hooks。",
+        "helpStatus": "missing"
       },
       {
         "name": "doctor",
-        "desc_zh": "检查配置和依赖。"
+        "desc_zh": "检查配置和依赖。",
+        "helpStatus": "ready"
       },
       {
         "name": "security",
-        "desc_zh": "对 venv、plugins 和 MCP servers 做供应链审计。"
+        "desc_zh": "对 venv、plugins 和 MCP servers 做供应链审计。",
+        "helpStatus": "ready"
       },
       {
         "name": "dump",
-        "desc_zh": "导出设置摘要用于支持或调试。"
+        "desc_zh": "导出设置摘要用于支持或调试。",
+        "helpStatus": "missing"
       },
       {
         "name": "debug",
-        "desc_zh": "上传日志和系统信息等调试工具。"
+        "desc_zh": "上传日志和系统信息等调试工具。",
+        "helpStatus": "missing"
       },
       {
         "name": "backup",
-        "desc_zh": "把 Hermes home 目录备份为 zip。"
+        "desc_zh": "把 Hermes home 目录备份为 zip。",
+        "helpStatus": "missing"
       },
       {
         "name": "checkpoints",
-        "desc_zh": "检查、修剪或清空 checkpoints。"
+        "desc_zh": "检查、修剪或清空 checkpoints。",
+        "helpStatus": "missing"
       },
       {
         "name": "import",
-        "desc_zh": "从 zip 恢复 Hermes backup。"
+        "desc_zh": "从 zip 恢复 Hermes backup。",
+        "helpStatus": "missing"
       },
       {
         "name": "config",
-        "desc_zh": "查看和编辑配置。"
+        "desc_zh": "查看和编辑配置。",
+        "helpStatus": "missing"
       },
       {
         "name": "pairing",
-        "desc_zh": "管理用户授权 DM pairing codes。"
+        "desc_zh": "管理用户授权 DM pairing codes。",
+        "helpStatus": "missing"
       },
       {
         "name": "skills",
-        "desc_zh": "搜索、安装、配置和管理 skills。"
+        "desc_zh": "搜索、安装、配置和管理 skills。",
+        "helpStatus": "ready"
       },
       {
         "name": "bundles",
-        "desc_zh": "创建、列出和管理 skill bundles。"
+        "desc_zh": "创建、列出和管理 skill bundles。",
+        "helpStatus": "missing"
       },
       {
         "name": "plugins",
-        "desc_zh": "管理插件安装、更新、移除和列表。"
+        "desc_zh": "管理插件安装、更新、移除和列表。",
+        "helpStatus": "ready"
       },
       {
         "name": "curator",
-        "desc_zh": "管理后台 skill maintenance curator。"
+        "desc_zh": "管理后台 skill maintenance curator。",
+        "helpStatus": "missing"
       },
       {
         "name": "memory",
-        "desc_zh": "配置外部 memory provider。"
+        "desc_zh": "配置外部 memory provider。",
+        "helpStatus": "missing"
       },
       {
         "name": "tools",
-        "desc_zh": "配置各平台启用哪些 tools。"
+        "desc_zh": "配置各平台启用哪些 tools。",
+        "helpStatus": "missing"
       },
       {
         "name": "computer-use",
-        "desc_zh": "管理 macOS Computer Use 后端。"
+        "desc_zh": "管理 macOS Computer Use 后端。",
+        "helpStatus": "missing"
       },
       {
         "name": "mcp",
-        "desc_zh": "管理 MCP servers 并把 Hermes 作为 MCP server 运行。"
+        "desc_zh": "管理 MCP servers 并把 Hermes 作为 MCP server 运行。",
+        "helpStatus": "ready"
       },
       {
         "name": "sessions",
-        "desc_zh": "管理会话历史。"
+        "desc_zh": "管理会话历史。",
+        "helpStatus": "missing"
       },
       {
         "name": "insights",
-        "desc_zh": "显示使用洞察和分析。"
+        "desc_zh": "显示使用洞察和分析。",
+        "helpStatus": "missing"
       },
       {
         "name": "claw",
-        "desc_zh": "OpenClaw 迁移工具。"
+        "desc_zh": "OpenClaw 迁移工具。",
+        "helpStatus": "missing"
       },
       {
         "name": "version",
-        "desc_zh": "显示版本信息。"
+        "desc_zh": "显示版本信息。",
+        "helpStatus": "missing"
       },
       {
         "name": "update",
-        "desc_zh": "更新 Hermes Agent。"
+        "desc_zh": "更新 Hermes Agent。",
+        "helpStatus": "missing"
       },
       {
         "name": "uninstall",
-        "desc_zh": "卸载 Hermes Agent。"
+        "desc_zh": "卸载 Hermes Agent。",
+        "helpStatus": "missing"
       },
       {
         "name": "acp",
-        "desc_zh": "作为 ACP server 运行 Hermes Agent。"
+        "desc_zh": "作为 ACP server 运行 Hermes Agent。",
+        "helpStatus": "missing"
       },
       {
         "name": "profile",
-        "desc_zh": "管理多个隔离 Hermes profiles。"
+        "desc_zh": "管理多个隔离 Hermes profiles。",
+        "helpStatus": "missing"
       },
       {
         "name": "completion",
-        "desc_zh": "打印 shell completion 脚本。"
+        "desc_zh": "打印 shell completion 脚本。",
+        "helpStatus": "missing"
       },
       {
         "name": "dashboard",
-        "desc_zh": "启动 web UI dashboard。"
+        "desc_zh": "启动 web UI dashboard。",
+        "helpStatus": "missing"
       },
       {
         "name": "desktop",
-        "desc_zh": "构建并启动原生桌面 app。"
+        "desc_zh": "构建并启动原生桌面 app。",
+        "helpStatus": "missing"
       },
       {
         "name": "logs",
-        "desc_zh": "查看和过滤 Hermes 日志文件。"
+        "desc_zh": "查看和过滤 Hermes 日志文件。",
+        "helpStatus": "missing"
       },
       {
         "name": "prompt-size",
-        "desc_zh": "显示 system prompt 和 tool schemas 的字节拆分。"
+        "desc_zh": "显示 system prompt 和 tool schemas 的字节拆分。",
+        "helpStatus": "missing"
       }
     ],
-    "iconBrand": "hermes"
+    "iconBrand": "hermes",
+    "raw": "~/Project/HuHaa-MySkills (main ✗) hermes -h\nusage: hermes [-h] [--version] [-z PROMPT] [-m MODEL] [--provider PROVIDER] [-t TOOLSETS] [--resume SESSION] [--continue [SESSION_NAME]] [--worktree] [--accept-hooks] [--skills SKILLS] [--yolo]\n              [--pass-session-id] [--ignore-user-config] [--ignore-rules] [--tui] [--cli] [--dev]\n              {chat,model,fallback,secrets,migrate,gateway,proxy,lsp,setup,postinstall,whatsapp,slack,send,login,logout,auth,status,cron,webhook,portal,kanban,hooks,doctor,security,dump,debug,backup,checkpoints,import,config,pairing,skills,bundles,plugins,curator,memory,tools,computer-use,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,desktop,gui,logs,prompt-size}\n              ...\n\nHermes Agent - AI assistant with tool-calling capabilities\n\npositional arguments:\n  {chat,model,fallback,secrets,migrate,gateway,proxy,lsp,setup,postinstall,whatsapp,slack,send,login,logout,auth,status,cron,webhook,portal,kanban,hooks,doctor,security,dump,debug,backup,checkpoints,import,config,pairing,skills,bundles,plugins,curator,memory,tools,computer-use,mcp,sessions,insights,claw,version,update,uninstall,acp,profile,completion,dashboard,desktop,gui,logs,prompt-size}\n                        Command to run\n    chat                Interactive chat with the agent\n    model               Select default model and provider\n    fallback            Manage fallback providers (tried when the primary model fails)\n    secrets             Manage external secret sources (Bitwarden Secrets Manager)\n    migrate             Migrate configuration for retired models or deprecated settings\n    gateway             Messaging gateway management\n    proxy               Local OpenAI-compatible proxy to OAuth providers\n    lsp                 Language Server Protocol management\n    setup               Interactive setup wizard\n    postinstall         Bootstrap non-Python deps for pip installs (node, browser, ripgrep, ffmpeg)\n    whatsapp            Set up WhatsApp integration\n    slack               Slack integration helpers (manifest generation, etc.)\n    send                Send a message to a configured platform (scripts, cron jobs, CI).\n    login               Authenticate with an inference provider\n    logout              Clear authentication for an inference provider\n    auth                Manage pooled provider credentials\n    status              Show status of all components\n    cron                Cron job management\n    webhook             Manage dynamic webhook subscriptions\n    portal              Set up Nous Portal (login, model pick, Tool Gateway); see also `portal info`\n    kanban              Multi-profile collaboration board (tasks, links, comments)\n    hooks               Inspect and manage shell-script hooks\n    doctor              Check configuration and dependencies\n    security            Supply-chain audit (OSV.dev) for venv, plugins, and MCP servers\n    dump                Dump setup summary for support/debugging\n    debug               Debug tools — upload logs and system info for support\n    backup              Back up Hermes home directory to a zip file\n    checkpoints         Inspect / prune / clear ~/.hermes/checkpoints/\n    import              Restore a Hermes backup from a zip file\n    config              View and edit configuration\n    pairing             Manage DM pairing codes for user authorization\n    skills              Search, install, configure, and manage skills\n    bundles             Create, list, and manage skill bundles (aliases for multiple skills)\n    plugins             Manage plugins — install, update, remove, list\n    curator             Background skill maintenance (curator) — status, run, pause, pin\n    memory              Configure external memory provider\n    tools               Configure which tools are enabled per platform\n    computer-use        Manage the Computer Use (cua-driver) backend (macOS)\n    mcp                 Manage MCP servers and run Hermes as an MCP server\n    sessions            Manage session history (list, rename, export, prune, delete)\n    insights            Show usage insights and analytics\n    claw                OpenClaw migration tools\n    version             Show version information\n    update              Update Hermes Agent to the latest version\n    uninstall           Uninstall Hermes Agent\n    acp                 Run Hermes Agent as an ACP (Agent Client Protocol) server\n    profile             Manage profiles — multiple isolated Hermes instances\n    completion          Print shell completion script (bash, zsh, or fish)\n    dashboard           Start the web UI dashboard\n    desktop (gui)       Build and launch the native desktop app\n    logs                View and filter Hermes log files\n    prompt-size         Show a byte breakdown of the system prompt + tool schemas\n\noptions:\n  -h, --help            show this help message and exit\n  --version, -V         Show version and exit\n  -z PROMPT, --oneshot PROMPT\n                        One-shot mode: send a single prompt and print ONLY the final response text to stdout. No banner, no spinner, no tool previews, no session_id line. Tools, memory, rules, and\n                        AGENTS.md in the CWD are loaded as normal; approvals are auto-bypassed. Intended for scripts / pipes.\n  -m MODEL, --model MODEL\n                        Model override for this invocation (e.g. anthropic/claude-sonnet-4.6). Applies to -z/--oneshot and --tui. Also settable via HERMES_INFERENCE_MODEL env var.\n  --provider PROVIDER   Provider override for this invocation (e.g. openrouter, anthropic). Applies to -z/--oneshot and --tui. The persistent provider lives in config.yaml under model.provider — use\n                        `hermes setup` or edit the file to change it.\n  -t TOOLSETS, --toolsets TOOLSETS\n                        Comma-separated toolsets to enable for this invocation. Applies to -z/--oneshot and --tui.\n  --resume SESSION, -r SESSION\n                        Resume a previous session by ID or title\n  --continue [SESSION_NAME], -c [SESSION_NAME]\n                        Resume a session by name, or the most recent if no name given\n  --worktree, -w        Run in an isolated git worktree (for parallel agents)\n  --accept-hooks        Auto-approve any unseen shell hooks declared in config.yaml without a TTY prompt. Equivalent to HERMES_ACCEPT_HOOKS=1 or hooks_auto_accept: true in config.yaml. Use on CI /\n                        headless runs that can't prompt.\n  --skills SKILLS, -s SKILLS\n                        Preload one or more skills for the session (repeat flag or comma-separate)\n  --yolo                Bypass all dangerous command approval prompts (use at your own risk)\n  --pass-session-id     Include the session ID in the agent's system prompt\n  --ignore-user-config  Ignore ~/.hermes/config.yaml and fall back to built-in defaults (credentials in .env are still loaded)\n  --ignore-rules        Skip auto-injection of AGENTS.md, SOUL.md, .cursorrules, memory, and preloaded skills\n  --tui                 Launch the modern TUI instead of the classic REPL\n  --cli                 Force the classic prompt_toolkit REPL (overrides display.interface=tui)\n  --dev                 With --tui: run TypeScript sources via tsx (skip dist build)\n\nExamples:\n    hermes                        Start interactive chat\n    hermes chat -q \"Hello\"        Single query mode\n    hermes --tui                  Launch the modern TUI (or set display.interface: tui)\n    hermes --cli                  Force the classic REPL (overrides display.interface: tui)\n    hermes -c                     Resume the most recent session\n    hermes -c \"my project\"        Resume a session by name (latest in lineage)\n    hermes --resume <session_id>  Resume a specific session by ID\n    hermes setup                  Run setup wizard\n    hermes logout                 Clear stored authentication\n    hermes auth add <provider>    Add a pooled credential\n    hermes auth list              List pooled credentials\n    hermes auth remove <p> <t>    Remove pooled credential by index, id, or label\n    hermes auth reset <provider>  Clear exhaustion status for a provider\n    hermes model                  Select default model\n    hermes fallback [list]        Show fallback provider chain\n    hermes fallback add           Add a fallback provider (same picker as `hermes model`)\n    hermes fallback remove        Remove a fallback provider from the chain\n    hermes config                 View configuration\n    hermes config edit            Edit config in $EDITOR\n    hermes config set model gpt-4 Set a config value\n    hermes gateway                Run messaging gateway\n    hermes -s hermes-agent-dev,github-auth\n    hermes -w                     Start in isolated git worktree\n    hermes gateway install        Install gateway background service\n    hermes sessions list          List past sessions\n    hermes sessions browse        Interactive session picker\n    hermes sessions rename ID T   Rename/title a session\n    hermes logs                   View agent.log (last 50 lines)\n    hermes logs -f                Follow agent.log in real time\n    hermes logs errors            View errors.log\n    hermes logs --since 1h        Lines from the last hour\n    hermes debug share             Upload debug report for support\n    hermes update                 Update to latest version\n    hermes dashboard              Start web UI dashboard (port 9119)\n    hermes dashboard --stop       Stop running dashboard processes\n    hermes dashboard --status     List running dashboard processes\n\nFor more help on a command:\n    hermes <command> --help",
+    "capturedAt": "2026-07-05",
+    "sourcePath": "source/hermes.cmd"
   }
 ]
