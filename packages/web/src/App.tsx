@@ -5,54 +5,126 @@ import { DashboardView } from '@/components/views/DashboardView'
 import { SkillsView } from '@/components/views/SkillsView'
 import { SettingsView } from '@/components/views/SettingsView'
 import { OtherSkillsView } from '@/components/views/OtherSkillsView'
-import { ComingSoon } from '@/components/ComingSoon'
+import { CliCommandView } from '@/components/views/CliCommandView'
+import { EditorPlaceholder } from '@/components/views/EditorPlaceholder'
 import { useLiveReload } from '@/hooks/useLiveReload'
 import { fetchSkills, fetchStats, reload } from '@/lib/api'
 import type { SkillItem, Stats } from '@/types'
 
-export type View = 'dashboard' | 'skills' | 'otherSkills' | 'settings'
+export type View = 'home' | 'skills' | 'otherSkills' | 'settings' | 'cli' | 'editor'
 
 export interface UIState {
   module: ModuleKey
+  /** 当前模块内的视图；home 对应 dashboard，commands 对应 cli。 */
   view: View
   editorFilter: string | null
   kindFilter: string | null
   query: string
   selectedId: string | null
   otherSkillsQuery: string
+  /** CLI 命令侧栏选中的品牌；null 表示「全部命令」。 */
+  selectedCommandBrand: string | null
 }
 
 export type Action =
   | { type: 'module'; module: ModuleKey }
+  | { type: 'home' }
   | { type: 'dashboard' }
   | { type: 'settings' }
   | { type: 'otherSkills' }
+  | { type: 'cli' }
+  | { type: 'editorView' }
   | { type: 'otherSkillsQuery'; query: string }
   | { type: 'editor'; key: string | null }
   | { type: 'query'; query: string }
   | { type: 'kind'; kind: string | null }
   | { type: 'select'; id: string }
+  | { type: 'selectCommandBrand'; brand: string | null }
 
 export const initialState: UIState = {
-  module: 'skills',
-  view: 'skills',
+  module: 'home',
+  view: 'home',
   editorFilter: null,
   kindFilter: null,
   query: '',
   selectedId: null,
   otherSkillsQuery: '',
+  selectedCommandBrand: null,
 }
 
 export function reducer(state: UIState, action: Action): UIState {
   switch (action.type) {
     case 'module':
-      return { ...state, module: action.module }
+      // 顶层 tab 切换：模块与默认视图对齐。
+      // - 切回 home：清空命令品牌选中
+      // - 进 commands：默认进入 cli，selectedCommandBrand 重置为 null
+      // - 进 editor：进入编辑器占位视图
+      // - 进 skills：从 cli 视图退出时回到 skills 视图
+      if (action.module === 'home') {
+        return {
+          ...state,
+          module: 'home',
+          view: 'home',
+          selectedCommandBrand: null,
+        }
+      }
+      if (action.module === 'commands') {
+        return {
+          ...state,
+          module: 'commands',
+          view: 'cli',
+          selectedCommandBrand: null,
+        }
+      }
+      if (action.module === 'editor') {
+        return {
+          ...state,
+          module: 'editor',
+          view: 'editor',
+        }
+      }
+      if (action.module === 'skills') {
+        if (state.module === 'commands') {
+          return {
+            ...state,
+            module: 'skills',
+            view: 'skills',
+            selectedCommandBrand: null,
+          }
+        }
+        return { ...state, module: 'skills', view: 'skills' }
+      }
+      return state
+    case 'home':
+      return {
+        ...state,
+        module: 'home',
+        view: 'home',
+        selectedCommandBrand: null,
+      }
     case 'dashboard':
-      return { ...state, view: 'dashboard' }
+      // 「首页 → 技能」入口：直接进入 skills 列表视图。
+      // 旧实现曾使用 'dashboard' 作为 view，但首页入口与「首页视图」现在由 module='home' 表达。
+      return {
+        ...state,
+        module: 'skills',
+        view: 'skills',
+        selectedCommandBrand: null,
+      }
     case 'settings':
       return { ...state, view: 'settings' }
     case 'otherSkills':
       return { ...state, view: 'otherSkills' }
+    case 'cli':
+      return {
+        ...state,
+        module: 'commands',
+        view: 'cli',
+        selectedCommandBrand: null,
+      }
+    case 'editorView':
+      // editor 模块与 commands 模块无关联：清空 selectedCommandBrand 避免下次回到 commands 时看到过期 brand
+      return { ...state, module: 'editor', view: 'editor', selectedCommandBrand: null }
     case 'otherSkillsQuery':
       return { ...state, otherSkillsQuery: action.query }
     case 'editor':
@@ -64,6 +136,8 @@ export function reducer(state: UIState, action: Action): UIState {
       return { ...state, kindFilter: action.kind }
     case 'select':
       return { ...state, selectedId: action.id }
+    case 'selectCommandBrand':
+      return { ...state, selectedCommandBrand: action.brand }
     default:
       return state
   }
@@ -84,11 +158,6 @@ export default function App() {
       const [skills, s] = await Promise.all([fetchSkills(), fetchStats()])
       setItems(skills)
       setStats(s)
-      // 默认选中第一个技能，进入即可看到详情
-      if (skills.length > 0) {
-        console.log('[App] load: select first, id=', skills[0].id)
-        dispatch({ type: 'select', id: skills[0].id })
-      }
     } catch (e) {
       setError(e instanceof Error ? e.message : '加载失败')
     } finally {
@@ -123,9 +192,22 @@ export default function App() {
   }
 
   function renderMain() {
-    console.log('[App] renderMain view=', ui.view, 'selectedId=', ui.selectedId, 'items=', items.length, 'loading=', loading)
-    if (ui.module !== 'skills') {
-      return <ComingSoon title={ui.module === 'commands' ? '命令' : '编辑器'} />
+    if (ui.view === 'home') {
+      return (
+        <DashboardView
+          stats={stats}
+          items={items}
+          onOpenSkills={() => dispatch({ type: 'module', module: 'skills' })}
+          onOpenCommands={() => dispatch({ type: 'module', module: 'commands' })}
+          onOpenEditor={() => dispatch({ type: 'editorView' })}
+        />
+      )
+    }
+    if (ui.view === 'cli') {
+      return <CliCommandView selectedBrand={ui.selectedCommandBrand} />
+    }
+    if (ui.view === 'editor') {
+      return <EditorPlaceholder />
     }
     if (loading) return <p className="text-body-sm text-muted-foreground">加载中…</p>
     if (error) {
@@ -135,7 +217,6 @@ export default function App() {
         </div>
       )
     }
-    if (ui.view === 'dashboard') return <DashboardView stats={stats} items={items} />
     if (ui.view === 'otherSkills')
       return (
         <OtherSkillsView
@@ -169,12 +250,15 @@ export default function App() {
         reloading={reloading}
       />
       <Sidebar
+        module={ui.module}
         view={ui.view}
         editorFilter={ui.editorFilter}
+        selectedCommandBrand={ui.selectedCommandBrand}
         stats={stats}
-        onDashboard={() => dispatch({ type: 'dashboard' })}
+        onHome={() => dispatch({ type: 'home' })}
         onSettings={() => dispatch({ type: 'settings' })}
         onOtherSkills={() => dispatch({ type: 'otherSkills' })}
+        onCommandBrand={(brand) => dispatch({ type: 'selectCommandBrand', brand })}
         onEditor={(key) => dispatch({ type: 'editor', key })}
       />
       <main className="main-pane">{renderMain()}</main>

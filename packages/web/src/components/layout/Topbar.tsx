@@ -3,11 +3,11 @@ import { Button } from '@/components/ui/button'
 import { useTheme } from '@/hooks/useTheme'
 import { cn } from '@/lib/cn'
 
-export type ModuleKey = 'skills' | 'commands' | 'editor'
+export type ModuleKey = 'home' | 'skills' | 'commands' | 'editor'
 
 const MODULES: { key: ModuleKey; label: string; soon?: boolean }[] = [
-  { key: 'skills', label: '技能 Skills' },
-  { key: 'commands', label: '命令', soon: true },
+  { key: 'skills', label: '技能' },
+  { key: 'commands', label: '命令' },
   { key: 'editor', label: '编辑器', soon: true },
 ]
 
@@ -23,30 +23,32 @@ export function Topbar({ module, onModule, onReload, reloading }: TopbarProps) {
 
   return (
     <header className="topbar">
-      {/* 品牌 */}
-      <div className="flex items-center gap-2 pr-2">
+      {/* 品牌：点击回到首页（dashboard 入口） */}
+      <button
+        type="button"
+        onClick={() => onModule('home')}
+        className="flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-muted"
+        aria-label="返回首页"
+      >
         <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground">
           <Boxes size={18} />
         </span>
         <span className="text-body-sm font-bold text-foreground">HuHaa</span>
-      </div>
+      </button>
 
-      {/* 模块标签 */}
+      {/* 模块标签（编辑器以可点击占位形式呈现，但继续标注「待开发」） */}
       <nav className="flex items-center gap-1">
         {MODULES.map((m) => {
           const active = module === m.key
           return (
             <button
               key={m.key}
-              disabled={m.soon}
-              onClick={() => !m.soon && onModule(m.key)}
+              onClick={() => onModule(m.key)}
               className={cn(
                 'rounded-md px-3 py-1.5 text-body-sm transition-colors',
                 active
                   ? 'bg-primary-soft text-primary'
-                  : m.soon
-                    ? 'cursor-not-allowed text-muted-foreground/60'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
               {m.label}

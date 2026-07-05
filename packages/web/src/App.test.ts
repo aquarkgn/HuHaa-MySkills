@@ -1,11 +1,18 @@
 import { describe, it, expect } from 'vitest'
 import { reducer, initialState, type UIState } from './App'
 
-describe('App reducer 状态机（module × view）', () => {
+describe('App reducer 状态机（module × view，首页为默认）', () => {
+  it('默认进入首页（module=home, view=home）', () => {
+    expect(initialState.module).toBe('home')
+    expect(initialState.view).toBe('home')
+    expect(initialState.selectedCommandBrand).toBeNull()
+  })
+
   it('editor 动作进入技能视图并重置 kind/选中（避免脏筛选）', () => {
     const dirty: UIState = {
       ...initialState,
-      view: 'dashboard',
+      module: 'home',
+      view: 'home',
       kindFilter: 'skill',
       selectedId: 'abc',
     }
@@ -20,10 +27,17 @@ describe('App reducer 状态机（module × view）', () => {
     expect(reducer(initialState, { type: 'editor', key: null }).editorFilter).toBeNull()
   })
 
-  it('dashboard / settings 切换视图', () => {
+  it('dashboard / settings 切换视图（保持模块语义）', () => {
+    // settings 不改 module，但 view=settings
     expect(reducer(initialState, { type: 'settings' }).view).toBe('settings')
-    const back = reducer(reducer(initialState, { type: 'settings' }), { type: 'dashboard' })
-    expect(back.view).toBe('dashboard')
+    // 「首页 → 技能」入口：直接进入 skills 视图，并清空 selectedCommandBrand
+    const after = reducer(
+      { ...initialState, selectedCommandBrand: 'claude' },
+      { type: 'dashboard' },
+    )
+    expect(after.view).toBe('skills')
+    expect(after.module).toBe('skills')
+    expect(after.selectedCommandBrand).toBeNull()
   })
 
   it('query / kind / select 只改对应字段', () => {
@@ -32,9 +46,70 @@ describe('App reducer 状态机（module × view）', () => {
     expect(reducer(initialState, { type: 'select', id: 'x1' }).selectedId).toBe('x1')
   })
 
-  it('module 切换不丢其它状态', () => {
-    const s = reducer({ ...initialState, query: 'q' }, { type: 'module', module: 'commands' })
-    expect(s.module).toBe('commands')
-    expect(s.query).toBe('q')
+  it('module 切换到 commands 重置 selectedCommandBrand 为 null', () => {
+    const dirty: UIState = { ...initialState, selectedCommandBrand: 'gstach' }
+    const next = reducer(dirty, { type: 'module', module: 'commands' })
+    expect(next.module).toBe('commands')
+    expect(next.view).toBe('cli')
+    expect(next.selectedCommandBrand).toBeNull()
+  })
+
+  it('cli 动作进入命令模块并清空品牌选中；切回 skills 时清空 selectedCommandBrand', () => {
+    const dirty: UIState = { ...initialState, selectedCommandBrand: 'hermes' }
+    const cli = reducer(dirty, { type: 'cli' })
+    expect(cli.module).toBe('commands')
+    expect(cli.view).toBe('cli')
+    expect(cli.selectedCommandBrand).toBeNull()
+    const skills = reducer(
+      { ...cli, selectedCommandBrand: 'codex' },
+      { type: 'module', module: 'skills' },
+    )
+    expect(skills.module).toBe('skills')
+    expect(skills.view).toBe('skills')
+    expect(skills.selectedCommandBrand).toBeNull()
+  })
+
+  it('selectCommandBrand 设置指定品牌；再 home 动作清空', () => {
+    const s1 = reducer(initialState, { type: 'selectCommandBrand', brand: 'claude' })
+    expect(s1.selectedCommandBrand).toBe('claude')
+    const s2 = reducer(s1, { type: 'selectCommandBrand', brand: null })
+    expect(s2.selectedCommandBrand).toBeNull()
+    const s3 = reducer(s1, { type: 'home' })
+    expect(s3.module).toBe('home')
+    expect(s3.selectedCommandBrand).toBeNull()
+  })
+
+  it('editorView 进入编辑器占位，保持模块与视图一致', () => {
+    const next = reducer(initialState, { type: 'editorView' })
+    expect(next.module).toBe('editor')
+    expect(next.view).toBe('editor')
+  })
+
+  it('editorView 从 commands 模块进入：清空 selectedCommandBrand 防止下次回到 commands 看到过期 brand', () => {
+    const dirty: UIState = { ...initialState, selectedCommandBrand: 'codex' }
+    const next = reducer(dirty, { type: 'editorView' })
+    expect(next.module).toBe('editor')
+    expect(next.view).toBe('editor')
+    expect(next.selectedCommandBrand).toBeNull()
+  })
+
+  it('settings / otherSkills 视图切换保留 selectedCommandBrand（同模块内视图切换）', () => {
+    // 设计契约：从 commands 进入 settings 后回到 commands（通过 module 切换）会重置 brand，
+    // 但 settings/otherSkills 动作本身不重置 brand，避免 module 维度冗余清空。
+    const dirty: UIState = { ...initialState, selectedCommandBrand: 'hermes' }
+    const settings = reducer(dirty, { type: 'settings' })
+    expect(settings.view).toBe('settings')
+    expect(settings.selectedCommandBrand).toBe('hermes')
+    const otherSkills = reducer(dirty, { type: 'otherSkills' })
+    expect(otherSkills.view).toBe('otherSkills')
+    expect(otherSkills.selectedCommandBrand).toBe('hermes')
+  })
+
+  it('Topbar module 切到 home 清空 selectedCommandBrand', () => {
+    const dirty: UIState = { ...initialState, selectedCommandBrand: 'claude' }
+    const next = reducer(dirty, { type: 'module', module: 'home' })
+    expect(next.module).toBe('home')
+    expect(next.view).toBe('home')
+    expect(next.selectedCommandBrand).toBeNull()
   })
 })

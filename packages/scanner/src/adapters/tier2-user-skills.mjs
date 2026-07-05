@@ -68,7 +68,7 @@ export async function scanTier2UserSkills(options = {}) {
           try {
             const skill = parseSkillFile({
               abs: filePath,
-              source: 'tier2-user',
+              editor: 'my-skills',
               limits: mergedLimits,
             });
             if (skill) {
@@ -96,7 +96,7 @@ export async function scanTier2UserSkills(options = {}) {
  * 解析单个技能文件
  * @private
  */
-function parseSkillFile({ abs, source, limits }) {
+function parseSkillFile({ abs, editor, limits }) {
   const { text, error } = readFileSafe(abs, limits.maxFileBytes);
   if (error) return null;
 
@@ -128,7 +128,8 @@ function parseSkillFile({ abs, source, limits }) {
   return {
     id,
     kind: 'skill',
-    source,
+    source: 'tier2-user',
+    editor,
     name,
     description,
     category,
