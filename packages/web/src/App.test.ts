@@ -35,6 +35,16 @@ describe('App reducer 状态机（module × view）', () => {
   it('module 切换不丢其它状态', () => {
     const s = reducer({ ...initialState, query: 'q' }, { type: 'module', module: 'commands' })
     expect(s.module).toBe('commands')
+    expect(s.view).toBe('cli')
     expect(s.query).toBe('q')
+  })
+
+  it('cli 动作进入命令模块，切回 skills 时回到技能视图', () => {
+    const cli = reducer(initialState, { type: 'cli' })
+    expect(cli.module).toBe('commands')
+    expect(cli.view).toBe('cli')
+    const skills = reducer(cli, { type: 'module', module: 'skills' })
+    expect(skills.module).toBe('skills')
+    expect(skills.view).toBe('skills')
   })
 })

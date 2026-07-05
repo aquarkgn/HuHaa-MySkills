@@ -7,7 +7,7 @@ export type ModuleKey = 'skills' | 'commands' | 'editor'
 
 const MODULES: { key: ModuleKey; label: string; soon?: boolean }[] = [
   { key: 'skills', label: '技能 Skills' },
-  { key: 'commands', label: '命令', soon: true },
+  { key: 'commands', label: '命令' },
   { key: 'editor', label: '编辑器', soon: true },
 ]
 

@@ -5,12 +5,13 @@ import { DashboardView } from '@/components/views/DashboardView'
 import { SkillsView } from '@/components/views/SkillsView'
 import { SettingsView } from '@/components/views/SettingsView'
 import { OtherSkillsView } from '@/components/views/OtherSkillsView'
+import { CliCommandView } from '@/components/views/CliCommandView'
 import { ComingSoon } from '@/components/ComingSoon'
 import { useLiveReload } from '@/hooks/useLiveReload'
 import { fetchSkills, fetchStats, reload } from '@/lib/api'
 import type { SkillItem, Stats } from '@/types'
 
-export type View = 'dashboard' | 'skills' | 'otherSkills' | 'settings'
+export type View = 'dashboard' | 'skills' | 'otherSkills' | 'settings' | 'cli'
 
 export interface UIState {
   module: ModuleKey
@@ -27,6 +28,7 @@ export type Action =
   | { type: 'dashboard' }
   | { type: 'settings' }
   | { type: 'otherSkills' }
+  | { type: 'cli' }
   | { type: 'otherSkillsQuery'; query: string }
   | { type: 'editor'; key: string | null }
   | { type: 'query'; query: string }
@@ -46,13 +48,17 @@ export const initialState: UIState = {
 export function reducer(state: UIState, action: Action): UIState {
   switch (action.type) {
     case 'module':
+      if (action.module === 'commands') return { ...state, module: 'commands', view: 'cli' }
+      if (action.module === 'skills' && state.view === 'cli') return { ...state, module: 'skills', view: 'skills' }
       return { ...state, module: action.module }
     case 'dashboard':
-      return { ...state, view: 'dashboard' }
+      return { ...state, module: 'skills', view: 'dashboard' }
     case 'settings':
-      return { ...state, view: 'settings' }
+      return { ...state, module: 'skills', view: 'settings' }
     case 'otherSkills':
-      return { ...state, view: 'otherSkills' }
+      return { ...state, module: 'skills', view: 'otherSkills' }
+    case 'cli':
+      return { ...state, module: 'commands', view: 'cli' }
     case 'otherSkillsQuery':
       return { ...state, otherSkillsQuery: action.query }
     case 'editor':
@@ -124,6 +130,7 @@ export default function App() {
 
   function renderMain() {
     console.log('[App] renderMain view=', ui.view, 'selectedId=', ui.selectedId, 'items=', items.length, 'loading=', loading)
+    if (ui.view === 'cli') return <CliCommandView />
     if (ui.module !== 'skills') {
       return <ComingSoon title={ui.module === 'commands' ? '命令' : '编辑器'} />
     }
@@ -175,6 +182,7 @@ export default function App() {
         onDashboard={() => dispatch({ type: 'dashboard' })}
         onSettings={() => dispatch({ type: 'settings' })}
         onOtherSkills={() => dispatch({ type: 'otherSkills' })}
+        onCli={() => dispatch({ type: 'cli' })}
         onEditor={(key) => dispatch({ type: 'editor', key })}
       />
       <main className="main-pane">{renderMain()}</main>

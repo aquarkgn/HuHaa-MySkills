@@ -10,7 +10,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'huhaa-verify-'));
 const oldHome = process.env.HUHAA_HOME;
+const oldUserHome = process.env.HOME;
 process.env.HUHAA_HOME = path.join(tempRoot, 'home');
+process.env.HOME = process.env.HUHAA_HOME;
 
 const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
 const testFiles = [
@@ -40,7 +42,7 @@ async function main() {
     run('npm', ['run', 'test:web']);
     run('node', ['--test', ...testFiles]);
 
-    const skillRoot = path.join(tempRoot, 'skills');
+    const skillRoot = path.join(process.env.HOME, '.hermes', 'skills');
     write(path.join(skillRoot, 'demo', 'verify-skill', 'SKILL.md'), `---
 name: verify-skill
 description: Verify smoke skill
@@ -83,7 +85,7 @@ limits:
 
       const stats = await fetchJson(`${base}/api/stats`);
       assert.equal(stats.total, 1);
-      assert.equal(stats.bySource.hermes, 1);
+      assert.equal(stats.byBrand.hermes, 1);
 
       const reload = await fetchJson(`${base}/api/reload`, { method: 'POST' });
       assert.equal(reload.ok, true);
@@ -111,6 +113,8 @@ limits:
   } finally {
     if (oldHome == null) delete process.env.HUHAA_HOME;
     else process.env.HUHAA_HOME = oldHome;
+    if (oldUserHome == null) delete process.env.HOME;
+    else process.env.HOME = oldUserHome;
     fs.rmSync(tempRoot, { recursive: true, force: true });
   }
 }

@@ -70,3 +70,29 @@ export interface Stats {
   byBrand: Record<string, number>
   labels?: Record<string, unknown>
 }
+
+export interface CliCommandFlag {
+  name: string
+  args?: string
+  desc_zh: string
+  raw: string
+}
+
+export interface CliCommandGroup {
+  name_zh: string
+  source: 'inferred' | 'explicit'
+  flags: CliCommandFlag[]
+}
+
+export interface CliCommandSubcommand {
+  name: string
+  desc_zh: string
+}
+
+export interface CliCommand {
+  brand: string
+  version?: string
+  summary_zh: string
+  groups: CliCommandGroup[]
+  subcommands?: CliCommandSubcommand[]
+}

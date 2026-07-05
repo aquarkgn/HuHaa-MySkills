@@ -28,6 +28,7 @@ describe('Sidebar editor 导航（D2 + C6 临界缺口）', () => {
         onDashboard={noop}
         onSettings={noop}
         onOtherSkills={noop}
+        onCli={noop}
         onEditor={noop}
       />
     )
@@ -48,6 +49,7 @@ describe('Sidebar editor 导航（D2 + C6 临界缺口）', () => {
         onDashboard={noop}
         onSettings={noop}
         onOtherSkills={noop}
+        onCli={noop}
         onEditor={noop}
       />
     )
@@ -65,10 +67,29 @@ describe('Sidebar editor 导航（D2 + C6 临界缺口）', () => {
         onDashboard={noop}
         onSettings={noop}
         onOtherSkills={noop}
+        onCli={noop}
         onEditor={onEditor}
       />
     )
     fireEvent.click(screen.getByText('Claude Code'))
     expect(onEditor).toHaveBeenCalledWith('Claude Code')
+  })
+
+  it('点击 CLI 命令入口回调 onCli', () => {
+    const onCli = vi.fn()
+    render(
+      <Sidebar
+        view="skills"
+        editorFilter={null}
+        stats={statsWith({ 'Claude Code': 3 })}
+        onDashboard={noop}
+        onSettings={noop}
+        onOtherSkills={noop}
+        onCli={onCli}
+        onEditor={noop}
+      />
+    )
+    fireEvent.click(screen.getByText('CLI 命令'))
+    expect(onCli).toHaveBeenCalledTimes(1)
   })
 })
