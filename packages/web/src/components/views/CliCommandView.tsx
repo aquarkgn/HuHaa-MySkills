@@ -16,6 +16,7 @@ import {
 import { getSubcommandHelp, getSubcommandHelpSearchText } from '@/lib/commandHelp'
 import type { CliCommand, CliCommandGroup, CliCommandSubcommand, CliSubcommandHelp } from '@/types'
 import { CommandIcon } from './CommandIcon'
+import { SubcommandRelatedItemsPanel } from './cli/SubcommandRelatedItemsPanel'
 
 type CommandDetailTab = 'flags' | 'subcommands' | 'raw'
 
@@ -189,13 +190,16 @@ function HelpPanel({ brand, subcommand }: { brand: string; subcommand: CliComman
 
   if (!help) {
     return (
-      <div className="rounded-md border border-dashed border-border bg-background px-4 py-4">
-        <div className="font-mono text-body-sm font-semibold text-foreground">{subcommand.name}</div>
-        <p className="mt-1 text-body-sm text-muted-foreground">{subcommand.desc_zh}</p>
-        <p className="mt-3 text-caption text-muted-foreground">
-          该子命令暂未采集详细帮助。当前可查看摘要，后续补充 --help 详情。
-        </p>
-      </div>
+      <>
+        <div className="rounded-md border border-dashed border-border bg-background px-4 py-4">
+          <div className="font-mono text-body-sm font-semibold text-foreground">{subcommand.name}</div>
+          <p className="mt-1 text-body-sm text-muted-foreground">{subcommand.desc_zh}</p>
+          <p className="mt-3 text-caption text-muted-foreground">
+            该子命令暂未采集详细帮助。当前可查看摘要，后续补充 --help 详情。
+          </p>
+        </div>
+        <SubcommandRelatedItemsPanel brand={brand} subcommand={subcommand.name} />
+      </>
     )
   }
 
@@ -263,6 +267,8 @@ function HelpPanel({ brand, subcommand }: { brand: string; subcommand: CliComman
           </pre>
         </details>
       )}
+
+      <SubcommandRelatedItemsPanel brand={brand} subcommand={subcommand.name} />
     </div>
   )
 }

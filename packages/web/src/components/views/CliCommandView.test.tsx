@@ -1,7 +1,11 @@
-import { describe, it, expect } from 'vitest'
+import { afterEach, describe, it, expect, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { CliCommandView } from './CliCommandView'
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 describe('CliCommandView', () => {
   it('selectedBrand=null 时渲染全部 5 个 CLI 命令与搜索框', () => {
@@ -122,7 +126,8 @@ describe('CliCommandView', () => {
     expect(within(section).getByText(/暂未采集详细帮助/)).toBeInTheDocument()
   })
 
-  it('gstack list 子命令可通过 tab 查看帮助详情', () => {
+  it('gstack list 子命令可通过 tab 查看帮助详情', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: true, json: async () => [] } as Response)))
     render(<CliCommandView selectedBrand="gstack" />)
 
     const section = screen.getByRole('heading', { name: 'gstack' }).closest('section')
@@ -136,6 +141,7 @@ describe('CliCommandView', () => {
     expect(within(section).getByRole('heading', { name: 'gstack list' })).toBeInTheDocument()
     expect(within(section).getAllByText(/npx @garrytan\/gstack list/).length).toBeGreaterThan(0)
     expect(within(section).getAllByText('--host').length).toBeGreaterThan(0)
+    await waitFor(() => expect(within(section).getByText('gstack 工具列表')).toBeInTheDocument())
   })
 
 
@@ -170,6 +176,153 @@ describe('CliCommandView', () => {
     expect(screen.getByRole('heading', { name: 'code' })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: /^serve-web/ })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'claude' })).not.toBeInTheDocument()
+  })
+
+
+  it('非 gstack list 子命令不展示关联对象区域，也不请求技能接口', () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<CliCommandView selectedBrand="gstack" />)
+    const section = screen.getByRole('heading', { name: 'gstack' }).closest('section')
+    expect(section).toBeInTheDocument()
+    if (!section) return
+
+    fireEvent.click(within(section).getByRole('tab', { name: /子命令/ }))
+    fireEvent.click(within(section).getByRole('tab', { name: /^install/ }))
+
+    expect(within(section).queryByText('gstack 工具列表')).not.toBeInTheDocument()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('gstack list 展示关联工具列表并支持中文和英文搜索', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url === '/api/skills') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ([
+            {
+              id: 'skill-qa',
+              kind: 'skill',
+              source: 'claude-code',
+              name: 'qa',
+              description: 'Systematically QA test a web application.',
+              i18n: { zh: { description: '自动化 QA 测试 Web 应用。' } },
+              paths: {
+                abs: '/Users/mac/.claude/skills/gstack/qa/SKILL.md',
+                rootKind: 'home',
+              },
+            },
+          ]),
+        } as Response)
+      }
+      return Promise.resolve({ ok: false, json: async () => ({ error: 'not found' }) } as Response)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<CliCommandView selectedBrand="gstack" />)
+    const section = screen.getByRole('heading', { name: 'gstack' }).closest('section')
+    expect(section).toBeInTheDocument()
+    if (!section) return
+
+    fireEvent.click(within(section).getByRole('tab', { name: /子命令/ }))
+    fireEvent.click(within(section).getByRole('tab', { name: /^list/ }))
+
+    await waitFor(() => expect(within(section).getByText('gstack 工具列表')).toBeInTheDocument())
+    expect(within(section).getByText('/qa')).toBeInTheDocument()
+    expect(within(section).getByText('自动化 QA 测试 Web 应用。')).toBeInTheDocument()
+    expect(within(section).getByText(/Systematically QA test/)).toBeInTheDocument()
+
+    fireEvent.change(within(section).getByPlaceholderText(/搜索工具/), { target: { value: '自动化' } })
+    expect(within(section).getByText('/qa')).toBeInTheDocument()
+
+    fireEvent.change(within(section).getByPlaceholderText(/搜索工具/), { target: { value: 'Systematically' } })
+    expect(within(section).getByText('/qa')).toBeInTheDocument()
+  })
+
+  it('展开 gstack 工具卡片后按需加载并展示 SKILL.md 关键字段', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url === '/api/skills') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ([
+            {
+              id: 'skill-ceo',
+              kind: 'skill',
+              source: 'claude-code',
+              name: 'plan-ceo-review',
+              description: 'CEO/founder-mode plan review.',
+              paths: {
+                abs: '/Users/mac/.claude/skills/gstack/plan-ceo-review/SKILL.md',
+                rootKind: 'home',
+              },
+            },
+          ]),
+        } as Response)
+      }
+      if (url === '/api/skills/skill-ceo') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            id: 'skill-ceo',
+            kind: 'skill',
+            source: 'claude-code',
+            name: 'plan-ceo-review',
+            description: 'CEO/founder-mode plan review.',
+            raw: `---
+name: plan-ceo-review
+allowed-tools:
+  - Read
+  - WebSearch
+triggers:
+  - think bigger
+benefits-from: [office-hours]
+---
+
+## When to invoke this skill
+Rethink the problem.
+`,
+          }),
+        } as Response)
+      }
+      return Promise.resolve({ ok: false, json: async () => ({ error: 'not found' }) } as Response)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<CliCommandView selectedBrand="gstack" />)
+    const section = screen.getByRole('heading', { name: 'gstack' }).closest('section')
+    expect(section).toBeInTheDocument()
+    if (!section) return
+
+    fireEvent.click(within(section).getByRole('tab', { name: /子命令/ }))
+    fireEvent.click(within(section).getByRole('tab', { name: /^list/ }))
+
+    await waitFor(() => expect(within(section).getByText('/plan-ceo-review')).toBeInTheDocument())
+    fireEvent.click(within(section).getByRole('button', { name: /\/plan-ceo-review/ }))
+
+    await waitFor(() => expect(within(section).getByText('Rethink the problem.')).toBeInTheDocument())
+    expect(within(section).getByText('think bigger')).toBeInTheDocument()
+    expect(within(section).getByText('Read')).toBeInTheDocument()
+    expect(within(section).getByText('WebSearch')).toBeInTheDocument()
+    expect(within(section).getByText('office-hours')).toBeInTheDocument()
+    expect(within(section).getByText('查看原始 SKILL.md')).toBeInTheDocument()
+  })
+
+  it('gstack list 关联对象加载失败时显示降级文案', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: false, json: async () => ({}) } as Response)))
+
+    render(<CliCommandView selectedBrand="gstack" />)
+    const section = screen.getByRole('heading', { name: 'gstack' }).closest('section')
+    expect(section).toBeInTheDocument()
+    if (!section) return
+
+    fireEvent.click(within(section).getByRole('tab', { name: /子命令/ }))
+    fireEvent.click(within(section).getByRole('tab', { name: /^list/ }))
+
+    await waitFor(() => {
+      expect(within(section).getByText(/关联对象加载失败/)).toBeInTheDocument()
+      expect(within(section).getByText(/子命令 help 仍可正常查看/)).toBeInTheDocument()
+    })
   })
 
 })
