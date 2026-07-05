@@ -1,6 +1,6 @@
-# CLAUDE.md — 项目 AI 助手协作规则
+# AGENTS.md — 项目 AI 助手协作规则
 
-> 本项目的 Claude Code 协作规范。详细规范查看 **[docs/**](docs/)** 目录下的文件。
+> 本项目的 Codex 协作规范。详细规范查看 **[docs/**](docs/)** 目录下的文件。
 
 - /Users/mac/Project/HuHaa-MySkills/docs/Frontend-Spec.md — 前端规范文档
 - /Users/mac/Project/HuHaa-MySkills/docs/scan_skills_rules.md — 扫描技能规则
@@ -66,7 +66,7 @@ refactor(types): 统一 API 类型定义
 ```
 HuHaa-MySkills/
 ├── README.md                    ✅ 项目导航文档（仅此）
-├── CLAUDE.md                    ✅ AI 协作规则（仅此）
+├── AGENTS.md                    ✅ AI 协作规则（仅此）
 ├── package.json                 ✅ 项目依赖配置
 ├── package-lock.json            ✅ 依赖锁定
 ├── .gitignore                   ✅ Git 配置
@@ -110,7 +110,7 @@ HuHaa-MySkills/
 
 1. **根目录仅允许两个文档文件**
    - ✅ `README.md` — 项目导航（指向 docs/）
-   - ✅ `CLAUDE.md` — AI 协作规则
+   - ✅ `AGENTS.md` — AI 协作规则
    - ❌ 其他所有文档禁止在根目录
 
 2. **docs/ 目录仅放规范文档**
@@ -142,7 +142,7 @@ HuHaa-MySkills/
    # 提交前必须检查根目录仅有这两个 .md 文件
    ls -1 *.md 2>/dev/null | sort
    # 输出必须是:
-   #   CLAUDE.md
+   #   AGENTS.md
    #   README.md
    # 共 2 个。不能更多、不能更少
    

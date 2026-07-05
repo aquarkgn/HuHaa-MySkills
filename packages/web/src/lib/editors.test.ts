@@ -7,10 +7,14 @@ describe('editors 映射（D2 主轴 = editor）', () => {
     expect(getEditorMeta('codex').color).toBe('#10A37F')
     expect(getEditorMeta('Hermes Agent').color).toBe('#4A5FC7')
     expect(getEditorMeta('Cursor').color).toBe('#1F2937')
+    expect(getEditorMeta('my-skills').color).toBe('#10B981')
+    expect(getEditorMeta('other-skills').color).toBe('#8B5CF6')
   })
 
-  it('label 透传原值，(none) → 未分类', () => {
+  it('label 透传原值，已知内置来源转中文，(none) → 未分类', () => {
     expect(getEditorMeta('Claude Code').label).toBe('Claude Code')
+    expect(getEditorMeta('my-skills').label).toBe('我的技能')
+    expect(getEditorMeta('other-skills').label).toBe('其它技能')
     expect(getEditorMeta('(none)').label).toBe('未分类')
     expect(editorLabel('Cursor')).toBe('Cursor')
     expect(editorLabel('(none)')).toBe('未分类')

@@ -33,6 +33,8 @@ interface Rule {
 
 // 关键字优先匹配（顺序敏感：更具体的放前面）
 const RULES: Rule[] = [
+  { test: /^my-skills$/i, color: '#10B981', icon: Boxes },
+  { test: /^other-skills$/i, color: '#8B5CF6', icon: Sparkles },
   { test: /claude|anthropic/i, color: '#D97757', icon: Sparkles },
   { test: /codex|openai/i, color: '#10A37F', icon: Cpu },
   { test: /hermes/i, color: '#4A5FC7', icon: Bot },
@@ -45,6 +47,10 @@ const RULES: Rule[] = [
 ]
 
 const FALLBACK: Omit<EditorMeta, 'label'> = { color: '#6B7280', icon: Boxes }
+const LABELS: Record<string, string> = {
+  'my-skills': '我的技能',
+  'other-skills': '其它技能',
+}
 
 /** 是否为「无归属」桶（C6）——调用方据此过滤或标注「未分类」。 */
 export function isNoneEditor(key: string): boolean {
@@ -58,7 +64,8 @@ export function itemEditorKey(it: SkillItem): string {
 
 /** 把原始 editor key 转为展示用 label（(none) → 未分类）。 */
 export function editorLabel(key: string): string {
-  return isNoneEditor(key) ? '未分类' : key
+  if (isNoneEditor(key)) return '未分类'
+  return LABELS[key.toLowerCase()] ?? key
 }
 
 export function getEditorMeta(key: string): EditorMeta {

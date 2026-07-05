@@ -68,7 +68,7 @@ export async function scanTier3OtherSkills(options = {}) {
         try {
           const skill = parseSkillFile({
             abs: filePath,
-            source: 'tier3-other',
+            editor: 'other-skills',
             limits: mergedLimits,
             location: location.name,
           });
@@ -94,7 +94,7 @@ export async function scanTier3OtherSkills(options = {}) {
  * 解析单个技能文件
  * @private
  */
-function parseSkillFile({ abs, source, limits, location }) {
+function parseSkillFile({ abs, editor, limits, location }) {
   const { text, error } = readFileSafe(abs, limits.maxFileBytes);
   if (error) return null;
 
@@ -126,7 +126,8 @@ function parseSkillFile({ abs, source, limits, location }) {
   return {
     id,
     kind: 'skill',
-    source,
+    source: 'tier3-other',
+    editor,
     name,
     description,
     category,
