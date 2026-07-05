@@ -1,5 +1,8 @@
-export async function translateSkill(skill, targetLang = 'zh') {
-  if (targetLang !== 'zh' || skill.i18n?.name_zh) return skill;
+// 旧模式：整技能对象翻译，依赖 ANTHROPIC_API_KEY（需密钥，按全局规则使用前需询问）。
+// 推荐使用 packages/server/src/index.mjs 的 translateText（Google 免费 + md5 缓存）。
+// 本模块保留以兼容 /api/translate 的 id 旧模式调用，新代码勿直接依赖。
+export async function translateSkill(skill, targetLang = 'zh-CN') {
+  if (targetLang !== 'zh-CN' || skill.i18n?.name_zh) return skill;
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {

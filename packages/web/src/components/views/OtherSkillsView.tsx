@@ -1,29 +1,59 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, ExternalLink, Tag, Code } from 'lucide-react'
 import { useOtherSkills, getSkillEmoji, type OtherSkillsOptions } from '@/hooks/useOtherSkills'
+import { translateText } from '@/lib/api'
+import { isTranslateDisplayEnabled } from '@/lib/i18n'
+import { isIconBlacklisted, markIconMissing } from '@/lib/iconBlacklist'
 import { cn } from '@/lib/cn'
 import type { OtherSkill } from '@/types/other-skill'
 
 /**
  * 技能图标 —— 优先展示真实应用图标 (iconUrl)，加载失败回退 emoji。
  * 对标 Pearcleaner 的真实应用图标展示。
+ * 黑名单优化：已知无图标的 brand 直接用 emoji，避免 404 闪烁。
+ * 加载动画：img 加载期间显示半透明 emoji placeholder。
  */
 function SkillIcon({ skill, size = 20 }: { skill: OtherSkill; size?: number }) {
   const [failed, setFailed] = useState(false)
+  const [loaded, setLoaded] = useState(false)
   const emoji = getSkillEmoji(skill)
+  // brand 变化时重置加载状态，避免旧 loaded 导致新图标加载期间无 placeholder
+  useEffect(() => {
+    setFailed(false)
+    setLoaded(false)
+  }, [skill.brand])
+  const blacklisted = skill.brand ? isIconBlacklisted(skill.brand) : false
+  const showImg = skill.iconUrl && !failed && !blacklisted
 
-  if (skill.iconUrl && !failed) {
+  if (showImg) {
     return (
-      <img
-        src={skill.iconUrl}
-        alt=""
-        width={size}
-        height={size}
-        loading="lazy"
-        onError={() => setFailed(true)}
-        className="rounded-[4px] object-contain shrink-0"
+      <span
+        className="relative inline-flex items-center justify-center shrink-0"
         style={{ width: size, height: size }}
-      />
+      >
+        {!loaded && (
+          <span
+            className="absolute inset-0 flex items-center justify-center opacity-50 animate-pulse"
+            style={{ fontSize: size * 0.85 }}
+          >
+            {emoji}
+          </span>
+        )}
+        <img
+          src={skill.iconUrl}
+          alt=""
+          width={size}
+          height={size}
+          loading="lazy"
+          onLoad={() => setLoaded(true)}
+          onError={() => {
+            if (skill.brand) markIconMissing(skill.brand)
+            setFailed(true)
+          }}
+          className="rounded-[4px] object-contain shrink-0"
+          style={{ width: size, height: size }}
+        />
+      </span>
     )
   }
   return (
@@ -57,6 +87,9 @@ export function OtherSkillsView({
   const [expanded, setExpanded] = useState<Set<string>>(
     new Set(groups.map((g) => g.groupKey))
   )
+  const [translateEnabled] = useState(() => isTranslateDisplayEnabled())
+  const [tabMode, setTabMode] = useState<'zh' | 'raw'>(translateEnabled ? 'zh' : 'raw')
+  const [descZh, setDescZh] = useState('')
 
   const toggleExpand = (groupKey: string) => {
     const next = new Set(expanded)
@@ -71,6 +104,26 @@ export function OtherSkillsView({
   const selectedSkill: OtherSkill | null = selectedId
     ? items.find((skill) => skill.id === selectedId) ?? null
     : null
+
+  // 选中技能变化时按需翻译 description（翻译展示开启时）
+  useEffect(() => {
+    setDescZh('')
+    setTabMode(translateEnabled ? 'zh' : 'raw')
+    if (!selectedSkill?.description || !translateEnabled) return
+    let alive = true
+    translateText(selectedSkill.description)
+      .then((res) => {
+        if (alive && res.ok && res.result && res.result !== selectedSkill.description) {
+          setDescZh(res.result)
+        }
+      })
+      .catch(() => {
+        // 翻译失败回退原文
+      })
+    return () => {
+      alive = false
+    }
+  }, [selectedSkill?.id, selectedSkill?.description, translateEnabled])
 
   return (
     <div className="flex h-full gap-4 p-4">
@@ -158,9 +211,33 @@ export function OtherSkillsView({
               <h2 className="text-heading-md">{selectedSkill.title || selectedSkill.name}</h2>
             </div>
             {selectedSkill.description && (
-              <p className="mt-2 text-body-sm text-muted-foreground">
-                {selectedSkill.description}
-              </p>
+              <div className="mt-2">
+                {translateEnabled && (
+                  <div className="mb-2 inline-flex rounded-md bg-muted p-1 text-caption">
+                    <button
+                      onClick={() => setTabMode('zh')}
+                      className={cn(
+                        'rounded-sm px-3 py-1 transition-colors',
+                        tabMode === 'zh' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground',
+                      )}
+                    >
+                      中文
+                    </button>
+                    <button
+                      onClick={() => setTabMode('raw')}
+                      className={cn(
+                        'rounded-sm px-3 py-1 transition-colors',
+                        tabMode === 'raw' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground',
+                      )}
+                    >
+                      原文
+                    </button>
+                  </div>
+                )}
+                <p className="text-body-sm text-muted-foreground">
+                  {tabMode === 'zh' && descZh ? descZh : selectedSkill.description}
+                </p>
+              </div>
             )}
           </div>
 

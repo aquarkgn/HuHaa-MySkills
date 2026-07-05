@@ -35,7 +35,7 @@ export type Action =
 
 export const initialState: UIState = {
   module: 'skills',
-  view: 'dashboard',
+  view: 'skills',
   editorFilter: null,
   kindFilter: null,
   query: '',
@@ -84,6 +84,11 @@ export default function App() {
       const [skills, s] = await Promise.all([fetchSkills(), fetchStats()])
       setItems(skills)
       setStats(s)
+      // 默认选中第一个技能，进入即可看到详情
+      if (skills.length > 0) {
+        console.log('[App] load: select first, id=', skills[0].id)
+        dispatch({ type: 'select', id: skills[0].id })
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : '加载失败')
     } finally {
@@ -118,6 +123,7 @@ export default function App() {
   }
 
   function renderMain() {
+    console.log('[App] renderMain view=', ui.view, 'selectedId=', ui.selectedId, 'items=', items.length, 'loading=', loading)
     if (ui.module !== 'skills') {
       return <ComingSoon title={ui.module === 'commands' ? '命令' : '编辑器'} />
     }

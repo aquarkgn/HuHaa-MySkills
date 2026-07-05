@@ -8,6 +8,13 @@ import Fastify from 'fastify';
 import chokidar from 'chokidar';
 import { translate } from 'google-translate-api-x';
 import { LABELS } from './labels.mjs';
+import { isChinese, detectLanguage } from './langdetect.mjs';
+import { getCached, setCached, flush as flushTranslateCache } from './translate-cache.mjs';
+import { setGlobalDispatcher, EnvHttpProxyAgent } from 'undici';
+
+// 尊重系统代理环境变量（HTTP_PROXY / HTTPS_PROXY / NO_PROXY）。
+// Node 内置 fetch 不读这些变量，需显式配置 dispatcher，否则 Google 翻译在代理环境下连接超时。
+setGlobalDispatcher(new EnvHttpProxyAgent());
 
 const PHASE = 'P6';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -30,7 +37,7 @@ function readPackageVersion() {
 }
 
 /**
- * 翻译文本
+ * 翻译文本 —— 中文短路 + md5 缓存 + Google 翻译，失败降级原文本。
  * @param {string} text - 要翻译的文本
  * @param {string} targetLang - 目标语言 (默认: 'zh-CN')
  * @returns {Promise<string>} 翻译结果
@@ -38,11 +45,30 @@ function readPackageVersion() {
 async function translateText(text, targetLang = 'zh-CN') {
   if (!text || !text.trim()) return '';
 
+  // 1. 语言判定：已是中文则直接返回，省一次外网请求
+  if (isChinese(text)) return text;
+
+  // 2. 查缓存（命中即返回，跨技能共享）
+  const cached = getCached(text);
+  if (cached) return cached.result;
+
+  // 3. 调 Google 翻译（免费），结果写缓存
+  // 加 8s 超时：google-translate-api-x 默认无超时，Google 偶发慢/超时会让请求
+  // 长期 pending，占满浏览器连接池（HTTP/1.1 同域名 6 并发），导致后续
+  // /api/skills/:id 排队，前端"加载正文…"一直 loading。超时后降级返回原文。
   try {
-    const result = await translate(text, {
-      to: targetLang === 'zh-CN' ? 'zh' : targetLang,
-    });
-    return result.text || text;
+    const result = await Promise.race([
+      translate(text, { to: targetLang }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('translate timeout')), 8000),
+      ),
+    ]);
+    const translated = result.text || text;
+    // google-translate-api-x 偶发不返回 from.language.code（部分文本 Google 无法判定源语言），
+    // 用本地 detectLanguage 兜底，避免 from 字段落盘为 'unknown'。
+    const from = result.from?.language?.code || detectLanguage(text);
+    setCached(text, translated, from);
+    return translated;
   } catch (e) {
     console.warn(`[translate] error: ${e.message}`);
     return text; // 降级返回原文本
@@ -67,7 +93,6 @@ export async function startServer({ port = 11520 } = {}) {
     items: irCache.length,
     reason: 'boot',
   };
-  const sseClients = new Set();
   let reloadTimer = null;
   let watcher = null;
 
@@ -78,7 +103,6 @@ export async function startServer({ port = 11520 } = {}) {
     }
 
     reloadState = { ...reloadState, scanning: true, pending: false, reason, lastError: '' };
-    broadcastSse('reload-start', reloadState);
     try {
       const next = await scan();
       const shouldRunAgain = reloadState.pending;
@@ -92,7 +116,6 @@ export async function startServer({ port = 11520 } = {}) {
         items: irCache.length,
         reason,
       };
-      broadcastSse('reload-done', reloadState);
     } catch (e) {
       const shouldRunAgain = reloadState.pending;
       reloadState = {
@@ -104,7 +127,6 @@ export async function startServer({ port = 11520 } = {}) {
         items: irCache.length,
         reason,
       };
-      broadcastSse('reload-error', reloadState);
     }
 
     if (reloadState.pending) setTimeout(() => runReload('pending'), 0);
@@ -116,13 +138,6 @@ export async function startServer({ port = 11520 } = {}) {
     reloadTimer = setTimeout(() => {
       runReload(reason).catch(e => app.log.warn({ err: e }, 'reload failed'));
     }, 800);
-  }
-
-  function broadcastSse(event, payload) {
-    const data = `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`;
-    for (const reply of sseClients) {
-      reply.raw.write(data);
-    }
   }
 
   async function setupWatcher() {
@@ -151,19 +166,28 @@ export async function startServer({ port = 11520 } = {}) {
     });
     watcher.on('error', err => {
       reloadState = { ...reloadState, lastError: `watch: ${err.message}`, items: irCache.length };
-      broadcastSse('reload-error', reloadState);
       app.log.warn({ err }, 'watcher error');
     });
     app.addHook('onClose', async () => {
       clearTimeout(reloadTimer);
-      for (const reply of sseClients) reply.raw.end();
-      sseClients.clear();
       if (watcher) await watcher.close();
+      flushTranslateCache(); // 落盘翻译缓存，跨重启复用
     });
   }
 
   const hasSpa = fs.existsSync(path.join(WEB_DIST, 'index.html'));
   const assetsDir = path.join(WEB_DIST, 'assets');
+
+  // 请求日志（诊断连接占用/慢请求）：记 /api 请求的方法、URL、状态码、耗时。
+  // 仅在 LOG_LEVEL=debug 时输出，避免默认运行时刷屏（logger level 由 LOG_LEVEL 控制）。
+  app.addHook('onRequest', async (req) => {
+    req.__t0 = Date.now();
+  });
+  app.addHook('onResponse', async (req, reply) => {
+    if (!req.url || !req.url.startsWith('/api')) return;
+    const ms = Date.now() - (req.__t0 || Date.now());
+    app.log.debug({ method: req.method, url: req.url, status: reply.statusCode, ms }, 'api request');
+  });
 
   // ─────────────────────────── routes ─────────────────────────────────────
 
@@ -205,7 +229,22 @@ export async function startServer({ port = 11520 } = {}) {
       } else if (!base.pathHash && base.id) {
         base.pathHash = base.id;
       }
-      
+
+      // 填充缓存命中的 i18n（无网络，毫秒级）。未命中的留空，详情页按需翻译。
+      // description 和 name 都可能命中（用户在详情页触发翻译后写缓存，下次列表命中）。
+      const zh = {};
+      if (base.description) {
+        const cached = getCached(base.description);
+        if (cached) zh.description = cached.result;
+      }
+      if (base.name) {
+        const cached = getCached(base.name);
+        if (cached && cached.result !== base.name) zh.name = cached.result;
+      }
+      if (Object.keys(zh).length) {
+        base.i18n = { zh, translatedAt: new Date().toISOString() };
+      }
+
       return base;
     });
   });
@@ -216,7 +255,32 @@ export async function startServer({ port = 11520 } = {}) {
       reply.code(404);
       return { error: 'not found' };
     }
-    return item;
+    // 返回副本，避免下面的 i18n 填充污染 irById 缓存
+    const result = { ...item };
+    // 填充缓存命中的 i18n（无网络，毫秒级）——与 /api/skills 列表口径一致
+    const zh = {};
+    if (result.description) {
+      const cached = getCached(result.description);
+      if (cached) zh.description = cached.result;
+    }
+    if (result.name) {
+      const cached = getCached(result.name);
+      if (cached && cached.result !== result.name) zh.name = cached.result;
+    }
+    // HUHAA_TRANSLATE=1 时主动翻译 description（缓存未命中）
+    if (
+      process.env.HUHAA_TRANSLATE === '1' &&
+      result.description &&
+      !zh.description &&
+      !isChinese(result.description)
+    ) {
+      const translated = await translateText(result.description, 'zh-CN');
+      if (translated && translated !== result.description) zh.description = translated;
+    }
+    if (Object.keys(zh).length) {
+      result.i18n = { zh, translatedAt: new Date().toISOString() };
+    }
+    return result;
   });
 
   app.get('/api/stats', async () => buildStats(irCache));
@@ -313,13 +377,23 @@ export async function startServer({ port = 11520 } = {}) {
   // Real application icon for a skill's brand/source (R6). Serves a cached PNG
   // extracted from the matching .app bundle; 404 JSON when no app is found so
   // the frontend can fall back to an emoji.
+  // 404 结果在进程内缓存（noIconBrands）：无图标的 brand 会被前端反复请求
+  // （每次渲染 SkillIcon），不缓存则每次都要 mdfind/plutil/sips 探测，拖慢
+  // 列表渲染。缓存仅在进程生命周期内有效，重启后重新探测。
+  const noIconBrands = new Set();
   app.get('/api/icons/:brand', async (req, reply) => {
     try {
-      const { getIconForBrand } = await import('../../../packages/scanner/src/icon/icon-extractor.mjs');
       const brand = decodeURIComponent(req.params.brand || '');
       const size = Math.min(Math.max(parseInt(req.query.size || '64', 10) || 64, 32), 128);
+      const cacheKey = `${brand}:${size}`;
+      if (noIconBrands.has(cacheKey)) {
+        reply.code(404);
+        return { ok: false, fallback: true, brand };
+      }
+      const { getIconForBrand } = await import('../../../packages/scanner/src/icon/icon-extractor.mjs');
       const pngPath = await getIconForBrand(brand, size);
       if (!pngPath || !fs.existsSync(pngPath)) {
+        noIconBrands.add(cacheKey);
         reply.code(404);
         return { ok: false, fallback: true, brand };
       }
@@ -338,21 +412,6 @@ export async function startServer({ port = 11520 } = {}) {
   }));
 
   app.post('/api/reload', async () => runReload('manual'));
-
-  app.get('/api/events', async (req, reply) => {
-    reply.hijack();
-    reply.raw.writeHead(200, {
-      'content-type': 'text/event-stream; charset=utf-8',
-      'cache-control': 'no-cache, no-transform',
-      connection: 'keep-alive',
-      'x-accel-buffering': 'no',
-    });
-    sseClients.add(reply);
-    reply.raw.write(`event: hello\ndata: ${JSON.stringify({ ok: true, ...reloadState })}\n\n`);
-    req.raw.on('close', () => {
-      sseClients.delete(reply);
-    });
-  });
 
   app.post('/api/copy', async (req, reply) => {
     const { id, what } = req.body || {};
@@ -420,7 +479,7 @@ export async function startServer({ port = 11520 } = {}) {
 
       const { translateSkill } = await import('./translator.mjs');
       try {
-        const translated = await translateSkill(item, 'zh');
+        const translated = await translateSkill(item, 'zh-CN');
         return translated;
       } catch (e) {
         reply.code(500);
@@ -430,6 +489,103 @@ export async function startServer({ port = 11520 } = {}) {
 
     reply.code(400);
     return { ok: false, error: 'missing text or id parameter' };
+  });
+
+  // 正文段落级翻译：切分 raw 为段落 + 代码块，代码块整体跳过，
+  // 文本段走 translateText（中文短路 + md5 缓存 + Google）。
+  // 并发翻译（并发 5），避免长正文串行翻译耗时过久。
+  // 前端用于「中文/原文」tab 切换时拉取译文。
+  // 流式 NDJSON 响应：每翻译完一段就发一行，前端实时显示 X/Y 段进度，
+  // 避免长正文翻译时长时间无反馈。整体超时 12s，超时未翻译的段填充原文。
+  app.post('/api/translate-raw', async (req, reply) => {
+    const { id } = req.body || {};
+    const item = irById.get(id);
+    if (!item) {
+      reply.code(404);
+      return { ok: false, error: 'not found' };
+    }
+    const raw = item.raw || '';
+    if (!raw.trim()) return { ok: true, segments: [] };
+
+    const segments = splitSegments(raw);
+    const CONCURRENCY = 16; // 并发 16（原 8），提升长正文翻译速度
+    const results = new Array(segments.length);
+    let cursor = 0;
+    let done = 0;
+    const deadline = Date.now() + 12000;
+
+    // hijack 后手动管理响应：NDJSON 流（每行一个 JSON 消息）
+    reply.hijack();
+    reply.raw.writeHead(200, {
+      'content-type': 'application/x-ndjson; charset=utf-8',
+      'cache-control': 'no-cache, no-transform',
+      'x-accel-buffering': 'no',
+    });
+    reply.raw.write(JSON.stringify({ type: 'start', total: segments.length }) + '\n');
+
+    // 监听客户端断开（前端 AbortController.abort）：切换技能时前端取消请求，
+    // 后端 worker 应及时停止翻译，避免浪费 Google 翻译配额。
+    // 用 reply.raw 的 'close' 事件 + writableEnded 判断：'close' 在正常结束时
+    // 也触发，但此时 writableEnded=true，不算 abort。只有响应未结束就关闭
+    // （客户端断开）才标记 aborted。req.raw 的 'close' 在 POST body 读完时
+    // 就触发，不能用于判断客户端断开。
+    let aborted = false;
+    reply.raw.on('close', () => {
+      if (!reply.raw.writableEnded) aborted = true;
+    });
+
+    const writeSegment = (idx) => {
+      done++;
+      if (aborted || reply.raw.writableEnded) return;
+      reply.raw.write(JSON.stringify({
+        type: 'segment',
+        index: idx,
+        done,
+        total: segments.length,
+        segment: results[idx],
+      }) + '\n');
+    };
+
+    try {
+      const worker = async () => {
+        while (cursor < segments.length) {
+          if (aborted || Date.now() > deadline) break;
+          const idx = cursor++;
+          const seg = segments[idx];
+          const key = crypto.createHash('md5').update(seg.text, 'utf8').digest('hex');
+          if (seg.type === 'code') {
+            results[idx] = { md5: key, text: seg.text, translated: seg.text, skipped: 'code' };
+          } else {
+            const translated = await translateText(seg.text, 'zh-CN');
+            results[idx] = { md5: key, text: seg.text, translated };
+          }
+          writeSegment(idx);
+        }
+      };
+      await Promise.all(new Array(CONCURRENCY).fill(0).map(() => worker()));
+      // 客户端断开时不再写后续消息（连接已不可用），但仍落盘已翻译缓存
+      if (!aborted) {
+        // 超时未翻译的段，填充原文
+        for (let i = 0; i < segments.length; i++) {
+          if (!results[i]) {
+            const seg = segments[i];
+            const key = crypto.createHash('md5').update(seg.text, 'utf8').digest('hex');
+            results[i] = { md5: key, text: seg.text, translated: seg.text, skipped: 'timeout' };
+            writeSegment(i);
+          }
+        }
+        if (!reply.raw.writableEnded) {
+          reply.raw.write(JSON.stringify({ type: 'done', ok: true, segments: results }) + '\n');
+          reply.raw.end();
+        }
+      }
+      flushTranslateCache();
+    } catch (e) {
+      if (!reply.raw.writableEnded) {
+        reply.raw.write(JSON.stringify({ type: 'error', error: e.message }) + '\n');
+        reply.raw.end();
+      }
+    }
   });
 
   app.get('/assets/*', async (req, reply) => {
@@ -447,11 +603,29 @@ export async function startServer({ port = 11520 } = {}) {
     return fs.createReadStream(abs);
   });
 
+  // PWA manifest（index.html 引用 /site.webmanifest）——返回有效 JSON，
+  // 避免 SPA fallback 返回 HTML 导致浏览器报 Manifest 语法错误
+  app.get('/site.webmanifest', async (req, reply) => {
+    reply.type('application/manifest+json; charset=utf-8');
+    reply.header('cache-control', 'no-cache, no-store, must-revalidate');
+    return {
+      name: 'HuHaa-MySkills',
+      short_name: 'HuHaa',
+      description: '本地技能 / 插件 / MCP 聚合中心',
+      start_url: '/',
+      display: 'standalone',
+      theme_color: '#3B82F6',
+      background_color: '#ffffff',
+      icons: [],
+    };
+  });
+
   // Serve built Vue SPA if present; fallback to P2 placeholder when the user
   // has not run `npm run build:web` yet.
   app.get('/', async (req, reply) => {
     if (hasSpa) {
       reply.type('text/html; charset=utf-8');
+      reply.header('cache-control', 'no-cache, no-store, must-revalidate');
       return fs.readFileSync(path.join(WEB_DIST, 'index.html'), 'utf8');
     }
     reply.type('text/html; charset=utf-8');
@@ -462,6 +636,7 @@ export async function startServer({ port = 11520 } = {}) {
   app.get('/*', async (req, reply) => {
     if (hasSpa) {
       reply.type('text/html; charset=utf-8');
+      reply.header('cache-control', 'no-cache, no-store, must-revalidate');
       return fs.readFileSync(path.join(WEB_DIST, 'index.html'), 'utf8');
     }
     reply.code(404);
@@ -471,13 +646,62 @@ export async function startServer({ port = 11520 } = {}) {
   await setupWatcher();
 
   await app.listen({ port, host: '127.0.0.1' });
-  return { app, port };
+  // port=0 时系统分配端口，需从 server.address() 取实际端口（测试用）
+  const actualPort = app.server.address().port;
+  return { app, port: actualPort };
 }
 
 // ─────────────────────────────── helpers ─────────────────────────────────
 
 function stripRaw({ raw, ...rest }) {
   return rest;
+}
+
+// 把 markdown 正文切分为段落 + 代码块序列。
+// - 围栏代码块（``` / ~~~）整体保留为 'code' 类型，不翻译。
+// - 文本部分按双换行切分为段落，每段独立翻译、独立 md5 缓存。
+// 设计目标：改一段只重译那段；代码 / 命令 / 路径不被误译。
+// export 便于单元测试（translate-raw.test.mjs）。
+export function splitSegments(text) {
+  const segments = [];
+  const lines = text.split('\n');
+  let textBuf = [];
+  let codeBuf = [];
+  let inCode = false;
+
+  const flushText = () => {
+    if (!textBuf.length) return;
+    const block = textBuf.join('\n');
+    for (const p of block.split(/\n\n+/)) {
+      if (p.trim()) segments.push({ type: 'text', text: p });
+    }
+    textBuf = [];
+  };
+  const flushCode = () => {
+    if (!codeBuf.length) return;
+    segments.push({ type: 'code', text: codeBuf.join('\n') });
+    codeBuf = [];
+  };
+
+  for (const line of lines) {
+    if (/^\s*(```+|~~~+)/.test(line)) {
+      if (inCode) {
+        codeBuf.push(line);
+        flushCode();
+        inCode = false;
+      } else {
+        flushText();
+        inCode = true;
+        codeBuf.push(line);
+      }
+    } else if (inCode) {
+      codeBuf.push(line);
+    } else {
+      textBuf.push(line);
+    }
+  }
+  if (inCode) flushCode(); else flushText();
+  return segments;
 }
 
 function contentTypeFor(abs) {

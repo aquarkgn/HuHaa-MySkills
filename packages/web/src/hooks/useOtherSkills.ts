@@ -163,7 +163,7 @@ function groupSkills(
     return [
       {
         groupKey: 'all',
-        label: 'All Skills',
+        label: '全部技能',
         icon: '📌',
         items,
         count: items.length,

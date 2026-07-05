@@ -25,6 +25,11 @@ export function cacheFile() {
   return path.join(homeDir(), 'cache.json');
 }
 
+// 翻译结果持久化缓存（md5 key → 译文）。purge 删除整个 homeDir 时随之清理。
+export function translateCacheFile() {
+  return path.join(homeDir(), 'translate-cache.json');
+}
+
 export function stateFile() {
   return path.join(homeDir(), 'state.json');
 }

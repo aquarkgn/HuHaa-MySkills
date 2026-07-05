@@ -162,8 +162,10 @@ export async function scan() {
       console.log('[scan] tierResult stats:', JSON.stringify(tierResult.stats, null, 2));
     }
 
-    // tierResult.items 包含了所有合并的技能（已分层且去重）
-    return tierResult.items || [];
+    // 三层扫描器可能产生同名重复（gstack 为 .cursor/.factory/.kiro 等多编辑器
+    // 生成的副本，source/kind/name 全相同），用语义去重合并为一条，保留主文件。
+    const items = tierResult.items || [];
+    return dedupeSemantic(items);
   } catch (e) {
     console.warn('[scan] Three-tier scanner failed:', e.message);
     if (process.env.HUHAA_DEBUG) {
@@ -178,8 +180,12 @@ export async function scan() {
 /**
  * 降级方案：旧的 adapter 模式（当三层扫描失败时使用）
  * v4.0: 补上 pathHash 和 tier 字段，便于前端分层菜单显示
+ *
+ * export 供单元测试验证「sources.yaml 聚合 + 语义去重」逻辑：
+ * scan() 主路径走三层扫描器（固定路径，不读 sources.yaml 的 hermes/codex/cursor 配置），
+ * 只有 scanLegacy 通过 sources.yaml 聚合多 source。
  */
-async function scanLegacy(cfg, limits) {
+export async function scanLegacy(cfg, limits) {
   const all = [];
   const stats = [];
   for (const [name, src] of Object.entries(cfg.sources || {})) {
@@ -316,7 +322,7 @@ function rankItem(it) {
   return score;
 }
 
-function loadConfig() {
+export function loadConfig() {
   const f = configFile();
   if (!fs.existsSync(f)) return null;
   try {

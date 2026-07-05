@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Boxes, AlertTriangle, Layers, Plug } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { getEditorMeta, isNoneEditor } from '@/lib/editors'
+import { kindLabel } from '@/lib/i18n'
 import type { SkillItem, Stats } from '@/types'
 
 interface DashboardViewProps {
@@ -34,18 +35,6 @@ function StatCard({
       </div>
     </Card>
   )
-}
-
-const KIND_LABEL: Record<string, string> = {
-  skill: '技能 Skill',
-  plugin: '插件 Plugin',
-  mcp: 'MCP',
-  'mcp-tool': 'MCP 工具',
-  runbook: 'Runbook',
-  instruction: '规则 Rule',
-  config: '配置',
-  doc: '文档',
-  'agent-rule': 'Agent 规则',
 }
 
 export function DashboardView({ stats, items }: DashboardViewProps) {
@@ -95,7 +84,7 @@ export function DashboardView({ stats, items }: DashboardViewProps) {
             key={kind}
             icon={<Plug size={20} />}
             color="#2563EB"
-            label={KIND_LABEL[kind] ?? kind}
+            label={kindLabel(kind)}
             value={count}
           />
         ))}

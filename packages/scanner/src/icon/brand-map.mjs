@@ -54,6 +54,33 @@ export const BRAND_APP_MAP = {
   codex: { bundleIds: [], appNames: ['Codex'], emoji: '📋' },
   hermes: { bundleIds: [], appNames: ['Hermes'], emoji: '⚡' },
   mcp: { bundleIds: [], appNames: [], emoji: '🔌' },
+  // 补充常见品牌（基于实际技能 brand 分布统计）：
+  // 有 .app 的 → 真实图标；无 .app 的 → 仅 emoji fallback
+  google: {
+    bundleIds: ['com.google.chrome'],
+    appNames: ['Google Chrome', 'Chrome'],
+    emoji: '🌐',
+  },
+  github: {
+    bundleIds: ['com.github.github', 'com.github.GitHubClient'],
+    appNames: ['GitHub', 'GitHub Desktop'],
+    emoji: '🐙',
+  },
+  notion: {
+    bundleIds: ['notion.id'],
+    appNames: ['Notion'],
+    emoji: '📓',
+  },
+  anthropic: {
+    bundleIds: ['com.anthropic.claude', 'com.anthropic.claudefordesktop'],
+    appNames: ['Claude'],
+    emoji: '🤖',
+  },
+  // 仅 emoji fallback（无单一对应 .app）
+  apple: { bundleIds: [], appNames: [], emoji: '🍎' },
+  rust: { bundleIds: [], appNames: [], emoji: '🦀' },
+  python: { bundleIds: [], appNames: [], emoji: '🐍' },
+  suno: { bundleIds: [], appNames: [], emoji: '🎵' },
 };
 
 /**

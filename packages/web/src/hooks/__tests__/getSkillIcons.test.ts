@@ -1,5 +1,5 @@
 /**
- * useSkillIcons.test.ts — Unit tests for skill icon mapping system
+ * getSkillIcons.test.ts — Unit tests for skill icon mapping system
  *
  * Tests cover:
  * 1. Tier 1 (tool) items return correct brand icon + display label
@@ -10,15 +10,15 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-  useSkillIcons,
+  getSkillIcons,
   getBrandIconForTier1,
   getTierIconMap,
   sortByTier,
   groupByTier,
-} from '@/hooks/useSkillIcons'
+} from '@/hooks/getSkillIcons'
 import type { SkillItem } from '@/types'
 
-describe('useSkillIcons', () => {
+describe('getSkillIcons', () => {
   // Helper to create mock SkillItem
   const createSkill = (overrides: Partial<SkillItem>): SkillItem => ({
     id: 'test-id',
@@ -37,7 +37,7 @@ describe('useSkillIcons', () => {
         name: 'some-hermes-skill',
       })
 
-      const result = useSkillIcons(skill)
+      const result = getSkillIcons(skill)
 
       expect(result.isTier1).toBe(true)
       expect(result.isTier2).toBe(false)
@@ -55,7 +55,7 @@ describe('useSkillIcons', () => {
         name: 'claude-skill',
       })
 
-      const result = useSkillIcons(skill)
+      const result = getSkillIcons(skill)
 
       expect(result.brandIcon).toBe('🤖') // Claude icon
       expect(result.displayLabel).toBe('🤖 claude-skill')
@@ -68,7 +68,7 @@ describe('useSkillIcons', () => {
         name: 'cursor-rule',
       })
 
-      const result = useSkillIcons(skill)
+      const result = getSkillIcons(skill)
 
       expect(result.brandIcon).toBe('📝') // Cursor icon
       expect(result.displayLabel).toBe('📝 cursor-rule')
@@ -81,7 +81,7 @@ describe('useSkillIcons', () => {
         name: 'codex-plugin',
       })
 
-      const result = useSkillIcons(skill)
+      const result = getSkillIcons(skill)
 
       expect(result.brandIcon).toBe('💡') // Codex icon
       expect(result.displayLabel).toBe('💡 codex-plugin')
@@ -97,11 +97,11 @@ describe('useSkillIcons', () => {
         dirName: 'auth-flow',
       })
 
-      const result = useSkillIcons(skill)
+      const result = getSkillIcons(skill)
 
       expect(result.isTier2).toBe(true)
       expect(result.tierIcon).toBe('📁') // Directory icon
-      expect(result.tierLabel).toBe('Custom Skills')
+      expect(result.tierLabel).toBe('自定义技能')
       expect(result.displayLabel).toBe('📁 auth-flow')
       expect(result.tierSort).toBe(2)
     })
@@ -113,7 +113,7 @@ describe('useSkillIcons', () => {
         name: 'my-custom-skill',
       })
 
-      const result = useSkillIcons(skill)
+      const result = getSkillIcons(skill)
 
       expect(result.displayLabel).toBe('📁 my-custom-skill')
     })
@@ -127,11 +127,11 @@ describe('useSkillIcons', () => {
         name: 'deployment-guide',
       })
 
-      const result = useSkillIcons(skill)
+      const result = getSkillIcons(skill)
 
       expect(result.isTier3).toBe(true)
       expect(result.tierIcon).toBe('⚙️') // Other icon
-      expect(result.tierLabel).toBe('Other Sources')
+      expect(result.tierLabel).toBe('其他来源')
       expect(result.displayLabel).toBe('⚙️ deployment-guide')
       expect(result.tierSort).toBe(3)
     })
@@ -142,10 +142,55 @@ describe('useSkillIcons', () => {
         source: 'project-runbook',
       })
 
-      const result = useSkillIcons(skill)
+      const result = getSkillIcons(skill)
 
       expect(result.isTier3).toBe(true)
       expect(result.tierSort).toBe(3)
+    })
+  })
+
+  describe('normalizeTier（tierId 优先于 tier）', () => {
+    // v4.0 scanner 只输出 tierId（'tier-1'/'tier-2'/'tier-3'），旧字段 tier
+    // 在不同接口口径不一致。normalizeTier 应优先读 tierId，回退 tier。
+    it('tierId=tier-1 → Tier 1（tool）', () => {
+      const skill = createSkill({ tierId: 'tier-1', brand: 'hermes', name: 'x' })
+      const result = getSkillIcons(skill)
+      expect(result.isTier1).toBe(true)
+      expect(result.tierSort).toBe(1)
+    })
+
+    it('tierId=tier-2 → Tier 2（directory）', () => {
+      const skill = createSkill({ tierId: 'tier-2', name: 'dir-skill', dirName: 'dir-skill' })
+      const result = getSkillIcons(skill)
+      expect(result.isTier2).toBe(true)
+      expect(result.tierSort).toBe(2)
+    })
+
+    it('tierId=tier-3 → Tier 3（other）', () => {
+      const skill = createSkill({ tierId: 'tier-3', name: 'other-skill' })
+      const result = getSkillIcons(skill)
+      expect(result.isTier3).toBe(true)
+      expect(result.tierSort).toBe(3)
+    })
+
+    it('tierId 优先于 tier（两者冲突时以 tierId 为准）', () => {
+      // tierId=tier-1 但 tier='other' —— 应归一化为 Tier 1
+      const skill = createSkill({ tierId: 'tier-1', tier: 'other', brand: 'claude', name: 'x' })
+      const result = getSkillIcons(skill)
+      expect(result.isTier1).toBe(true)
+      expect(result.isTier3).toBe(false)
+    })
+
+    it('无 tierId 时回退 tier 字段', () => {
+      const skill = createSkill({ tier: 'directory', name: 'd', dirName: 'd' })
+      const result = getSkillIcons(skill)
+      expect(result.isTier2).toBe(true)
+    })
+
+    it('tier 为 tier-1/tier-2/tier-3 字符串时也应正确归一化', () => {
+      expect(getSkillIcons(createSkill({ tier: 'tier-1' })).isTier1).toBe(true)
+      expect(getSkillIcons(createSkill({ tier: 'tier-2' })).isTier2).toBe(true)
+      expect(getSkillIcons(createSkill({ tier: 'tier-3' })).isTier3).toBe(true)
     })
   })
 
@@ -185,17 +230,17 @@ describe('useSkillIcons', () => {
       expect(tiers).toContainEqual({
         tier: 'tool',
         icon: '🔧',
-        label: 'Official Tools',
+        label: '官方工具',
       })
       expect(tiers).toContainEqual({
         tier: 'directory',
         icon: '📁',
-        label: 'Custom Skills',
+        label: '自定义技能',
       })
       expect(tiers).toContainEqual({
         tier: 'other',
         icon: '⚙️',
-        label: 'Other Sources',
+        label: '其他来源',
       })
     })
   })

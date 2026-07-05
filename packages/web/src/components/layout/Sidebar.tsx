@@ -49,13 +49,6 @@ export function Sidebar({
         </span>
       </button>
 
-      <button onClick={onOtherSkills} className={rowCls(view === 'otherSkills')}>
-        <span className="flex items-center gap-2">
-          <Sparkles size={16} />
-          其它技能
-        </span>
-      </button>
-
       {/* 技能来源 (Editor) */}
       <p className="mt-3 px-3 text-caption text-muted-foreground/70">技能来源</p>
 
@@ -102,6 +95,13 @@ export function Sidebar({
           <span className="text-caption opacity-80">{noneCount}</span>
         </button>
       )}
+
+      <button onClick={onOtherSkills} className={rowCls(view === 'otherSkills')}>
+        <span className="flex items-center gap-2">
+          <Sparkles size={16} />
+          其它技能
+        </span>
+      </button>
 
       <button onClick={onSettings} className={cn(rowCls(view === 'settings'), 'mt-auto')}>
         <span className="flex items-center gap-2">

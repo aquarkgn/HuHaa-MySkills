@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { cn } from '@/lib/cn'
 import { useTheme } from '@/hooks/useTheme'
+import { isTranslateDisplayEnabled, setTranslateDisplayEnabled } from '@/lib/i18n'
 
 const TABS = ['通用', '网络服务', '数据管理', '关于'] as const
 type Tab = (typeof TABS)[number]
@@ -31,6 +32,15 @@ const selectCls =
 export function SettingsView() {
   const [tab, setTab] = useState<Tab>('通用')
   const { theme, toggle } = useTheme()
+  const [translateOn, setTranslateOn] = useState(() => isTranslateDisplayEnabled())
+
+  const toggleTranslate = () => {
+    const next = !translateOn
+    setTranslateOn(next)
+    setTranslateDisplayEnabled(next)
+    // 开关状态被多处组件在初始化时读取（localStorage），切换后刷新以让所有视图生效
+    setTimeout(() => window.location.reload(), 200)
+  }
 
   return (
     <div>
@@ -59,6 +69,26 @@ export function SettingsView() {
               <select className={selectCls} defaultValue="zh-CN" disabled>
                 <option value="zh-CN">简体中文</option>
               </select>
+            </Row>
+            <Row
+              title="翻译技能描述"
+              subtitle="将英文技能描述与正文翻译为中文（联网，使用 Google 翻译，结果本地缓存）。关闭后仅显示原文，不会发送任何内容到外部服务"
+            >
+              <button
+                onClick={toggleTranslate}
+                aria-label="切换翻译开关"
+                className={cn(
+                  'relative h-6 w-11 rounded-full transition-colors',
+                  translateOn ? 'bg-primary' : 'bg-muted',
+                )}
+              >
+                <span
+                  className={cn(
+                    'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
+                    translateOn ? 'translate-x-5' : 'translate-x-0.5',
+                  )}
+                />
+              </button>
             </Row>
             <Row title="应用主题" subtitle="切换深色或浅色模式">
               <select

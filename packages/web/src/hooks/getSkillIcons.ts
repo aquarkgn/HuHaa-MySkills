@@ -1,5 +1,5 @@
 /**
- * useSkillIcons — Mapping skill tier/brand to emoji icons and display labels
+ * getSkillIcons — Mapping skill tier/brand to emoji icons and display labels
  *
  * Maps the backend SkillItem.tier and .brand fields to human-readable
  * icons and categorized groups for the Skills Tab UI.
@@ -10,7 +10,7 @@
  *   - Tier 3: Other sources (project-runbook, etc.)
  *
  * Usage:
- *   const { tierIcon, tierLabel, brandIcon, isTier } = useSkillIcons(skill);
+ *   const { tierIcon, tierLabel, brandIcon, isTier } = getSkillIcons(skill);
  */
 
 import type { SkillItem } from '@/types';
@@ -75,17 +75,17 @@ const BRAND_ICONS: Record<string, IconMapping> = {
 const TIER_ICONS: Record<string, IconMapping> = {
   tool: {
     icon: '🔧',
-    label: 'Official Tools',
+    label: '官方工具',
     colorClass: 'text-blue-600',
   },
   directory: {
     icon: '📁',
-    label: 'Custom Skills',
+    label: '自定义技能',
     colorClass: 'text-emerald-600',
   },
   other: {
     icon: '⚙️',
-    label: 'Other Sources',
+    label: '其他来源',
     colorClass: 'text-slate-500',
   },
 };
@@ -101,7 +101,7 @@ const TIER_SORT_ORDER: Record<string, number> = {
 };
 
 /**
- * useSkillIcons — Extract icon and label for a skill item
+ * getSkillIcons — Extract icon and label for a skill item
  *
  * @param skill - SkillItem from API (contains tier, brand, dirName)
  * @returns Icon mapping + tier predicates for UI rendering
@@ -115,14 +115,36 @@ const TIER_SORT_ORDER: Record<string, number> = {
  *     ...
  *   }
  *
- *   const { tierIcon, displayLabel, isTier2 } = useSkillIcons(skill);
+ *   const { tierIcon, displayLabel, isTier2 } = getSkillIcons(skill);
  *   // Returns:
  *   // tierIcon: '📁'
  *   // displayLabel: '📁 auth-flow'
  *   // isTier2: true
  */
-export function useSkillIcons(skill: SkillItem): SkillIconResult {
-  const tier = (skill.tier || 'other') as 'tool' | 'directory' | 'other';
+/**
+ * normalizeTier — 从 tierId（v4.0 新字段）或 tier（旧字段）推导统一的 tier 枚举
+ *
+ * v4.0 scanner 只输出 tierId（'tier-1'/'tier-2'/'tier-3'），旧字段 tier 在不同接口
+ * 口径不一致（/api/skills 补成 'tier-1' 等，/api/skills/:id 为 undefined）。
+ * 这里统一归一化为 'tool'/'directory'/'other'，保证列表与详情图标/标签一致。
+ */
+function normalizeTier(skill: SkillItem): 'tool' | 'directory' | 'other' {
+  switch (skill.tierId) {
+    case 'tier-1': return 'tool';
+    case 'tier-2': return 'directory';
+    case 'tier-3': return 'other';
+    default: break;
+  }
+  switch (skill.tier) {
+    case 'tool': case 'tier-1': return 'tool';
+    case 'directory': case 'tier-2': return 'directory';
+    case 'other': case 'tier-3': return 'other';
+    default: return 'other';
+  }
+}
+
+export function getSkillIcons(skill: SkillItem): SkillIconResult {
+  const tier = normalizeTier(skill);
   const brand = skill.brand || 'other';
   const dirName = skill.dirName || skill.name;
 
@@ -208,8 +230,8 @@ export function getTierIconMap(): Array<{
  *   // Results: Tier 1 (tools) → Tier 2 (directories) → Tier 3 (other)
  */
 export function sortByTier(a: SkillItem, b: SkillItem): number {
-  const aResult = useSkillIcons(a);
-  const bResult = useSkillIcons(b);
+  const aResult = getSkillIcons(a);
+  const bResult = getSkillIcons(b);
   return aResult.tierSort - bResult.tierSort;
 }
 
@@ -235,7 +257,7 @@ export function groupByTier(
   };
 
   for (const skill of skills) {
-    const tier = (skill.tier || 'other') as 'tool' | 'directory' | 'other';
+    const tier = normalizeTier(skill);
     groups[tier].push(skill);
   }
 

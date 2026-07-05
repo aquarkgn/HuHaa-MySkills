@@ -35,6 +35,19 @@ export interface SkillItem {
   updatedAt?: string
   parseError?: string
 
+  /**
+   * i18n 翻译结果（仅 description 走在线翻译，name 保持原英文）。
+   * 后端在 HUHAA_TRANSLATE=1 时按需填充；缓存命中的也在列表接口返回。
+   */
+  i18n?: {
+    zh?: {
+      description?: string
+      title?: string
+      name?: string
+    }
+    translatedAt?: string
+  }
+
   // v4.0 Priority Scan & Menu Layering
   /** MD5(normalizedAbsPath) — 用于去重和菜单分层 */
   pathHash?: string

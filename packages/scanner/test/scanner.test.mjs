@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { scan, getWatchTargets } from '../src/index.mjs';
+import { scan, getWatchTargets, scanLegacy, loadConfig } from '../src/index.mjs';
 
 function makeTempHome() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'huhaa-scanner-test-'));
@@ -83,7 +83,7 @@ limits:
   maxFileBytes: 1048576
 `);
 
-  const items = await scan();
+  const items = await scanLegacy(loadConfig(), { maxFiles: 100, maxFileBytes: 1048576 });
   const bySource = groupBy(items, it => it.source);
 
   assert.equal(bySource.hermes?.length, 1, 'semantic duplicate hermes skill should collapse to one item');
@@ -91,9 +91,9 @@ limits:
   assert.equal(bySource.cursor?.length, 1);
   assert.equal(bySource.directory?.length, 1, 'directory-skill should return one item');
 
-  // Verify Tier 1 tool skills have tier='tool' and brand
+  // Verify Tier 1 tool skills have tier='tier-1' (scanLegacy 把 'tool' 转成 'tier-1') and brand
   const hermesSkill = bySource.hermes[0];
-  assert.equal(hermesSkill.tier, 'tool', 'hermes skill should have tier="tool"');
+  assert.equal(hermesSkill.tier, 'tier-1', 'hermes skill should have tier="tier-1"');
   assert.equal(hermesSkill.brand, 'hermes', 'hermes skill should have brand="hermes"');
   assert.equal(hermesSkill.name, 'deploy-helper');
   assert.equal(hermesSkill.editor, 'Hermes Agent');
@@ -101,9 +101,9 @@ limits:
   assert.deepEqual(hermesSkill.triggers, ['deploy service']);
   assert.ok(!hermesSkill.paths.abs.includes('/.hidden-export/'), 'visible export should outrank hidden duplicate');
 
-  // Verify Tier 2 directory skills have tier='directory' and dirName
+  // Verify Tier 2 directory skills have tier='tier-2' (scanLegacy 把 'directory' 转成 'tier-2') and dirName
   const dirSkill = bySource.directory[0];
-  assert.equal(dirSkill.tier, 'directory', 'directory-skill should have tier="directory"');
+  assert.equal(dirSkill.tier, 'tier-2', 'directory-skill should have tier="tier-2"');
   assert.equal(dirSkill.dirName, 'auth-flow', 'directory-skill should have dirName="auth-flow"');
   assert.equal(dirSkill.source, 'directory', 'directory-skill should have source="directory"');
   assert.equal(dirSkill.name, 'auth-flow');
