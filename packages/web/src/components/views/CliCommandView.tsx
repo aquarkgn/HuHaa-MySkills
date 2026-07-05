@@ -4,17 +4,29 @@ import {
   ChevronRight,
   Command,
   Search,
-  TerminalSquare,
 } from 'lucide-react'
-import commandsData from '@/data/commands.json'
 import { cn } from '@/lib/cn'
+import {
+  COMMANDS,
+  getFlagCount,
+  getSubcommandCount,
+  getTotalFlagCount,
+  getTotalSubcommandCount,
+} from '@/lib/commands'
 import type { CliCommand, CliCommandGroup, CliCommandSubcommand } from '@/types'
+import { CommandIcon } from './CommandIcon'
 
-const COMMANDS = commandsData as CliCommand[]
-const FALLBACK_ICON_BRANDS = new Set(['gstach', 'hermes'])
+interface CliCommandViewProps {
+  /**
+   * 侧栏选中的命令品牌；`null` 表示「全部命令」。
+   * UI 上 brand 始终非空字符串，但接口允许 null 以表达"未选中"。
+   */
+  selectedBrand: string | null
+}
 
-function getFlagCount(command: CliCommand): number {
-  return command.groups.reduce((total, group) => total + group.flags.length, 0)
+/** 是否在"已选中某品牌"的范围内。空字符串视作未选中（兜底） */
+function isBrandSelected(brand: string | null | undefined): brand is string {
+  return typeof brand === 'string' && brand.length > 0
 }
 
 function getSearchText(command: CliCommand): string {
@@ -40,35 +52,6 @@ function getSearchText(command: CliCommand): string {
     .filter(Boolean)
     .join(' ')
     .toLowerCase()
-}
-
-function iconBrand(brand: string): string {
-  if (brand === 'code') return 'vscode'
-  return brand
-}
-
-function CommandIcon({ brand }: { brand: string }) {
-  const [failed, setFailed] = useState(false)
-  if (failed || FALLBACK_ICON_BRANDS.has(brand)) {
-    return (
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
-        <TerminalSquare size={18} />
-      </span>
-    )
-  }
-  return (
-    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-muted">
-      <img
-        src={`/api/icons/${encodeURIComponent(iconBrand(brand))}?size=64`}
-        alt=""
-        width={28}
-        height={28}
-        loading="lazy"
-        onError={() => setFailed(true)}
-        className="h-7 w-7 rounded-[4px] object-contain"
-      />
-    </span>
-  )
 }
 
 function filterCommand(command: CliCommand, query: string): CliCommand | null {
@@ -126,22 +109,34 @@ function Subcommands({ subcommands }: { subcommands: CliCommandSubcommand[] }) {
   )
 }
 
-export function CliCommandView() {
+/**
+ * CliCommandView：
+ * - selectedBrand=null/undefined/'' → 展示全部命令
+ * - selectedBrand='claude' → 只展示该品牌的命令详情
+ * - 搜索只在当前展示范围内生效。
+ */
+export function CliCommandView({ selectedBrand }: CliCommandViewProps) {
   const [query, setQuery] = useState('')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
 
+  // 1) 先按品牌过滤：侧栏选中「全部命令」或未选中时返回全量
+  const scopedCommands = useMemo(() => {
+    if (!isBrandSelected(selectedBrand)) return COMMANDS
+    return COMMANDS.filter((command) => command.brand === selectedBrand)
+  }, [selectedBrand])
+
+  // 2) 再叠加搜索：搜索作用于当前可见范围（侧栏已过滤后的子集）
   const visibleCommands = useMemo(
-    () => COMMANDS
+    () => scopedCommands
       .map((command) => filterCommand(command, query))
       .filter((command): command is CliCommand => command !== null),
-    [query],
+    [scopedCommands, query],
   )
 
-  const totalFlags = COMMANDS.reduce((total, command) => total + getFlagCount(command), 0)
-  const totalSubcommands = COMMANDS.reduce(
-    (total, command) => total + (command.subcommands?.length ?? 0),
-    0,
-  )
+  const totalFlags = getTotalFlagCount(scopedCommands)
+  const totalSubcommands = getTotalSubcommandCount(scopedCommands)
+  const isScoped = isBrandSelected(selectedBrand)
+  const scopedBrand: string = selectedBrand as string
 
   function toggleGroup(commandBrand: string, groupName: string) {
     const key = `${commandBrand}:${groupName}`
@@ -160,9 +155,22 @@ export function CliCommandView() {
     <div className="flex h-full flex-col gap-4">
       <div className="flex flex-col gap-3 border-b border-border pb-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-heading-lg font-semibold text-foreground">CLI 命令</h1>
+          <h1 className="text-heading-lg font-semibold text-foreground">
+            {isScoped ? (
+              <span className="flex items-center gap-2">
+                <span className="font-mono text-primary">{scopedBrand}</span>
+                <span className="text-muted-foreground">命令</span>
+              </span>
+            ) : (
+              'CLI 命令'
+            )}
+          </h1>
           <p className="mt-1 max-w-3xl text-body-sm text-muted-foreground">
-            5 个常用 CLI 的能力地图，覆盖 {totalFlags} 个 flag 和 {totalSubcommands} 个子命令。
+            {isScoped ? (
+              <>该品牌的 flag 与子命令详情，{totalFlags} 个 flag / {totalSubcommands} 个子命令。</>
+            ) : (
+              <>5 个常用 CLI 的能力地图，覆盖 {totalFlags} 个 flag 和 {totalSubcommands} 个子命令。</>
+            )}
           </p>
         </div>
         <div className="relative w-full lg:w-80">
@@ -172,7 +180,7 @@ export function CliCommandView() {
           />
           <input
             type="search"
-            placeholder="搜索 flag、说明或命令…"
+            placeholder={isScoped ? '搜索当前命令的 flag/说明…' : '搜索 flag、说明或命令…'}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-body-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -182,7 +190,9 @@ export function CliCommandView() {
 
       {visibleCommands.length === 0 ? (
         <div className="detail flex min-h-48 items-center justify-center">
-          <p className="text-body-sm text-muted-foreground">没有匹配的命令能力</p>
+          <p className="text-body-sm text-muted-foreground">
+            {isScoped ? '没有匹配的命令能力' : '没有匹配的命令能力'}
+          </p>
         </div>
       ) : (
         <div className="space-y-4 pb-2">
@@ -206,7 +216,7 @@ export function CliCommandView() {
                 <div className="flex shrink-0 gap-2 text-caption text-muted-foreground">
                   <span className="rounded-sm bg-muted px-2 py-1">{getFlagCount(command)} flags</span>
                   <span className="rounded-sm bg-muted px-2 py-1">
-                    {command.subcommands?.length ?? 0} 子命令
+                    {getSubcommandCount(command)} 子命令
                   </span>
                 </div>
               </div>
