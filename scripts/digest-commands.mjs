@@ -136,6 +136,15 @@ export function validateCliCommand(command) {
   if (command.version !== undefined && typeof command.version !== 'string') {
     throw new Error('version must be a string when present');
   }
+  if (command.raw !== undefined && typeof command.raw !== 'string') {
+    throw new Error('raw must be a string when present');
+  }
+  if (command.capturedAt !== undefined && typeof command.capturedAt !== 'string') {
+    throw new Error('capturedAt must be a string when present');
+  }
+  if (command.sourcePath !== undefined && typeof command.sourcePath !== 'string') {
+    throw new Error('sourcePath must be a string when present');
+  }
   assertNonEmptyString(command.summary_zh, 'summary_zh');
   if (!Array.isArray(command.groups) || command.groups.length === 0) {
     throw new Error('groups must be a non-empty array');
@@ -227,6 +236,10 @@ export async function digestCommandFile(file, { llm = callAnthropic } = {}) {
       if (command.brand !== brand) {
         throw new Error(`brand mismatch: expected ${brand}, got ${command.brand}`);
       }
+      // 原始 help 不交给 LLM 重写，直接从源文件回填，便于网页提供可校对的原文 Tab。
+      command.raw = helpText;
+      command.capturedAt = new Date().toISOString().slice(0, 10);
+      command.sourcePath = path.relative(ROOT, file);
       validateCliCommand(command);
       return command;
     } catch (error) {

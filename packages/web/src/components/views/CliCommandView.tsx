@@ -17,6 +17,8 @@ import { getSubcommandHelp, getSubcommandHelpSearchText } from '@/lib/commandHel
 import type { CliCommand, CliCommandGroup, CliCommandSubcommand, CliSubcommandHelp } from '@/types'
 import { CommandIcon } from './CommandIcon'
 
+type CommandDetailTab = 'flags' | 'subcommands' | 'raw'
+
 interface CliCommandViewProps {
   /**
    * 侧栏选中的命令品牌；`null` 表示「全部命令」。
@@ -108,6 +110,78 @@ function filterCommand(command: CliCommand, query: string): CliCommand | null {
 
 function getHelpFlagCount(help: CliSubcommandHelp): number {
   return help.groups.reduce((total, group) => total + group.flags.length, 0)
+}
+
+function RawHelpPanel({ command }: { command: CliCommand }) {
+  if (!command.raw) {
+    return (
+      <div className="border-b border-border bg-muted/20 px-4 py-4 text-caption text-muted-foreground">
+        暂未保存该命令的原始 --help 文本。
+      </div>
+    )
+  }
+
+  return (
+    <div className="border-b border-border bg-muted/20 px-4 py-4">
+      <div className="mb-2 flex flex-wrap items-center gap-2 text-caption text-muted-foreground">
+        <span className="font-semibold text-foreground">原始 help</span>
+        {command.sourcePath && <span>{command.sourcePath}</span>}
+        {command.capturedAt && <span>采集于 {command.capturedAt}</span>}
+      </div>
+      <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap rounded-md border border-border bg-background px-4 py-3 font-mono text-caption text-foreground">
+        {command.raw}
+      </pre>
+    </div>
+  )
+}
+
+function getDefaultCommandTab(command: CliCommand): CommandDetailTab {
+  // 搜索命中子命令且 flag 分组被过滤为空时，自动落到子命令 Tab，避免卡片出现空内容。
+  if (command.groups.length === 0 && (command.subcommands?.length ?? 0) > 0) return 'subcommands'
+  if (command.groups.length === 0 && command.raw) return 'raw'
+  return 'flags'
+}
+
+function CommandHeaderTabs({
+  command,
+  activeTab,
+  onSelect,
+}: {
+  command: CliCommand
+  activeTab: CommandDetailTab
+  onSelect: (tab: CommandDetailTab) => void
+}) {
+  const tabs: Array<{ key: CommandDetailTab; label: string; count?: number }> = [
+    { key: 'flags', label: 'Flags', count: getFlagCount(command) },
+    { key: 'subcommands', label: '子命令', count: getSubcommandCount(command) },
+    { key: 'raw', label: '原始 help' },
+  ]
+
+  return (
+    <div role="tablist" aria-label={`${command.brand} 内容切换`} className="flex shrink-0 flex-wrap gap-2 text-caption">
+      {tabs.map((tab) => {
+        const isActive = activeTab === tab.key
+        return (
+          <button
+            key={`${command.brand}:${tab.key}`}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onSelect(tab.key)}
+            className={cn(
+              'rounded-full border px-3 py-1.5 transition-colors',
+              isActive
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border bg-background text-muted-foreground hover:bg-muted/70 hover:text-foreground',
+            )}
+          >
+            <span>{tab.label}</span>
+            {tab.count !== undefined && <span className="ml-1 font-mono">{tab.count}</span>}
+          </button>
+        )
+      })}
+    </div>
+  )
 }
 
 function HelpPanel({ brand, subcommand }: { brand: string; subcommand: CliCommandSubcommand }) {
@@ -308,6 +382,8 @@ export function CliCommandView({ selectedBrand }: CliCommandViewProps) {
   const [query, setQuery] = useState('')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [selectedSubcommands, setSelectedSubcommands] = useState<Record<string, string | undefined>>({})
+  // 顶层内容 Tab 只控制当前命令卡片展示：Flags / 子命令 / 原始 help 三选一。
+  const [selectedCommandTabs, setSelectedCommandTabs] = useState<Record<string, CommandDetailTab | undefined>>({})
 
   // 1) 先按品牌过滤：侧栏选中「全部命令」或未选中时返回全量
   const normalizedSelectedBrand = normalizeSelectedBrand(selectedBrand)
@@ -348,6 +424,10 @@ export function CliCommandView({ selectedBrand }: CliCommandViewProps) {
       ...current,
       [commandBrand]: current[commandBrand] === subcommandName ? undefined : subcommandName,
     }))
+  }
+
+  function selectCommandTab(commandBrand: string, tab: CommandDetailTab) {
+    setSelectedCommandTabs((current) => ({ ...current, [commandBrand]: tab }))
   }
 
   return (
@@ -395,8 +475,11 @@ export function CliCommandView({ selectedBrand }: CliCommandViewProps) {
         </div>
       ) : (
         <div className="space-y-4 pb-2">
-          {visibleCommands.map((command) => (
-            <section key={command.brand} className="overflow-hidden rounded-md border border-border bg-card">
+          {visibleCommands.map((command) => {
+            // 默认停留在 Flags，保证用户进入命令页仍能立即看到基础参数；头部 Tab 可快速切换到子命令或原文。
+            const activeCommandTab = selectedCommandTabs[command.brand] ?? getDefaultCommandTab(command)
+            return (
+              <section key={command.brand} className="overflow-hidden rounded-md border border-border bg-card">
               <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex min-w-0 items-start gap-3">
                   <CommandIcon brand={command.brand} iconBrand={command.iconBrand} />
@@ -412,22 +495,25 @@ export function CliCommandView({ selectedBrand }: CliCommandViewProps) {
                     <p className="mt-1 text-body-sm text-muted-foreground">{command.summary_zh}</p>
                   </div>
                 </div>
-                <div className="flex shrink-0 gap-2 text-caption text-muted-foreground">
-                  <span className="rounded-sm bg-muted px-2 py-1">{getFlagCount(command)} flags</span>
-                  <span className="rounded-sm bg-muted px-2 py-1">
-                    {getSubcommandCount(command)} 子命令
-                  </span>
-                </div>
+                <CommandHeaderTabs
+                  command={command}
+                  activeTab={activeCommandTab}
+                  onSelect={(tab) => selectCommandTab(command.brand, tab)}
+                />
               </div>
 
-              <Subcommands
-                brand={command.brand}
-                subcommands={command.subcommands ?? []}
-                selectedName={selectedSubcommands[command.brand]}
-                onSelect={(subcommandName) => selectSubcommand(command.brand, subcommandName)}
-              />
+              {activeCommandTab === 'subcommands' && (
+                <Subcommands
+                  brand={command.brand}
+                  subcommands={command.subcommands ?? []}
+                  selectedName={selectedSubcommands[command.brand]}
+                  onSelect={(subcommandName) => selectSubcommand(command.brand, subcommandName)}
+                />
+              )}
 
-              {command.groups.length > 0 && (
+              {activeCommandTab === 'raw' && <RawHelpPanel command={command} />}
+
+              {activeCommandTab === 'flags' && command.groups.length > 0 && (
                 <div className="divide-y divide-border">
                   {command.groups.map((group) => {
                     const groupKey = `${command.brand}:${group.name_zh}`
@@ -486,8 +572,9 @@ export function CliCommandView({ selectedBrand }: CliCommandViewProps) {
                   })}
                 </div>
               )}
-            </section>
-          ))}
+              </section>
+            )
+          })}
         </div>
       )}
     </div>

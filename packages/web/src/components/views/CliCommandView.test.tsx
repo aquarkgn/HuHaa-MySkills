@@ -90,12 +90,15 @@ describe('CliCommandView', () => {
     expect(section).toBeInTheDocument()
     if (!section) return
 
-    const tablist = within(section).getByRole('tablist', { name: /codex 子命令/ })
-    expect(tablist).toBeInTheDocument()
-    const firstFlagGroupButton = within(section).getAllByRole('button')[0]
+    const contentTabs = within(section).getByRole('tablist', { name: /codex 内容切换/ })
+    expect(contentTabs).toBeInTheDocument()
+    const firstFlagGroupButton = within(section).getByRole('button', { name: /配置与特性开关/ })
     expect(
-      Boolean(tablist.compareDocumentPosition(firstFlagGroupButton) & Node.DOCUMENT_POSITION_FOLLOWING),
+      Boolean(contentTabs.compareDocumentPosition(firstFlagGroupButton) & Node.DOCUMENT_POSITION_FOLLOWING),
     ).toBe(true)
+
+    fireEvent.click(within(contentTabs).getByRole('tab', { name: /子命令/ }))
+    expect(within(section).getByRole('tablist', { name: /codex 子命令/ })).toBeInTheDocument()
     expect(within(section).getByText(/选择一个子命令查看帮助详情/)).toBeInTheDocument()
 
     fireEvent.click(within(section).getAllByRole('tab').find((tab) => tab.textContent?.trim().startsWith('exec') && !tab.textContent.includes('exec-server'))!)
@@ -112,6 +115,7 @@ describe('CliCommandView', () => {
     expect(section).toBeInTheDocument()
     if (!section) return
 
+    fireEvent.click(within(section).getByRole('tab', { name: /子命令/ }))
     fireEvent.click(within(section).getByRole('tab', { name: /logout/ }))
 
     expect(within(section).getByText('logout', { selector: 'div' })).toBeInTheDocument()
@@ -125,12 +129,28 @@ describe('CliCommandView', () => {
     expect(section).toBeInTheDocument()
     if (!section) return
 
+    fireEvent.click(within(section).getByRole('tab', { name: /子命令/ }))
     expect(within(section).getByRole('tablist', { name: /gstack 子命令/ })).toBeInTheDocument()
     fireEvent.click(within(section).getByRole('tab', { name: /^list/ }))
 
     expect(within(section).getByRole('heading', { name: 'gstack list' })).toBeInTheDocument()
     expect(within(section).getAllByText(/npx @garrytan\/gstack list/).length).toBeGreaterThan(0)
     expect(within(section).getAllByText('--host').length).toBeGreaterThan(0)
+  })
+
+
+  it('原始 help tab 展示顶层命令 help 原文', () => {
+    render(<CliCommandView selectedBrand="claude" />)
+
+    const section = screen.getByRole('heading', { name: 'claude' }).closest('section')
+    expect(section).toBeInTheDocument()
+    if (!section) return
+
+    const contentTabs = within(section).getByRole('tablist', { name: /claude 内容切换/ })
+    fireEvent.click(within(contentTabs).getByRole('tab', { name: /原始 help/ }))
+
+    expect(within(section).getByText('source/claude.cmd')).toBeInTheDocument()
+    expect(within(section).getByText(/Usage: claude \[options\]/)).toBeInTheDocument()
   })
 
   it('兼容历史误拼 selectedBrand=gstach，并落到 gstack 命令页', () => {

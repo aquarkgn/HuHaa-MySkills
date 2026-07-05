@@ -115,4 +115,8 @@ export interface CliCommand {
   summary_zh: string
   groups: CliCommandGroup[]
   subcommands?: CliCommandSubcommand[]
+  /** 顶层命令 --help 原始文本，用于原始 help Tab 校对。 */
+  raw?: string
+  capturedAt?: string
+  sourcePath?: string
 }
