@@ -7,21 +7,41 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+function queryCommandHeading(brand: string): HTMLElement | undefined {
+  return screen.queryAllByRole('heading', { name: brand }).find((element) => element.tagName.toLowerCase() === 'h2')
+}
+
+function expectCommandHeading(brand: string): HTMLElement {
+  const heading = queryCommandHeading(brand)
+  expect(heading).toBeInTheDocument()
+  return heading!
+}
+
+function expectNoCommandHeading(brand: string): void {
+  expect(queryCommandHeading(brand)).toBeUndefined()
+}
+
+function commandSection(brand: string): HTMLElement {
+  const section = expectCommandHeading(brand).closest('section')
+  expect(section).toBeInTheDocument()
+  return section!
+}
+
 describe('CliCommandView', () => {
   it('selectedBrand=null 时渲染全部 5 个 CLI 命令与搜索框', () => {
     render(<CliCommandView selectedBrand={null} />)
 
-    expect(screen.getByRole('heading', { name: 'CLI 命令' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'CLI 命令手册' })).toBeInTheDocument()
     expect(screen.getByPlaceholderText(/搜索 flag/)).toBeInTheDocument()
     for (const brand of ['claude', 'code', 'codex', 'gstack', 'hermes']) {
-      expect(screen.getByRole('heading', { name: brand })).toBeInTheDocument()
+      expectCommandHeading(brand)
     }
   })
 
   it('selectedBrand=空字符串 兜底为"全部命令"（防止空串污染过滤）', () => {
     render(<CliCommandView selectedBrand={''} />)
     for (const brand of ['claude', 'code', 'codex', 'gstack', 'hermes']) {
-      expect(screen.getByRole('heading', { name: brand })).toBeInTheDocument()
+      expectCommandHeading(brand)
     }
   })
 
@@ -30,16 +50,16 @@ describe('CliCommandView', () => {
     // 标题显示「claude 命令」形式
     expect(screen.getByText('claude', { selector: 'span' })).toBeInTheDocument()
     // 只有 claude 命令卡片的 h2
-    expect(screen.getByRole('heading', { name: 'claude' })).toBeInTheDocument()
+    expectCommandHeading('claude')
     // 其它品牌不应出现
-    expect(screen.queryByRole('heading', { name: 'code' })).toBeNull()
-    expect(screen.queryByRole('heading', { name: 'hermes' })).toBeNull()
+    expectNoCommandHeading('code')
+    expectNoCommandHeading('hermes')
   })
 
   it('selectedBrand=null 时渲染全部命令', () => {
     render(<CliCommandView selectedBrand={null} />)
     for (const brand of ['claude', 'code', 'codex', 'gstack', 'hermes']) {
-      expect(screen.getByRole('heading', { name: brand })).toBeInTheDocument()
+      expectCommandHeading(brand)
     }
   })
 
@@ -48,13 +68,13 @@ describe('CliCommandView', () => {
     const search = screen.getByPlaceholderText(/搜索当前命令/)
     // 在 claude 范围内搜索一个真实存在的 flag（--add-dir）
     fireEvent.change(search, { target: { value: '--add-dir' } })
-    expect(screen.getByRole('heading', { name: 'claude' })).toBeInTheDocument()
+    expectCommandHeading('claude')
     expect(screen.getByText('--add-dir')).toBeInTheDocument()
     // 不应出现其它品牌的命令卡
-    expect(screen.queryByRole('heading', { name: 'code' })).toBeNull()
+    expectNoCommandHeading('code')
     // 在 claude 范围内搜索一个不存在的关键词
     fireEvent.change(search, { target: { value: 'zzzzzzz' } })
-    expect(screen.queryByRole('heading', { name: 'claude' })).toBeNull()
+    expectNoCommandHeading('claude')
   })
 
   it('按 flag 名和中文说明搜索过滤结果（默认全量）', () => {
@@ -63,21 +83,19 @@ describe('CliCommandView', () => {
     const search = screen.getByPlaceholderText(/搜索 flag/)
     fireEvent.change(search, { target: { value: '--add-mcp' } })
 
-    expect(screen.getByRole('heading', { name: 'code' })).toBeInTheDocument()
+    expectCommandHeading('code')
     expect(screen.getByText('--add-mcp')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'claude' })).not.toBeInTheDocument()
+    expectNoCommandHeading('claude')
 
     fireEvent.change(search, { target: { value: '供应链审计' } })
-    expect(screen.getByRole('heading', { name: 'hermes' })).toBeInTheDocument()
+    expectCommandHeading('hermes')
     expect(screen.getByText('security')).toBeInTheDocument()
   })
 
   it('支持折叠和展开分组', () => {
-    render(<CliCommandView selectedBrand={null} />)
+    render(<CliCommandView selectedBrand="code" />)
 
-    const section = screen.getByRole('heading', { name: 'code' }).closest('section')
-    expect(section).toBeInTheDocument()
-    if (!section) return
+    const section = commandSection('code')
 
     expect(within(section).getByText('--install-extension')).toBeInTheDocument()
     const button = within(section).getByRole('button', { name: /扩展管理/ })
@@ -90,9 +108,7 @@ describe('CliCommandView', () => {
   it('子命令以 tab 显示在命令卡片头部，点击后展示帮助详情', () => {
     render(<CliCommandView selectedBrand="codex" />)
 
-    const section = screen.getByRole('heading', { name: 'codex' }).closest('section')
-    expect(section).toBeInTheDocument()
-    if (!section) return
+    const section = commandSection('codex')
 
     const contentTabs = within(section).getByRole('tablist', { name: /codex 内容切换/ })
     expect(contentTabs).toBeInTheDocument()
@@ -115,9 +131,7 @@ describe('CliCommandView', () => {
   it('未采集详情的子命令显示 fallback，不阻塞查看摘要', () => {
     render(<CliCommandView selectedBrand="codex" />)
 
-    const section = screen.getByRole('heading', { name: 'codex' }).closest('section')
-    expect(section).toBeInTheDocument()
-    if (!section) return
+    const section = commandSection('codex')
 
     fireEvent.click(within(section).getByRole('tab', { name: /子命令/ }))
     fireEvent.click(within(section).getByRole('tab', { name: /logout/ }))
@@ -130,9 +144,7 @@ describe('CliCommandView', () => {
     vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: true, json: async () => [] } as Response)))
     render(<CliCommandView selectedBrand="gstack" />)
 
-    const section = screen.getByRole('heading', { name: 'gstack' }).closest('section')
-    expect(section).toBeInTheDocument()
-    if (!section) return
+    const section = commandSection('gstack')
 
     fireEvent.click(within(section).getByRole('tab', { name: /子命令/ }))
     expect(within(section).getByRole('tablist', { name: /gstack 子命令/ })).toBeInTheDocument()
@@ -148,9 +160,7 @@ describe('CliCommandView', () => {
   it('原始 help tab 展示顶层命令 help 原文', () => {
     render(<CliCommandView selectedBrand="claude" />)
 
-    const section = screen.getByRole('heading', { name: 'claude' }).closest('section')
-    expect(section).toBeInTheDocument()
-    if (!section) return
+    const section = commandSection('claude')
 
     const contentTabs = within(section).getByRole('tablist', { name: /claude 内容切换/ })
     fireEvent.click(within(contentTabs).getByRole('tab', { name: /原始 help/ }))
@@ -163,8 +173,8 @@ describe('CliCommandView', () => {
     render(<CliCommandView selectedBrand="gstach" />)
 
     expect(screen.getByText('gstack', { selector: 'span' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'gstack' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'codex' })).not.toBeInTheDocument()
+    expectCommandHeading('gstack')
+    expectNoCommandHeading('codex')
   })
 
   it('全局搜索能命中已采集的子命令帮助内容', () => {
@@ -173,9 +183,9 @@ describe('CliCommandView', () => {
     const search = screen.getByPlaceholderText(/搜索 flag/)
     fireEvent.change(search, { target: { value: 'CONNECTION_TOKEN_FILE' } })
 
-    expect(screen.getByRole('heading', { name: 'code' })).toBeInTheDocument()
+    expectCommandHeading('code')
     expect(screen.getByRole('tab', { name: /^serve-web/ })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'claude' })).not.toBeInTheDocument()
+    expectNoCommandHeading('claude')
   })
 
 
@@ -184,9 +194,7 @@ describe('CliCommandView', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     render(<CliCommandView selectedBrand="gstack" />)
-    const section = screen.getByRole('heading', { name: 'gstack' }).closest('section')
-    expect(section).toBeInTheDocument()
-    if (!section) return
+    const section = commandSection('gstack')
 
     fireEvent.click(within(section).getByRole('tab', { name: /子命令/ }))
     fireEvent.click(within(section).getByRole('tab', { name: /^install/ }))
@@ -221,9 +229,7 @@ describe('CliCommandView', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     render(<CliCommandView selectedBrand="gstack" />)
-    const section = screen.getByRole('heading', { name: 'gstack' }).closest('section')
-    expect(section).toBeInTheDocument()
-    if (!section) return
+    const section = commandSection('gstack')
 
     fireEvent.click(within(section).getByRole('tab', { name: /子命令/ }))
     fireEvent.click(within(section).getByRole('tab', { name: /^list/ }))
@@ -290,9 +296,7 @@ Rethink the problem.
     vi.stubGlobal('fetch', fetchMock)
 
     render(<CliCommandView selectedBrand="gstack" />)
-    const section = screen.getByRole('heading', { name: 'gstack' }).closest('section')
-    expect(section).toBeInTheDocument()
-    if (!section) return
+    const section = commandSection('gstack')
 
     fireEvent.click(within(section).getByRole('tab', { name: /子命令/ }))
     fireEvent.click(within(section).getByRole('tab', { name: /^list/ }))
@@ -312,9 +316,7 @@ Rethink the problem.
     vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: false, json: async () => ({}) } as Response)))
 
     render(<CliCommandView selectedBrand="gstack" />)
-    const section = screen.getByRole('heading', { name: 'gstack' }).closest('section')
-    expect(section).toBeInTheDocument()
-    if (!section) return
+    const section = commandSection('gstack')
 
     fireEvent.click(within(section).getByRole('tab', { name: /子命令/ }))
     fireEvent.click(within(section).getByRole('tab', { name: /^list/ }))

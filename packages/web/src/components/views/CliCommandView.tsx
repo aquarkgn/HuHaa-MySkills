@@ -2,7 +2,10 @@ import { useMemo, useState } from 'react'
 import {
   ChevronDown,
   ChevronRight,
+  CheckCircle2,
+  Clipboard,
   Command,
+  Info,
   Search,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -26,6 +29,9 @@ interface CliCommandViewProps {
    * UI 上 brand 始终非空字符串，但接口允许 null 以表达"未选中"。
    */
   selectedBrand: string | null
+  query?: string
+  onQuery?: (query: string) => void
+  onSelectBrand?: (brand: string) => void
 }
 
 /** 是否在"已选中某品牌"的范围内。空字符串视作未选中（兜底） */
@@ -182,6 +188,129 @@ function CommandHeaderTabs({
         )
       })}
     </div>
+  )
+}
+
+function CommandOverview({
+  commands,
+  onSelectBrand,
+}: {
+  commands: CliCommand[]
+  onSelectBrand?: (brand: string) => void
+}) {
+  return (
+    <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+      {commands.map((command) => {
+        const flags = getFlagCount(command)
+        const subcommands = getSubcommandCount(command)
+        const readySubcommands = command.subcommands?.filter((subcommand) => subcommand.helpStatus === 'ready').length ?? 0
+        return (
+          <section
+            key={command.brand}
+            className="rounded-md border border-border bg-card p-4 transition-colors hover:border-primary"
+          >
+            <div className="flex items-start gap-3">
+              <CommandIcon brand={command.brand} iconBrand={command.iconBrand} />
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <h2 className="font-mono text-h4 font-semibold text-foreground">{command.brand}</h2>
+                  {command.version && (
+                    <span className="rounded-sm bg-muted px-2 py-0.5 text-caption text-muted-foreground">
+                      v{command.version}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 line-clamp-2 text-body-sm text-muted-foreground">
+                  {command.summary_zh}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <div className="rounded-md bg-muted px-2 py-2">
+                <div className="font-mono text-body-sm font-semibold text-foreground">{flags}</div>
+                <div className="text-caption text-muted-foreground">Flags</div>
+              </div>
+              <div className="rounded-md bg-muted px-2 py-2">
+                <div className="font-mono text-body-sm font-semibold text-foreground">{subcommands}</div>
+                <div className="text-caption text-muted-foreground">子命令</div>
+              </div>
+              <div className="rounded-md bg-emerald-500/10 px-2 py-2">
+                <div className="font-mono text-body-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                  {readySubcommands}
+                </div>
+                <div className="text-caption text-muted-foreground">已采集</div>
+              </div>
+            </div>
+
+            {onSelectBrand && (
+              <button
+                type="button"
+                onClick={() => onSelectBrand(command.brand)}
+                className="mt-4 inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-caption font-medium text-muted-foreground transition-colors hover:bg-primary-soft hover:text-primary"
+              >
+                查看详情
+                <ChevronRight size={14} />
+              </button>
+            )}
+          </section>
+        )
+      })}
+    </div>
+  )
+}
+
+function CommandContextPanel({ command }: { command: CliCommand }) {
+  const readySubcommands = command.subcommands?.filter((subcommand) => subcommand.helpStatus === 'ready').length ?? 0
+  const missingSubcommands = command.subcommands?.filter((subcommand) => subcommand.helpStatus !== 'ready').length ?? 0
+
+  async function copyCommandName(): Promise<void> {
+    await navigator.clipboard?.writeText(command.brand)
+  }
+
+  return (
+    <aside className="detail sticky top-0 flex max-h-full flex-col gap-5 overflow-y-auto">
+      <div>
+        <p className="text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          命令上下文
+        </p>
+        <div className="mt-3 flex items-start gap-3">
+          <CommandIcon brand={command.brand} iconBrand={command.iconBrand} />
+          <div className="min-w-0">
+            <h3 className="font-mono text-body font-semibold text-foreground">{command.brand}</h3>
+            <p className="mt-1 text-caption text-muted-foreground">{command.summary_zh}</p>
+          </div>
+        </div>
+      </div>
+
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-body-sm">
+        <dt className="text-muted-foreground">Flags</dt>
+        <dd className="font-mono text-caption">{getFlagCount(command)}</dd>
+        <dt className="text-muted-foreground">子命令</dt>
+        <dd className="font-mono text-caption">{getSubcommandCount(command)}</dd>
+        <dt className="text-muted-foreground">已采集</dt>
+        <dd className="font-mono text-caption">{readySubcommands}</dd>
+        <dt className="text-muted-foreground">待补充</dt>
+        <dd className="font-mono text-caption">{missingSubcommands}</dd>
+      </dl>
+
+      <div className="rounded-md border border-border bg-background px-3 py-3">
+        <div className="mb-2 flex items-center gap-2 text-caption font-semibold text-muted-foreground">
+          <Info size={14} />
+          快速提示
+        </div>
+        <p className="text-body-sm text-foreground">先用搜索定位 flag 或子命令，再切换到原始 help 校对上下文。</p>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => void copyCommandName()}
+        className="inline-flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-body-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <Clipboard size={15} />
+        复制命令名
+      </button>
+    </aside>
   )
 }
 
@@ -384,12 +513,18 @@ function Subcommands({
  * - selectedBrand='claude' → 只展示该品牌的命令详情
  * - 搜索只在当前展示范围内生效。
  */
-export function CliCommandView({ selectedBrand }: CliCommandViewProps) {
-  const [query, setQuery] = useState('')
+export function CliCommandView({
+  selectedBrand,
+  query: controlledQuery,
+  onQuery,
+  onSelectBrand,
+}: CliCommandViewProps) {
+  const [internalQuery, setInternalQuery] = useState('')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [selectedSubcommands, setSelectedSubcommands] = useState<Record<string, string | undefined>>({})
   // 顶层内容 Tab 只控制当前命令卡片展示：Flags / 子命令 / 原始 help 三选一。
   const [selectedCommandTabs, setSelectedCommandTabs] = useState<Record<string, CommandDetailTab | undefined>>({})
+  const query = controlledQuery ?? internalQuery
 
   // 1) 先按品牌过滤：侧栏选中「全部命令」或未选中时返回全量
   const normalizedSelectedBrand = normalizeSelectedBrand(selectedBrand)
@@ -436,18 +571,30 @@ export function CliCommandView({ selectedBrand }: CliCommandViewProps) {
     setSelectedCommandTabs((current) => ({ ...current, [commandBrand]: tab }))
   }
 
+  function updateQuery(nextQuery: string) {
+    if (onQuery) {
+      onQuery(nextQuery)
+      return
+    }
+    setInternalQuery(nextQuery)
+  }
+
+  const showOverview = !isScoped && query.trim().length === 0
+  const contextCommand = isScoped ? (visibleCommands[0] ?? scopedCommands[0] ?? null) : null
+
   return (
-    <div className="flex h-full flex-col gap-4">
-      <div className="flex flex-col gap-3 border-b border-border pb-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <section className="rounded-md border border-border bg-card px-4 py-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-heading-lg font-semibold text-foreground">
+          <h1 className="text-h4 font-semibold text-foreground">
             {isScoped ? (
               <span className="flex items-center gap-2">
                 <span className="font-mono text-primary">{scopedBrand}</span>
-                <span className="text-muted-foreground">命令</span>
+                <span className="text-muted-foreground">命令手册</span>
               </span>
             ) : (
-              'CLI 命令'
+              'CLI 命令手册'
             )}
           </h1>
           <p className="mt-1 max-w-3xl text-body-sm text-muted-foreground">
@@ -467,120 +614,127 @@ export function CliCommandView({ selectedBrand }: CliCommandViewProps) {
             type="search"
             placeholder={isScoped ? '搜索当前命令的 flag/子命令/说明…' : '搜索 flag、子命令、说明或命令…'}
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => updateQuery(event.target.value)}
             className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-body-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
         </div>
-      </div>
+        </div>
+      </section>
 
       {visibleCommands.length === 0 ? (
         <div className="detail flex min-h-48 items-center justify-center">
-          <p className="text-body-sm text-muted-foreground">
-            {isScoped ? '没有匹配的命令能力' : '没有匹配的命令能力'}
-          </p>
+          <p className="text-body-sm text-muted-foreground">没有匹配的命令能力</p>
         </div>
+      ) : showOverview ? (
+        <CommandOverview commands={visibleCommands} onSelectBrand={onSelectBrand} />
       ) : (
-        <div className="space-y-4 pb-2">
-          {visibleCommands.map((command) => {
-            // 默认停留在 Flags，保证用户进入命令页仍能立即看到基础参数；头部 Tab 可快速切换到子命令或原文。
-            const activeCommandTab = selectedCommandTabs[command.brand] ?? getDefaultCommandTab(command)
-            return (
-              <section key={command.brand} className="overflow-hidden rounded-md border border-border bg-card">
-              <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex min-w-0 items-start gap-3">
-                  <CommandIcon brand={command.brand} iconBrand={command.iconBrand} />
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="font-mono text-h4 font-semibold text-foreground">{command.brand}</h2>
-                      {command.version && (
-                        <span className="rounded-sm bg-muted px-2 py-0.5 text-caption text-muted-foreground">
-                          v{command.version}
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-body-sm text-muted-foreground">{command.summary_zh}</p>
-                  </div>
-                </div>
-                <CommandHeaderTabs
-                  command={command}
-                  activeTab={activeCommandTab}
-                  onSelect={(tab) => selectCommandTab(command.brand, tab)}
-                />
-              </div>
-
-              {activeCommandTab === 'subcommands' && (
-                <Subcommands
-                  brand={command.brand}
-                  subcommands={command.subcommands ?? []}
-                  selectedName={selectedSubcommands[command.brand]}
-                  onSelect={(subcommandName) => selectSubcommand(command.brand, subcommandName)}
-                />
-              )}
-
-              {activeCommandTab === 'raw' && <RawHelpPanel command={command} />}
-
-              {activeCommandTab === 'flags' && command.groups.length > 0 && (
-                <div className="divide-y divide-border">
-                  {command.groups.map((group) => {
-                    const groupKey = `${command.brand}:${group.name_zh}`
-                    const isCollapsed = collapsed.has(groupKey)
-                    return (
-                      <div key={groupKey}>
-                        <button
-                          type="button"
-                          onClick={() => toggleGroup(command.brand, group.name_zh)}
-                          className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/60"
-                          aria-expanded={!isCollapsed}
-                        >
-                          {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                          <span className="font-medium text-foreground">{group.name_zh}</span>
-                          <span className="rounded-sm bg-muted px-2 py-0.5 text-caption text-muted-foreground">
-                            {group.flags.length}
-                          </span>
-                          <span className="ml-auto text-caption text-muted-foreground">
-                            {group.source === 'explicit' ? '原始分组' : '智能分组'}
-                          </span>
-                        </button>
-                        {!isCollapsed && (
-                          <div className="px-4 pb-4">
-                            <div className="overflow-hidden rounded-md border border-border">
-                              {group.flags.map((flag) => (
-                                <div
-                                  key={`${groupKey}:${flag.name}:${flag.args ?? ''}`}
-                                  className={cn(
-                                    'grid gap-2 border-b border-border bg-background px-3 py-3 last:border-b-0',
-                                    'lg:grid-cols-[minmax(180px,0.9fr)_minmax(0,1.4fr)]',
-                                  )}
-                                >
-                                  <div className="min-w-0">
-                                    <code className="break-words rounded-sm bg-muted px-1.5 py-0.5 font-mono text-caption text-primary">
-                                      {flag.name}
-                                    </code>
-                                    {flag.args && (
-                                      <div className="mt-1 break-words font-mono text-caption text-muted-foreground">
-                                        {flag.args}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="text-body-sm text-foreground">{flag.desc_zh}</p>
-                                    <p className="mt-1 break-words text-caption text-muted-foreground">
-                                      {flag.raw}
-                                    </p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+        <div className={cn('grid min-h-0 gap-4', isScoped && 'xl:grid-cols-[minmax(0,1fr)_300px]')}>
+          <div className="space-y-4 pb-2">
+            {visibleCommands.map((command) => {
+              const activeCommandTab = selectedCommandTabs[command.brand] ?? getDefaultCommandTab(command)
+              return (
+                <section key={command.brand} className="overflow-hidden rounded-md border border-border bg-card">
+                  <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <CommandIcon brand={command.brand} iconBrand={command.iconBrand} />
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="font-mono text-h4 font-semibold text-foreground">{command.brand}</h2>
+                          {command.version && (
+                            <span className="rounded-sm bg-muted px-2 py-0.5 text-caption text-muted-foreground">
+                              v{command.version}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-body-sm text-muted-foreground">{command.summary_zh}</p>
                       </div>
-                    )
-                  })}
-                </div>
-              )}
-              </section>
-            )
-          })}
+                    </div>
+                    <CommandHeaderTabs
+                      command={command}
+                      activeTab={activeCommandTab}
+                      onSelect={(tab) => selectCommandTab(command.brand, tab)}
+                    />
+                  </div>
+
+                  {activeCommandTab === 'subcommands' && (
+                    <Subcommands
+                      brand={command.brand}
+                      subcommands={command.subcommands ?? []}
+                      selectedName={selectedSubcommands[command.brand]}
+                      onSelect={(subcommandName) => selectSubcommand(command.brand, subcommandName)}
+                    />
+                  )}
+
+                  {activeCommandTab === 'raw' && <RawHelpPanel command={command} />}
+
+                  {activeCommandTab === 'flags' && command.groups.length > 0 && (
+                    <div className="divide-y divide-border">
+                      {command.groups.map((group) => {
+                        const groupKey = `${command.brand}:${group.name_zh}`
+                        const isCollapsed = collapsed.has(groupKey)
+                        return (
+                          <div key={groupKey}>
+                            <button
+                              type="button"
+                              onClick={() => toggleGroup(command.brand, group.name_zh)}
+                              className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/60"
+                              aria-expanded={!isCollapsed}
+                            >
+                              {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                              <span className="font-medium text-foreground">{group.name_zh}</span>
+                              <span className="rounded-sm bg-muted px-2 py-0.5 text-caption text-muted-foreground">
+                                {group.flags.length}
+                              </span>
+                              <span className="ml-auto text-caption text-muted-foreground">
+                                {group.source === 'explicit' ? '原始分组' : '智能分组'}
+                              </span>
+                            </button>
+                            {!isCollapsed && (
+                              <div className="px-4 pb-4">
+                                <div className="overflow-hidden rounded-md border border-border">
+                                  {group.flags.map((flag) => (
+                                    <div
+                                      key={`${groupKey}:${flag.name}:${flag.args ?? ''}`}
+                                      className={cn(
+                                        'grid gap-2 border-b border-border bg-background px-3 py-3 last:border-b-0',
+                                        'lg:grid-cols-[minmax(180px,0.9fr)_minmax(0,1.4fr)]',
+                                      )}
+                                    >
+                                      <div className="min-w-0">
+                                        <code className="break-words rounded-sm bg-muted px-1.5 py-0.5 font-mono text-caption text-primary">
+                                          {flag.name}
+                                        </code>
+                                        {flag.args && (
+                                          <div className="mt-1 break-words font-mono text-caption text-muted-foreground">
+                                            {flag.args}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="min-w-0">
+                                        <p className="text-body-sm text-foreground">{flag.desc_zh}</p>
+                                        <p className="mt-1 break-words text-caption text-muted-foreground">
+                                          {flag.raw}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </section>
+              )
+            })}
+          </div>
+          {contextCommand && (
+            <section className="hidden xl:block">
+              <CommandContextPanel command={contextCommand} />
+            </section>
+          )}
         </div>
       )}
     </div>

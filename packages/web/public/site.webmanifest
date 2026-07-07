@@ -1,11 +1,11 @@
 {
-  "name": "HuHaa-MySkills",
-  "short_name": "MySkills",
-  "description": "一个高效的技能、规则和提示管理工具",
+  "name": "HuHaa AI 助手",
+  "short_name": "HuHaa",
+  "description": "HuHaa AI 助手：本地技能 / 插件 / MCP 聚合中心",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#7c3aed",
+  "theme_color": "#3B82F6",
   "orientation": "portrait-primary",
   "icons": [
     {

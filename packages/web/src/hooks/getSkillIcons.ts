@@ -85,7 +85,7 @@ const TIER_ICONS: Record<string, IconMapping> = {
   },
   other: {
     icon: '⚙️',
-    label: '其他来源',
+    label: '其它技能',
     colorClass: 'text-slate-500',
   },
 };

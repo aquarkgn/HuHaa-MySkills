@@ -20,10 +20,10 @@ export const KIND_LABEL: Record<string, string> = {
 export const TIER_LABEL: Record<string, string> = {
   tool: '官方工具',
   directory: '自定义技能',
-  other: '其他来源',
+  other: '其它技能',
   'tier-1': '官方工具',
   'tier-2': '自定义技能',
-  'tier-3': '其他来源',
+  'tier-3': '其它技能',
 }
 
 // 品牌名保留英文，仅做大小写规范化

@@ -1,11 +1,21 @@
 import type { ReactNode } from 'react'
-import { ArrowRight, BookOpen, TerminalSquare, Code2 } from 'lucide-react'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import {
+  ArrowRight,
+  BookOpen,
+  CheckCircle2,
+  Clock3,
+  Layers,
+  Sparkles,
+  TerminalSquare,
+} from 'lucide-react'
 import {
   COMMAND_BRAND_SUMMARIES,
   TOTAL_FLAG_COUNT,
   TOTAL_SUBCOMMAND_COUNT,
 } from '@/lib/commands'
+import { editorLabel } from '@/lib/editors'
+import { itemEditorKey } from './SkillsView'
+import { displayDescription, kindLabel } from '@/lib/i18n'
 import type { SkillItem, Stats } from '@/types'
 
 interface DashboardViewProps {
@@ -17,159 +27,253 @@ interface DashboardViewProps {
   /**
    * 技能条目列表。仅在 `stats === null`（fetchStats 失败但 fetchSkills 成功）时
    * 作为兜底，用 `items.filter(!parseError).length` 估计条目数。
-   * 在 stats 已加载的常规路径中，此 prop 不影响渲染输出。
    */
   items: SkillItem[]
   onOpenSkills: () => void
   onOpenCommands: () => void
-  onOpenEditor: () => void
+  onOpenOtherSkills: () => void
 }
 
-interface FeatureCardProps {
-  title: string
-  description: string
+interface MetricTileProps {
+  label: string
+  value: string
   icon: ReactNode
-  accent: string
-  metrics: { label: string; value: string }[]
-  ctaLabel: string
-  onOpen: () => void
-  comingSoon?: boolean
+  tone?: 'primary' | 'success' | 'warning'
 }
 
-function FeatureCard({
-  title,
-  description,
-  icon,
-  accent,
-  metrics,
-  ctaLabel,
-  onOpen,
-  comingSoon,
-}: FeatureCardProps) {
+function MetricTile({ label, value, icon, tone = 'primary' }: MetricTileProps) {
+  const toneClass =
+    tone === 'success'
+      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+      : tone === 'warning'
+        ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+        : 'bg-primary-soft text-primary'
+
   return (
-    <Card
-      className="group flex h-full cursor-pointer flex-col transition-all hover:border-primary hover:shadow-md"
-      onClick={onOpen}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          onOpen()
-        }
-      }}
-      aria-label={`进入 ${title}`}
-    >
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <span
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg"
-            style={{ backgroundColor: accent + '1A', color: accent }}
-          >
-            {icon}
-          </span>
-          <div className="min-w-0">
-            <CardTitle className="flex items-center gap-2">
-              {title}
-              {comingSoon && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-caption font-normal text-muted-foreground">
-                  待开发
-                </span>
-              )}
-            </CardTitle>
-            <CardDescription className="mt-0.5">{description}</CardDescription>
-          </div>
+    <div className="rounded-md border border-border bg-card px-4 py-3">
+      <div className="flex items-center gap-3">
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-md ${toneClass}`}>
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <div className="font-mono text-h4 font-semibold text-foreground">{value}</div>
+          <div className="truncate text-caption text-muted-foreground">{label}</div>
         </div>
-      </CardHeader>
-      <CardContent className="mt-auto">
-        <div className="flex flex-wrap gap-2">
-          {metrics.map((m) => (
-            <span
-              key={m.label}
-              className="rounded-md bg-muted px-2 py-1 text-caption text-muted-foreground"
-            >
-              <span className="mr-1 text-foreground">{m.value}</span>
-              {m.label}
-            </span>
-          ))}
-        </div>
-        <div className="mt-4 inline-flex items-center gap-1 text-body-sm font-medium text-primary">
-          {ctaLabel}
-          <ArrowRight
-            size={14}
-            className="transition-transform group-hover:translate-x-1"
-          />
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 
-/**
- * 首页仪表盘：以三个功能卡片呈现入口。
- * - 进入技能模块前若数据未就绪，按 0 渲染（保留视觉一致）。
- * - 命令/编辑器卡片统计从 commands.json 聚合，与侧栏共享 lib/commands 口径。
- */
+interface WorkActionProps {
+  title: string
+  description: string
+  icon: ReactNode
+  onOpen: () => void
+}
+
+function WorkAction({ title, description, icon, onOpen }: WorkActionProps) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group flex w-full items-center gap-3 rounded-md border border-border bg-card px-4 py-3 text-left transition-colors hover:border-primary hover:bg-primary-soft/40"
+      aria-label={title}
+    >
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-muted text-primary">
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-body-sm font-semibold text-foreground">{title}</span>
+        <span className="mt-0.5 block truncate text-caption text-muted-foreground">
+          {description}
+        </span>
+      </span>
+      <ArrowRight size={16} className="text-muted-foreground transition-transform group-hover:translate-x-1" />
+    </button>
+  )
+}
+
+function formatUpdatedAt(value?: string): string {
+  if (!value) return '未知'
+  const time = new Date(value)
+  if (Number.isNaN(time.getTime())) return '未知'
+  return time.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
+}
+
 export function DashboardView({
   stats,
   items,
   onOpenSkills,
   onOpenCommands,
-  onOpenEditor,
+  onOpenOtherSkills,
 }: DashboardViewProps) {
-  // 入口统计：技能数（仅统计成功解析的条目，错误条目在加载阶段已能被 catch）
-  const skillCount = items.filter((it) => !it.parseError).length
-  const statsTotal = stats?.total ?? skillCount
-
-  // 命令统计从模块顶层预算常量读取，避免每次渲染重复计算
+  const validItems = items.filter((it) => !it.parseError)
+  const statsTotal = stats?.total ?? validItems.length
   const commandBrandCount = COMMAND_BRAND_SUMMARIES.length
-  const flagTotal = TOTAL_FLAG_COUNT
-  const subcommandTotal = TOTAL_SUBCOMMAND_COUNT
+  const recentItems = [...validItems]
+    .filter((item) => item.updatedAt)
+    .sort((a, b) => Date.parse(b.updatedAt ?? '') - Date.parse(a.updatedAt ?? ''))
+    .slice(0, 5)
+  const sourceRows = Object.entries(stats?.byEditor ?? {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+  const kindRows = Object.entries(stats?.byKind ?? {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
 
   return (
-    <div className="canvas-dotted -m-6 min-h-full p-6">
-      <h1 className="mb-1 text-h3 font-bold text-foreground">首页</h1>
-      <p className="mb-5 text-body-sm text-muted-foreground">
-        本地聚合的技能 / 命令 / 编辑器总览 — 选择一个模块进入。
-      </p>
+    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5">
+      <section className="rounded-md border border-border bg-card px-5 py-4">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-caption font-medium text-primary">
+              <CheckCircle2 size={14} />
+              本地工作台已就绪
+            </div>
+            <h1 className="mt-1 text-h3 font-bold text-foreground">HuHaa AI 助手</h1>
+            <p className="mt-1 max-w-3xl text-body-sm text-muted-foreground">
+              集中浏览本机技能、插件与常用 CLI 帮助，快速找到可复用的 AI 辅助能力。
+            </p>
+          </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <FeatureCard
-          title="技能"
-          description="按 editor / 来源浏览本地技能、插件与 MCP 配置。"
-          icon={<BookOpen size={20} />}
-          accent="#2563EB"
-          metrics={[
-            { label: '个技能条目', value: String(statsTotal) },
-          ]}
-          ctaLabel="进入技能模块"
-          onOpen={onOpenSkills}
-        />
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:min-w-[620px]">
+            <MetricTile label="技能条目" value={String(statsTotal)} icon={<BookOpen size={18} />} />
+            <MetricTile
+              label="命令品牌"
+              value={String(commandBrandCount)}
+              icon={<TerminalSquare size={18} />}
+              tone="success"
+            />
+            <MetricTile label="Flags" value={String(TOTAL_FLAG_COUNT)} icon={<Layers size={18} />} />
+            <MetricTile
+              label="子命令"
+              value={String(TOTAL_SUBCOMMAND_COUNT)}
+              icon={<Sparkles size={18} />}
+              tone="warning"
+            />
+          </div>
+        </div>
+      </section>
 
-        <FeatureCard
-          title="CLI 命令"
-          description="常见 CLI 工具的 flag 与子命令能力地图。"
-          icon={<TerminalSquare size={20} />}
-          accent="#8B5CF6"
-          metrics={[
-            { label: '个品牌', value: String(commandBrandCount) },
-            { label: '个 flag', value: String(flagTotal) },
-            { label: '个子命令', value: String(subcommandTotal) },
-          ]}
-          ctaLabel="进入命令模块"
-          onOpen={onOpenCommands}
-        />
+      <div className="grid min-h-0 gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+        <section className="detail">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-h4 font-semibold text-foreground">继续工作</h2>
+              <p className="mt-1 text-body-sm text-muted-foreground">从最常用的入口继续，不需要先判断模块。</p>
+            </div>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-3">
+            <WorkAction
+              title="打开技能库"
+              description={`${statsTotal} 个本地技能与插件`}
+              icon={<BookOpen size={18} />}
+              onOpen={onOpenSkills}
+            />
+            <WorkAction
+              title="查看命令手册"
+              description={`${TOTAL_FLAG_COUNT} 个 flag / ${TOTAL_SUBCOMMAND_COUNT} 个子命令`}
+              icon={<TerminalSquare size={18} />}
+              onOpen={onOpenCommands}
+            />
+            <WorkAction
+              title="查看其它技能"
+              description="在技能库中筛选其它技能"
+              icon={<Sparkles size={18} />}
+              onOpen={onOpenOtherSkills}
+            />
+          </div>
+        </section>
 
-        <FeatureCard
-          title="编辑器"
-          description="编辑器与 AI 辅助能力聚合（占位模块）。"
-          icon={<Code2 size={20} />}
-          accent="#F59E0B"
-          metrics={[]}
-          ctaLabel="查看编辑器占位"
-          onOpen={onOpenEditor}
-          comingSoon
-        />
+        <section className="detail">
+          <div className="mb-4 flex items-center gap-2">
+            <Clock3 size={16} className="text-primary" />
+            <h2 className="text-h4 font-semibold text-foreground">来源健康</h2>
+          </div>
+          {sourceRows.length === 0 ? (
+            <p className="text-body-sm text-muted-foreground">暂无来源统计，等待下一次扫描。</p>
+          ) : (
+            <div className="space-y-3">
+              {sourceRows.map(([source, count]) => (
+                <div key={source} className="flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3 text-body-sm">
+                      <span className="truncate font-medium text-foreground">{editorLabel(source)}</span>
+                      <span className="font-mono text-caption text-muted-foreground">{count}</span>
+                    </div>
+                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-primary"
+                        style={{ width: `${Math.max(6, Math.min(100, (count / Math.max(statsTotal, 1)) * 100))}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+
+      <div className="grid min-h-0 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="detail">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-h4 font-semibold text-foreground">最近更新</h2>
+              <p className="mt-1 text-body-sm text-muted-foreground">最近扫描到变化的技能条目。</p>
+            </div>
+          </div>
+          {recentItems.length === 0 ? (
+            <p className="text-body-sm text-muted-foreground">暂无最近更新记录。</p>
+          ) : (
+            <div className="divide-y divide-border overflow-hidden rounded-md border border-border">
+              {recentItems.map((item) => (
+                <div key={item.id} className="grid gap-2 bg-background px-3 py-3 md:grid-cols-[1fr_auto]">
+                  <div className="min-w-0">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <span className="truncate text-body-sm font-medium text-foreground">
+                        {item.title || item.name}
+                      </span>
+                      <span className="rounded-sm bg-muted px-1.5 py-0.5 text-caption text-muted-foreground">
+                        {kindLabel(item.kind)}
+                      </span>
+                      <span className="rounded-sm bg-primary-soft px-1.5 py-0.5 text-caption text-primary">
+                        {editorLabel(itemEditorKey(item))}
+                      </span>
+                    </div>
+                    <p className="mt-1 truncate text-caption text-muted-foreground">
+                      {displayDescription(item) || item.preview || '无描述'}
+                    </p>
+                  </div>
+                  <span className="font-mono text-caption text-muted-foreground">
+                    {formatUpdatedAt(item.updatedAt)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="detail">
+          <h2 className="text-h4 font-semibold text-foreground">推荐下一步</h2>
+          <div className="mt-4 space-y-3">
+            {kindRows.length > 0 ? (
+              kindRows.map(([kind, count]) => (
+                <div key={kind} className="rounded-md border border-border bg-background px-3 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-body-sm font-medium text-foreground">{kindLabel(kind)}</span>
+                    <span className="font-mono text-caption text-muted-foreground">{count}</span>
+                  </div>
+                  <p className="mt-1 text-caption text-muted-foreground">
+                    可在技能库中继续按类型筛选和复制调用提示。
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-body-sm text-muted-foreground">扫描完成后会展示可优先整理的类型。</p>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   )

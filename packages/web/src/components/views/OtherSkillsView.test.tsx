@@ -1,126 +1,175 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { OtherSkillsView } from './OtherSkillsView'
+import type { OtherSkill } from '@/types/other-skill'
 
-// Setup mock fetch before tests
+const sampleSkills: OtherSkill[] = [
+  {
+    id: 'docker-skill',
+    name: 'docker-helper',
+    title: 'Docker Helper',
+    category: ['tool'],
+    brand: 'docker',
+    source: 'directory-skill',
+    description: 'Manage local containers.',
+    tags: ['container', 'devops'],
+    docs: 'https://docs.docker.com/',
+    examples: ['docker ps'],
+    updatedAt: '2026-07-05T10:00:00.000Z',
+  },
+  {
+    id: 'ai-skill',
+    name: 'prompt-review',
+    title: 'Prompt Review',
+    category: ['ai'],
+    brand: 'codex',
+    source: 'project-runbook',
+    description: 'Review prompts before shipping.',
+    links: [{ label: 'Runbook', url: 'https://example.com/runbook' }],
+    updatedAt: '2026-07-04T10:00:00.000Z',
+  },
+]
+
+function mockOtherSkills(skills: OtherSkill[]) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((url: string | URL) => {
+      const href = String(url)
+      if (href.includes('/api/other-skills')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ ok: true, skills }),
+        } as Response)
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ ok: true, result: '', targetLang: 'zh-CN' }),
+      } as Response)
+    }),
+  )
+}
+
 beforeEach(() => {
-  // Reset fetch mock
   vi.clearAllMocks()
+  const storage = new Map<string, string>()
+  vi.stubGlobal('localStorage', {
+    getItem: vi.fn((key: string) => storage.get(key) ?? null),
+    setItem: vi.fn((key: string, value: string) => {
+      storage.set(key, value)
+    }),
+    removeItem: vi.fn((key: string) => {
+      storage.delete(key)
+    }),
+    clear: vi.fn(() => {
+      storage.clear()
+    }),
+    key: vi.fn((index: number) => Array.from(storage.keys())[index] ?? null),
+    get length() {
+      return storage.size
+    },
+  })
+  localStorage.setItem('huhaa_translate_display', '0')
+  mockOtherSkills([])
+})
 
-  // Mock successful API response with empty skills
-  ;(globalThis as any).fetch = vi.fn(() =>
-    Promise.resolve({
-      ok: true,
-      json: () => Promise.resolve([]),
-    })
-  ) as any
+afterEach(() => {
+  localStorage.clear()
+  vi.unstubAllGlobals()
 })
 
 describe('OtherSkillsView', () => {
-  it('应该渲染搜索框和容器结构', async () => {
+  it('渲染发布级工作台外壳和搜索框', async () => {
     const { container } = render(<OtherSkillsView />)
 
-    // 验证容器存在
-    expect(container.querySelector('[class*="flex"]')).toBeInTheDocument()
-
-    // 搜索框应该存在
-    const searchInput = screen.getByPlaceholderText(/搜索其它技能/)
-    expect(searchInput).toBeInTheDocument()
-    expect(searchInput).toHaveAttribute('type', 'text')
-  })
-
-  it('应该支持搜索输入', () => {
-    const onQuery = vi.fn()
-    render(<OtherSkillsView onQuery={onQuery} />)
-
-    const searchInput = screen.getByPlaceholderText(/搜索其它技能/) as HTMLInputElement
-    fireEvent.change(searchInput, { target: { value: 'docker' } })
-
-    expect(onQuery).toHaveBeenCalledWith('docker')
-  })
-
-  it('应该在未选择技能时显示提示', async () => {
-    render(<OtherSkillsView />)
-
-    // 等待加载完成
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
-    // 没有选中任何技能时，应显示提示信息
-    const emptyPrompt = screen.queryByText(/选择一个技能查看详情/)
-    expect(emptyPrompt || screen.getByText(/加载中|无结果|选择一个技能/)).toBeInTheDocument()
-  })
-
-  it('应该支持受控组件模式', () => {
-    const onQuery = vi.fn()
-    const onSelect = vi.fn()
-
-    render(<OtherSkillsView query="test" onQuery={onQuery} onSelect={onSelect} selectedId={null} />)
-
-    const searchInput = screen.getByPlaceholderText(/搜索其它技能/) as HTMLInputElement
-    expect(searchInput.value).toBe('test')
-  })
-
-  it('应该有两列布局结构', () => {
-    render(<OtherSkillsView />)
-
-    // 验证搜索框存在
+    expect(screen.getByRole('heading', { name: '其它技能' })).toBeInTheDocument()
     expect(screen.getByPlaceholderText(/搜索其它技能/)).toBeInTheDocument()
+    expect(container.querySelector('.grid.min-h-0.flex-1')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('暂无其它技能')).toBeInTheDocument())
   })
 
-  it('应该在加载中显示加载状态', async () => {
-    // 模拟永不resolve的fetch
-    ;(globalThis as any).fetch = vi.fn(
-      () =>
-        new Promise(() => {
-          /* never resolves */
-        })
-    ) as any
-
-    render(<OtherSkillsView />)
-
-    // 加载状态应该显示
-    const loadingText = screen.getByText(/加载中/)
-    expect(loadingText).toBeInTheDocument()
-  })
-
-  it('应该在获取数据失败时显示错误', async () => {
-    // 模拟fetch失败
-    ;(globalThis as any).fetch = vi.fn(() => Promise.reject(new Error('Network error'))) as any
-
-    render(<OtherSkillsView />)
-
-    // 等待错误状态显示
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
-    const errorText = screen.queryByText(/加载失败/)
-    expect(errorText || screen.getByText(/加载中|选择一个技能/)).toBeInTheDocument()
-  })
-
-  it('应该接受并传递 selectedId 属性', () => {
-    const onSelect = vi.fn()
-    render(<OtherSkillsView selectedId="test-id" onSelect={onSelect} />)
-
-    // 验证组件接受了 selectedId
-    expect(screen.getByPlaceholderText(/搜索其它技能/)).toBeInTheDocument()
-  })
-
-  it('应该接受并传递 query 属性', () => {
+  it('支持受控搜索输入', async () => {
     const onQuery = vi.fn()
-    render(<OtherSkillsView query="existing-query" onQuery={onQuery} />)
+    render(<OtherSkillsView query="docker" onQuery={onQuery} />)
 
     const searchInput = screen.getByPlaceholderText(/搜索其它技能/) as HTMLInputElement
-    expect(searchInput.value).toBe('existing-query')
+    expect(searchInput.value).toBe('docker')
+
+    fireEvent.change(searchInput, { target: { value: 'codex' } })
+    expect(onQuery).toHaveBeenCalledWith('codex')
+    await waitFor(() => expect(screen.getByText('暂无其它技能')).toBeInTheDocument())
   })
 
-  it('应该有正确的CSS类用于响应式设计', () => {
-    const { container } = render(<OtherSkillsView />)
+  it('加载完成后展示紧凑列表、首项详情和右侧元数据', async () => {
+    mockOtherSkills(sampleSkills)
+    render(<OtherSkillsView />)
 
-    // 验证响应式类
-    const leftPanel = container.querySelector('.sm\\:w-1\\/3')
-    expect(leftPanel).toBeInTheDocument()
+    await waitFor(() => expect(screen.getAllByText('Docker Helper').length).toBeGreaterThan(0))
+    expect(screen.getAllByText('Manage local containers.').length).toBeGreaterThan(0)
+    expect(screen.getByText('技能上下文')).toBeInTheDocument()
+    expect(screen.getAllByText('directory-skill').length).toBeGreaterThan(0)
+    expect(screen.getByText('$ docker ps')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '文档' })).toHaveAttribute('href', 'https://docs.docker.com/')
+  })
 
-    const rightPanel = container.querySelector('.hidden.w-2\\/3.sm\\:flex')
-    expect(rightPanel).toBeInTheDocument()
+  it('selectedId 指向指定技能时展示对应详情', async () => {
+    mockOtherSkills(sampleSkills)
+    render(<OtherSkillsView selectedId="ai-skill" />)
+
+    await waitFor(() => expect(screen.getAllByText('Prompt Review').length).toBeGreaterThan(0))
+    expect(screen.getAllByText('Review prompts before shipping.').length).toBeGreaterThan(0)
+    expect(screen.getByText('Runbook')).toBeInTheDocument()
+    expect(screen.queryByText('$ docker ps')).toBeNull()
+  })
+
+  it('点击列表项回传选中 id', async () => {
+    const onSelect = vi.fn()
+    mockOtherSkills(sampleSkills)
+    render(<OtherSkillsView onSelect={onSelect} />)
+
+    await waitFor(() => expect(screen.getAllByText('Prompt Review').length).toBeGreaterThan(0))
+    fireEvent.click(screen.getAllByText('Prompt Review')[0])
+    expect(onSelect).toHaveBeenCalledWith('ai-skill')
+  })
+
+  it('分类筛选会收窄列表', async () => {
+    mockOtherSkills(sampleSkills)
+    render(<OtherSkillsView />)
+
+    await waitFor(() => expect(screen.getAllByText('Docker Helper').length).toBeGreaterThan(0))
+    fireEvent.click(screen.getByRole('button', { name: 'ai 1' }))
+
+    expect(screen.getAllByText('Prompt Review').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Docker Helper')).toBeNull()
+  })
+
+  it('加载中显示加载状态', () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        () =>
+          new Promise(() => {
+            /* 保持 pending */
+          }),
+      ),
+    )
+
+    render(<OtherSkillsView />)
+    expect(screen.getByText(/加载中/)).toBeInTheDocument()
+  })
+
+  it('获取数据失败时显示错误', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('Network error'))))
+
+    render(<OtherSkillsView />)
+    await waitFor(() => expect(screen.getByText(/加载失败/)).toBeInTheDocument())
+  })
+
+  it('空数据时显示稳定空状态', async () => {
+    mockOtherSkills([])
+    render(<OtherSkillsView />)
+
+    await waitFor(() => expect(screen.getByText('暂无其它技能')).toBeInTheDocument())
+    expect(screen.getByText('选择一项其它技能查看详情')).toBeInTheDocument()
   })
 })

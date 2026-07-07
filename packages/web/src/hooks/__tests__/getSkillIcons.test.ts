@@ -131,7 +131,7 @@ describe('getSkillIcons', () => {
 
       expect(result.isTier3).toBe(true)
       expect(result.tierIcon).toBe('⚙️') // Other icon
-      expect(result.tierLabel).toBe('其他来源')
+      expect(result.tierLabel).toBe('其它技能')
       expect(result.displayLabel).toBe('⚙️ deployment-guide')
       expect(result.tierSort).toBe(3)
     })
@@ -240,7 +240,7 @@ describe('getSkillIcons', () => {
       expect(tiers).toContainEqual({
         tier: 'other',
         icon: '⚙️',
-        label: '其他来源',
+        label: '其它技能',
       })
     })
   })

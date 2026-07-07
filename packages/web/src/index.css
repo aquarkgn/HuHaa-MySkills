@@ -100,6 +100,35 @@
     @apply rounded-lg border border-border bg-card p-6 text-card-foreground;
   }
 
+  @media (max-width: 900px) {
+    .app-shell {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      grid-template-areas:
+        'topbar'
+        'sidebar'
+        'main';
+    }
+    .topbar {
+      @apply min-h-14 flex-wrap gap-2 px-3 py-2;
+    }
+    .sidebar {
+      @apply flex-row gap-1 overflow-x-auto overflow-y-hidden border-b border-r-0 p-2;
+    }
+    .sidebar > p {
+      @apply hidden;
+    }
+    .sidebar > button {
+      @apply shrink-0;
+    }
+    .main-pane {
+      @apply p-4;
+    }
+    .detail {
+      @apply p-4;
+    }
+  }
+
   /* 点阵画布纹理（仅内容区） */
   .canvas-dotted {
     background-color: hsl(var(--color-background));
@@ -157,5 +186,14 @@
   .markdown-body th,
   .markdown-body td {
     @apply border border-border px-2 py-1 text-left;
+  }
+}
+
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
   }
 }

@@ -2,164 +2,134 @@ import { describe, it, expect, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { DashboardView } from './DashboardView'
-import type { Stats } from '@/types'
+import type { SkillItem, Stats } from '@/types'
 
 function statsWith(total: number): Stats {
   return {
     total,
     bySource: {},
-    byEditor: { 'Claude Code': total },
-    byKind: {},
+    byEditor: { 'Claude Code': total - 2, Cursor: 2 },
+    byKind: { skill: total - 1, mcp: 1 },
     byCategory: {},
     byBrand: {},
   }
 }
 
+const sampleItems: SkillItem[] = [
+  {
+    id: 'skill-a',
+    kind: 'skill',
+    source: 'Claude Code',
+    name: 'plan-devex-review',
+    title: '开发体验评审',
+    description: 'Review developer experience plans.',
+    updatedAt: '2026-07-05T10:00:00.000Z',
+  },
+  {
+    id: 'skill-b',
+    kind: 'mcp',
+    source: 'Cursor',
+    name: 'browser-tools',
+    description: 'Browser automation tools.',
+    updatedAt: '2026-07-04T10:00:00.000Z',
+  },
+]
+
 const noop = () => {}
 
-describe('DashboardView 三个功能入口', () => {
-  it('渲染三个功能卡片：技能 / CLI 命令 / 编辑器', () => {
+describe('DashboardView 发布级首页', () => {
+  it('渲染品牌、状态区和关键指标', () => {
     render(
       <DashboardView
         stats={statsWith(7)}
-        items={[]}
+        items={sampleItems}
         onOpenSkills={noop}
         onOpenCommands={noop}
-        onOpenEditor={noop}
+        onOpenOtherSkills={noop}
       />,
     )
-    expect(screen.getByText('技能')).toBeInTheDocument()
-    expect(screen.getByText('CLI 命令')).toBeInTheDocument()
-    expect(screen.getByText('编辑器')).toBeInTheDocument()
+
+    expect(screen.getByText('HuHaa AI 助手')).toBeInTheDocument()
+    expect(screen.getByText('本地工作台已就绪')).toBeInTheDocument()
+    expect(screen.getByText('技能条目')).toBeInTheDocument()
+    expect(screen.getByText('命令品牌')).toBeInTheDocument()
+    expect(screen.getByText('Flags')).toBeInTheDocument()
+    expect(screen.getByText('子命令')).toBeInTheDocument()
   })
 
-  it('统计正确：技能总数、命令品牌数、flag/子命令数', () => {
+  it('继续工作区提供三个真实入口', () => {
     render(
       <DashboardView
         stats={statsWith(7)}
-        items={[]}
+        items={sampleItems}
         onOpenSkills={noop}
         onOpenCommands={noop}
-        onOpenEditor={noop}
+        onOpenOtherSkills={noop}
       />,
     )
-    // 技能卡片：「7 个技能条目」
-    expect(screen.getByText('7')).toBeInTheDocument()
-    expect(screen.getByText(/个技能条目/)).toBeInTheDocument()
-    // 命令卡片：5 个品牌（来自 commands.json）
-    expect(screen.getAllByText('5').length).toBeGreaterThan(0)
-    expect(screen.getByText(/个品牌/)).toBeInTheDocument()
+
+    expect(screen.getByText('继续工作')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '打开技能库' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '查看命令手册' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '查看其它技能' })).toBeInTheDocument()
   })
 
-  it('点击技能卡片触发 onOpenSkills', () => {
+  it('点击入口触发对应回调', () => {
     const onOpenSkills = vi.fn()
-    render(
-      <DashboardView
-        stats={statsWith(3)}
-        items={[]}
-        onOpenSkills={onOpenSkills}
-        onOpenCommands={noop}
-        onOpenEditor={noop}
-      />,
-    )
-    fireEvent.click(screen.getByLabelText('进入 技能'))
-    expect(onOpenSkills).toHaveBeenCalledTimes(1)
-  })
-
-  it('点击 CLI 命令卡片触发 onOpenCommands', () => {
     const onOpenCommands = vi.fn()
-    render(
-      <DashboardView
-        stats={statsWith(3)}
-        items={[]}
-        onOpenSkills={noop}
-        onOpenCommands={onOpenCommands}
-        onOpenEditor={noop}
-      />,
-    )
-    fireEvent.click(screen.getByLabelText('进入 CLI 命令'))
-    expect(onOpenCommands).toHaveBeenCalledTimes(1)
-  })
+    const onOpenOtherSkills = vi.fn()
 
-  it('点击编辑器卡片触发 onOpenEditor', () => {
-    const onOpenEditor = vi.fn()
     render(
       <DashboardView
         stats={statsWith(3)}
-        items={[]}
-        onOpenSkills={noop}
-        onOpenCommands={noop}
-        onOpenEditor={onOpenEditor}
-      />,
-    )
-    fireEvent.click(screen.getByLabelText('进入 编辑器'))
-    expect(onOpenEditor).toHaveBeenCalledTimes(1)
-  })
-
-  it('键盘 Enter 触发卡片回调', () => {
-    const onOpenCommands = vi.fn()
-    render(
-      <DashboardView
-        stats={statsWith(3)}
-        items={[]}
-        onOpenSkills={noop}
-        onOpenCommands={onOpenCommands}
-        onOpenEditor={noop}
-      />,
-    )
-    const card = screen.getByLabelText('进入 CLI 命令')
-    card.focus()
-    fireEvent.keyDown(card, { key: 'Enter' })
-    expect(onOpenCommands).toHaveBeenCalledTimes(1)
-  })
-
-  it('键盘 Space 触发卡片回调且阻止默认滚动', () => {
-    const onOpenSkills = vi.fn()
-    render(
-      <DashboardView
-        stats={statsWith(3)}
-        items={[]}
+        items={sampleItems}
         onOpenSkills={onOpenSkills}
-        onOpenCommands={noop}
-        onOpenEditor={noop}
+        onOpenCommands={onOpenCommands}
+        onOpenOtherSkills={onOpenOtherSkills}
       />,
     )
-    const card = screen.getByLabelText('进入 技能')
-    card.focus()
-    // Space 默认会滚动页面：断言 preventDefault 被调用
-    const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })
-    const preventSpy = vi.spyOn(event, 'preventDefault')
-    card.dispatchEvent(event)
+
+    fireEvent.click(screen.getByRole('button', { name: '打开技能库' }))
+    fireEvent.click(screen.getByRole('button', { name: '查看命令手册' }))
+    fireEvent.click(screen.getByRole('button', { name: '查看其它技能' }))
+
     expect(onOpenSkills).toHaveBeenCalledTimes(1)
-    expect(preventSpy).toHaveBeenCalledTimes(1)
+    expect(onOpenCommands).toHaveBeenCalledTimes(1)
+    expect(onOpenOtherSkills).toHaveBeenCalledTimes(1)
   })
 
-  it('其它键不触发卡片回调', () => {
-    const onOpenEditor = vi.fn()
+  it('展示来源健康、最近更新和推荐下一步', () => {
     render(
       <DashboardView
-        stats={statsWith(3)}
-        items={[]}
+        stats={statsWith(7)}
+        items={sampleItems}
         onOpenSkills={noop}
         onOpenCommands={noop}
-        onOpenEditor={onOpenEditor}
+        onOpenOtherSkills={noop}
       />,
     )
-    fireEvent.keyDown(screen.getByLabelText('进入 编辑器'), { key: 'a' })
-    expect(onOpenEditor).not.toHaveBeenCalled()
+
+    expect(screen.getByText('来源健康')).toBeInTheDocument()
+    expect(screen.getAllByText('Claude Code').length).toBeGreaterThan(0)
+    expect(screen.getByText('最近更新')).toBeInTheDocument()
+    expect(screen.getByText('开发体验评审')).toBeInTheDocument()
+    expect(screen.getByText('推荐下一步')).toBeInTheDocument()
+    expect(screen.getAllByText('技能').length).toBeGreaterThan(0)
   })
 
-  it('stats 缺失时不崩溃，按 0 渲染统计', () => {
+  it('stats 缺失时不崩溃，使用 items 兜底统计', () => {
     render(
       <DashboardView
         stats={null}
-        items={[]}
+        items={sampleItems}
         onOpenSkills={noop}
         onOpenCommands={noop}
-        onOpenEditor={noop}
+        onOpenOtherSkills={noop}
       />,
     )
-    expect(screen.getByText('技能')).toBeInTheDocument()
-    expect(screen.getByText('CLI 命令')).toBeInTheDocument()
+
+    expect(screen.getByText('HuHaa AI 助手')).toBeInTheDocument()
+    expect(screen.getByText('2')).toBeInTheDocument()
+    expect(screen.getByText('暂无来源统计，等待下一次扫描。')).toBeInTheDocument()
   })
 })

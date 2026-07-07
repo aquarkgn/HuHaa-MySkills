@@ -51,7 +51,7 @@ const RULES: Rule[] = [
 
 const FALLBACK: Omit<EditorMeta, 'label'> = { color: '#6B7280', icon: Boxes }
 const LABELS: Record<string, string> = {
-  'my-skills': '我的技能',
+  'my-skills': '自定义技能',
   'other-skills': '其它技能',
 }
 

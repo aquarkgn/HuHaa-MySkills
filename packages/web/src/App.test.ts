@@ -13,12 +13,14 @@ describe('App reducer 状态机（module × view，首页为默认）', () => {
       ...initialState,
       module: 'home',
       view: 'home',
+      tierFilter: 'tier-3',
       kindFilter: 'skill',
       selectedId: 'abc',
     }
     const next = reducer(dirty, { type: 'editor', key: 'Cursor' })
     expect(next.view).toBe('skills')
     expect(next.editorFilter).toBe('Cursor')
+    expect(next.tierFilter).toBeNull()
     expect(next.kindFilter).toBeNull()
     expect(next.selectedId).toBeNull()
   })
@@ -37,11 +39,14 @@ describe('App reducer 状态机（module × view，首页为默认）', () => {
     )
     expect(after.view).toBe('skills')
     expect(after.module).toBe('skills')
+    expect(after.tierFilter).toBeNull()
     expect(after.selectedCommandBrand).toBeNull()
   })
 
   it('query / kind / select 只改对应字段', () => {
     expect(reducer(initialState, { type: 'query', query: 'mcp' }).query).toBe('mcp')
+    expect(reducer(initialState, { type: 'commandQuery', query: 'serve' }).commandQuery).toBe('serve')
+    expect(reducer(initialState, { type: 'tier', tier: 'tier-3' }).tierFilter).toBe('tier-3')
     expect(reducer(initialState, { type: 'kind', kind: 'skill' }).kindFilter).toBe('skill')
     expect(reducer(initialState, { type: 'select', id: 'x1' }).selectedId).toBe('x1')
   })
@@ -93,16 +98,17 @@ describe('App reducer 状态机（module × view，首页为默认）', () => {
     expect(next.selectedCommandBrand).toBeNull()
   })
 
-  it('settings / otherSkills 视图切换保留 selectedCommandBrand（同模块内视图切换）', () => {
-    // 设计契约：从 commands 进入 settings 后回到 commands（通过 module 切换）会重置 brand，
-    // 但 settings/otherSkills 动作本身不重置 brand，避免 module 维度冗余清空。
+  it('settings / 其它技能入口清空 selectedCommandBrand，且其它技能归入技能库筛选', () => {
     const dirty: UIState = { ...initialState, selectedCommandBrand: 'hermes' }
     const settings = reducer(dirty, { type: 'settings' })
     expect(settings.view).toBe('settings')
-    expect(settings.selectedCommandBrand).toBe('hermes')
+    expect(settings.selectedCommandBrand).toBeNull()
     const otherSkills = reducer(dirty, { type: 'otherSkills' })
-    expect(otherSkills.view).toBe('otherSkills')
-    expect(otherSkills.selectedCommandBrand).toBe('hermes')
+    expect(otherSkills.module).toBe('skills')
+    expect(otherSkills.view).toBe('skills')
+    expect(otherSkills.tierFilter).toBe('tier-3')
+    expect(otherSkills.editorFilter).toBeNull()
+    expect(otherSkills.selectedCommandBrand).toBeNull()
   })
 
   it('Topbar module 切到 home 清空 selectedCommandBrand', () => {

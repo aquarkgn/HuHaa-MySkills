@@ -13,7 +13,7 @@ describe('editors 映射（D2 主轴 = editor）', () => {
 
   it('label 透传原值，已知内置来源转中文，(none) → 未分类', () => {
     expect(getEditorMeta('Claude Code').label).toBe('Claude Code')
-    expect(getEditorMeta('my-skills').label).toBe('我的技能')
+    expect(getEditorMeta('my-skills').label).toBe('自定义技能')
     expect(getEditorMeta('other-skills').label).toBe('其它技能')
     expect(getEditorMeta('(none)').label).toBe('未分类')
     expect(editorLabel('Cursor')).toBe('Cursor')

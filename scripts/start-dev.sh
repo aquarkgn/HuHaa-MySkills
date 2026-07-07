@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# HuHaa-MySkills 智能启动脚本 - 完全后台运行
+# HuHaa AI 助手智能启动脚本 - 完全后台运行
 # 功能：后台启动，自动处理端口占用，重启本服务或切换端口
 
 DEFAULT_PORT=11522
@@ -53,7 +53,7 @@ is_our_process() {
       fi
     else
       # 端口空闲，启动服务
-      echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting HuHaa-MySkills on port $PORT..."
+      echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting HuHaa AI 助手 on port $PORT..."
       nohup npm run start >/dev/null 2>&1 &
       sleep 2
       echo "[$(date +'%Y-%m-%d %H:%M:%S')] ✓ Service started on port $PORT"
@@ -68,5 +68,4 @@ is_our_process() {
 # 立即返回（真正的后台运行）
 exec 2>/dev/null
 exit 0
-
 

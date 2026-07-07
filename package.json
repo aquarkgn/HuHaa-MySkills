@@ -1,8 +1,8 @@
 {
   "name": "huhaa-myskills",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "private": false,
-  "description": "Local skill / plugin / MCP aggregation hub. Browse all your AI agent skills at http://localhost:11520.",
+  "description": "HuHaa AI 助手：本地技能 / 插件 / MCP 聚合中心。",
   "license": "MIT",
   "homepage": "https://github.com/aquarkgn/HuHaa-MySkills#readme",
   "repository": {
@@ -23,9 +23,15 @@
     "bin/",
     "build/",
     "config/",
-    "packages/",
-    "scripts/",
     "docs/",
+    "packages/scanner/package.json",
+    "packages/scanner/src/",
+    "packages/server/package.json",
+    "packages/server/src/",
+    "packages/web/dist/",
+    "packages/web/public/",
+    "scripts/install-and-sync.sh",
+    "scripts/sync-skills.sh",
     "README.md",
     "LICENSE"
   ],
@@ -46,6 +52,7 @@
     "typecheck:web": "tsc --noEmit -p packages/web/tsconfig.json",
     "test:web": "vitest run --root packages/web",
     "prepack": "node build/build-web.mjs",
+    "pack:smoke": "node build/pack-smoke.mjs",
     "test": "node --test packages/scanner/test/*.test.mjs packages/server/test/*.test.mjs",
     "verify": "node build/verify.mjs",
     "release": "npm version patch && git push"
@@ -55,6 +62,7 @@
     "fast-glob": "^3.3.2",
     "fastify": "^5.0.0",
     "google-translate-api-x": "^10.7.3",
+    "undici": "^6.27.0",
     "yaml": "^2.6.0"
   },
   "devDependencies": {

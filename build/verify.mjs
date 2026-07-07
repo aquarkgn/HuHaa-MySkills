@@ -106,10 +106,20 @@ limits:
       assert.equal(css.contentType.split(';')[0], 'text/css');
       assert.ok(css.body.includes('topbar') || css.body.includes('sidebar') || css.body.includes('detail'));
 
-      console.log('\n[verify] PASS build + tests + HTTP/API/static smoke checks');
+      const manifest = await fetchJson(`${base}/site.webmanifest`);
+      assert.equal(manifest.name, 'HuHaa AI 助手');
+      assert.ok(manifest.icons.some(icon => icon.sizes === '192x192'));
+      assert.ok(manifest.icons.some(icon => icon.sizes === '512x512'));
+
+      const favicon = await fetchBuffer(`${base}/favicon.ico`);
+      assert.equal(favicon.contentType.split(';')[0], 'image/x-icon');
+      assert.deepEqual([...favicon.body.subarray(0, 4)], [0x00, 0x00, 0x01, 0x00]);
     } finally {
       await app.close();
     }
+
+    run('node', ['build/pack-smoke.mjs']);
+    console.log('\n[verify] PASS build + tests + HTTP/API/static/package smoke checks');
   } finally {
     if (oldHome == null) delete process.env.HUHAA_HOME;
     else process.env.HUHAA_HOME = oldHome;
@@ -130,6 +140,13 @@ async function fetchText(url, init) {
   const res = await fetch(url, init);
   const body = await res.text();
   assert.equal(res.ok, true, `${url} returned ${res.status}: ${body.slice(0, 200)}`);
+  return { body, contentType: res.headers.get('content-type') || '' };
+}
+
+async function fetchBuffer(url, init) {
+  const res = await fetch(url, init);
+  const body = Buffer.from(await res.arrayBuffer());
+  assert.equal(res.ok, true, `${url} returned ${res.status}: ${body.toString('utf8', 0, 200)}`);
   return { body, contentType: res.headers.get('content-type') || '' };
 }
 

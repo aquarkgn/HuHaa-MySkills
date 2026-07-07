@@ -15,7 +15,7 @@ export interface SkillItem {
   name: string
   title?: string
   description?: string
-  category?: string[]
+  category?: string | string[]
   tier?: string
   brand?: string
   dirName?: string

@@ -4,24 +4,26 @@ import { Topbar, type ModuleKey } from '@/components/layout/Topbar'
 import { DashboardView } from '@/components/views/DashboardView'
 import { SkillsView } from '@/components/views/SkillsView'
 import { SettingsView } from '@/components/views/SettingsView'
-import { OtherSkillsView } from '@/components/views/OtherSkillsView'
 import { CliCommandView } from '@/components/views/CliCommandView'
 import { EditorPlaceholder } from '@/components/views/EditorPlaceholder'
 import { useLiveReload } from '@/hooks/useLiveReload'
 import { fetchSkills, fetchStats, reload } from '@/lib/api'
 import type { SkillItem, Stats } from '@/types'
 
-export type View = 'home' | 'skills' | 'otherSkills' | 'settings' | 'cli' | 'editor'
+type TierFilter = 'tier-1' | 'tier-2' | 'tier-3'
+
+export type View = 'home' | 'skills' | 'settings' | 'cli' | 'editor'
 
 export interface UIState {
   module: ModuleKey
   /** 当前模块内的视图；home 对应 dashboard，commands 对应 cli。 */
   view: View
   editorFilter: string | null
+  tierFilter: TierFilter | null
   kindFilter: string | null
   query: string
+  commandQuery: string
   selectedId: string | null
-  otherSkillsQuery: string
   /** CLI 命令侧栏选中的品牌；null 表示「全部命令」。 */
   selectedCommandBrand: string | null
 }
@@ -34,9 +36,10 @@ export type Action =
   | { type: 'otherSkills' }
   | { type: 'cli' }
   | { type: 'editorView' }
-  | { type: 'otherSkillsQuery'; query: string }
   | { type: 'editor'; key: string | null }
+  | { type: 'tier'; tier: TierFilter | null }
   | { type: 'query'; query: string }
+  | { type: 'commandQuery'; query: string }
   | { type: 'kind'; kind: string | null }
   | { type: 'select'; id: string }
   | { type: 'selectCommandBrand'; brand: string | null }
@@ -45,10 +48,11 @@ export const initialState: UIState = {
   module: 'home',
   view: 'home',
   editorFilter: null,
+  tierFilter: null,
   kindFilter: null,
   query: '',
+  commandQuery: '',
   selectedId: null,
-  otherSkillsQuery: '',
   selectedCommandBrand: null,
 }
 
@@ -109,12 +113,25 @@ export function reducer(state: UIState, action: Action): UIState {
         ...state,
         module: 'skills',
         view: 'skills',
+        editorFilter: null,
+        tierFilter: null,
+        kindFilter: null,
+        selectedId: null,
         selectedCommandBrand: null,
       }
     case 'settings':
-      return { ...state, view: 'settings' }
+      return { ...state, view: 'settings', selectedCommandBrand: null }
     case 'otherSkills':
-      return { ...state, view: 'otherSkills' }
+      return {
+        ...state,
+        module: 'skills',
+        view: 'skills',
+        editorFilter: null,
+        tierFilter: 'tier-3',
+        kindFilter: null,
+        selectedId: null,
+        selectedCommandBrand: null,
+      }
     case 'cli':
       return {
         ...state,
@@ -125,19 +142,39 @@ export function reducer(state: UIState, action: Action): UIState {
     case 'editorView':
       // editor 模块与 commands 模块无关联：清空 selectedCommandBrand 避免下次回到 commands 时看到过期 brand
       return { ...state, module: 'editor', view: 'editor', selectedCommandBrand: null }
-    case 'otherSkillsQuery':
-      return { ...state, otherSkillsQuery: action.query }
     case 'editor':
       // 切换来源：进入技能视图，重置 kind/选中
-      return { ...state, view: 'skills', editorFilter: action.key, kindFilter: null, selectedId: null }
+      return {
+        ...state,
+        module: 'skills',
+        view: 'skills',
+        editorFilter: action.key,
+        tierFilter: null,
+        kindFilter: null,
+        selectedId: null,
+        selectedCommandBrand: null,
+      }
+    case 'tier':
+      return {
+        ...state,
+        module: 'skills',
+        view: 'skills',
+        editorFilter: null,
+        tierFilter: action.tier,
+        kindFilter: null,
+        selectedId: null,
+        selectedCommandBrand: null,
+      }
     case 'query':
       return { ...state, query: action.query }
+    case 'commandQuery':
+      return { ...state, commandQuery: action.query }
     case 'kind':
       return { ...state, kindFilter: action.kind }
     case 'select':
       return { ...state, selectedId: action.id }
     case 'selectCommandBrand':
-      return { ...state, selectedCommandBrand: action.brand }
+      return { ...state, module: 'commands', view: 'cli', selectedCommandBrand: action.brand }
     default:
       return state
   }
@@ -197,14 +234,21 @@ export default function App() {
         <DashboardView
           stats={stats}
           items={items}
-          onOpenSkills={() => dispatch({ type: 'module', module: 'skills' })}
+          onOpenSkills={() => dispatch({ type: 'dashboard' })}
           onOpenCommands={() => dispatch({ type: 'module', module: 'commands' })}
-          onOpenEditor={() => dispatch({ type: 'editorView' })}
+          onOpenOtherSkills={() => dispatch({ type: 'otherSkills' })}
         />
       )
     }
     if (ui.view === 'cli') {
-      return <CliCommandView selectedBrand={ui.selectedCommandBrand} />
+      return (
+        <CliCommandView
+          selectedBrand={ui.selectedCommandBrand}
+          query={ui.commandQuery}
+          onQuery={(query) => dispatch({ type: 'commandQuery', query })}
+          onSelectBrand={(brand) => dispatch({ type: 'selectCommandBrand', brand })}
+        />
+      )
     }
     if (ui.view === 'editor') {
       return <EditorPlaceholder />
@@ -217,20 +261,14 @@ export default function App() {
         </div>
       )
     }
-    if (ui.view === 'otherSkills')
-      return (
-        <OtherSkillsView
-          query={ui.otherSkillsQuery}
-          onQuery={(q) => dispatch({ type: 'otherSkillsQuery', query: q })}
-          selectedId={ui.selectedId}
-          onSelect={(id) => dispatch({ type: 'select', id })}
-        />
-      )
     if (ui.view === 'settings') return <SettingsView />
     return (
       <SkillsView
         items={items}
         editorFilter={ui.editorFilter}
+        onEditorFilter={(key) => dispatch({ type: 'editor', key })}
+        tierFilter={ui.tierFilter}
+        onTier={(tier) => dispatch({ type: 'tier', tier })}
         query={ui.query}
         onQuery={(q) => dispatch({ type: 'query', query: q })}
         kindFilter={ui.kindFilter}
@@ -248,6 +286,19 @@ export default function App() {
         onModule={(m) => dispatch({ type: 'module', module: m })}
         onReload={handleReload}
         reloading={reloading}
+        searchValue={ui.module === 'commands' ? ui.commandQuery : ui.query}
+        onSearch={(query) => {
+          if (ui.module === 'commands') {
+            dispatch({ type: 'commandQuery', query })
+            return
+          }
+          if (ui.module === 'home') {
+            dispatch({ type: 'dashboard' })
+          }
+          dispatch({ type: 'query', query })
+        }}
+        scanStatus={loading ? 'loading' : reloading ? 'syncing' : error ? 'error' : 'ready'}
+        skillCount={stats?.total ?? items.length}
       />
       <Sidebar
         module={ui.module}
@@ -257,7 +308,6 @@ export default function App() {
         stats={stats}
         onHome={() => dispatch({ type: 'home' })}
         onSettings={() => dispatch({ type: 'settings' })}
-        onOtherSkills={() => dispatch({ type: 'otherSkills' })}
         onCommandBrand={(brand) => dispatch({ type: 'selectCommandBrand', brand })}
         onEditor={(key) => dispatch({ type: 'editor', key })}
       />

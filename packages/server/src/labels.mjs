@@ -38,7 +38,7 @@ export const LABELS = {
     'social-media': '社交媒体',
     'mcp': 'MCP 协议',
     'note-taking': '笔记',
-    'huhaa-myskills': 'HuHaa-MySkills',
+    'huhaa-myskills': 'HuHaa AI 助手',
     'autonomous-ai-agents': '自主 AI 代理',
     'kanban': '看板',
     'eslint': 'ESLint',

@@ -22,6 +22,17 @@ const PKGS_ROOT = path.resolve(__dirname, '..', '..');
 const PACKAGE_JSON = path.resolve(PKGS_ROOT, '..', 'package.json');
 const VERSION = readPackageVersion();
 const WEB_DIST = path.join(PKGS_ROOT, 'web', 'dist');
+const WEB_PUBLIC = path.join(PKGS_ROOT, 'web', 'public');
+const ROOT_STATIC_FILES = [
+  'favicon.ico',
+  'favicon.svg',
+  'favicon-16x16.png',
+  'favicon-32x32.png',
+  'favicon-192x192.png',
+  'favicon-512x512.png',
+  'site.webmanifest',
+  'robots.txt',
+];
 
 async function importScanner() {
   const { scan, getWatchTargets } = await import(path.join(PKGS_ROOT, 'scanner/src/index.mjs'));
@@ -624,22 +635,10 @@ export async function startServer({ port = 11520 } = {}) {
     return fs.createReadStream(abs);
   });
 
-  // PWA manifest（index.html 引用 /site.webmanifest）——返回有效 JSON，
-  // 避免 SPA fallback 返回 HTML 导致浏览器报 Manifest 语法错误
-  app.get('/site.webmanifest', async (req, reply) => {
-    reply.type('application/manifest+json; charset=utf-8');
-    reply.header('cache-control', 'no-cache, no-store, must-revalidate');
-    return {
-      name: 'HuHaa-MySkills',
-      short_name: 'HuHaa',
-      description: '本地技能 / 插件 / MCP 聚合中心',
-      start_url: '/',
-      display: 'standalone',
-      theme_color: '#3B82F6',
-      background_color: '#ffffff',
-      icons: [],
-    };
-  });
+  // 根路径静态资源必须在 SPA fallback 前注册，否则浏览器会拿到 HTML 而不是图标。
+  for (const file of ROOT_STATIC_FILES) {
+    app.get(`/${file}`, async (req, reply) => serveRootStatic(file, reply));
+  }
 
   // Serve built Vue SPA if present; fallback to P2 placeholder when the user
   // has not run `npm run build:web` yet.
@@ -673,6 +672,29 @@ export async function startServer({ port = 11520 } = {}) {
 }
 
 // ─────────────────────────────── helpers ─────────────────────────────────
+
+function findRootStaticFile(file) {
+  for (const base of [WEB_DIST, WEB_PUBLIC]) {
+    const abs = path.join(base, file);
+    if (fs.existsSync(abs) && fs.statSync(abs).isFile()) return abs;
+  }
+  return null;
+}
+
+async function serveRootStatic(file, reply) {
+  const abs = findRootStaticFile(file);
+  if (!abs) {
+    reply.code(404);
+    return { error: 'static file not found' };
+  }
+  reply.type(contentTypeFor(abs));
+  if (file.endsWith('.webmanifest') || file === 'robots.txt') {
+    reply.header('cache-control', 'no-cache, no-store, must-revalidate');
+  } else {
+    reply.header('cache-control', 'public, max-age=86400');
+  }
+  return fs.createReadStream(abs);
+}
 
 function stripRaw({ raw, ...rest }) {
   return rest;
@@ -726,11 +748,15 @@ export function splitSegments(text) {
 }
 
 function contentTypeFor(abs) {
+  if (abs.endsWith('.html')) return 'text/html; charset=utf-8';
   if (abs.endsWith('.js')) return 'text/javascript; charset=utf-8';
   if (abs.endsWith('.css')) return 'text/css; charset=utf-8';
   if (abs.endsWith('.json')) return 'application/json; charset=utf-8';
+  if (abs.endsWith('.webmanifest')) return 'application/manifest+json; charset=utf-8';
+  if (abs.endsWith('.txt')) return 'text/plain; charset=utf-8';
   if (abs.endsWith('.svg')) return 'image/svg+xml';
   if (abs.endsWith('.png')) return 'image/png';
+  if (abs.endsWith('.ico')) return 'image/x-icon';
   if (abs.endsWith('.jpg') || abs.endsWith('.jpeg')) return 'image/jpeg';
   if (abs.endsWith('.woff2')) return 'font/woff2';
   return 'application/octet-stream';
@@ -894,7 +920,7 @@ function placeholderHtml({ port, items }) {
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>HuHaa-MySkills · P2</title>
+<title>HuHaa AI 助手 · P2</title>
 <style>
   :root { color-scheme: light dark; }
   body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
@@ -925,7 +951,7 @@ function placeholderHtml({ port, items }) {
 </style>
 </head>
 <body>
-  <h1>HuHaa-MySkills <span style="font-size:13px;color:#888">P2</span></h1>
+  <h1>HuHaa AI 助手 <span style="font-size:13px;color:#888">P2</span></h1>
   <div class="meta">
     本地聚合中枢 · ${total} 条 skill 已加载 · 显示前 ${sample.length} 条 ·
     <a href="/api/skills">/api/skills</a> ·

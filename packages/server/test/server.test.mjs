@@ -148,3 +148,37 @@ test('server asset route rejects path traversal', async (t) => {
   const res = await app.inject({ method: 'GET', url: '/assets/..%2F..%2Fpackage.json' });
   assert.equal(res.statusCode, 404);
 });
+
+test('server serves favicon files from root paths before SPA fallback', async (t) => {
+  const { app } = await bootFixtureServer(t);
+
+  const svg = await app.inject({ method: 'GET', url: '/favicon.svg' });
+  assert.equal(svg.statusCode, 200);
+  assert.equal(svg.headers['content-type'], 'image/svg+xml');
+  assert.match(svg.body, /<svg\b/);
+
+  const png = await app.inject({ method: 'GET', url: '/favicon-32x32.png' });
+  assert.equal(png.statusCode, 200);
+  assert.equal(png.headers['content-type'], 'image/png');
+  assert.deepEqual([...png.rawPayload.subarray(0, 8)], [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+  const ico = await app.inject({ method: 'GET', url: '/favicon.ico' });
+  assert.equal(ico.statusCode, 200);
+  assert.equal(ico.headers['content-type'], 'image/x-icon');
+  assert.equal(ico.rawPayload.readUInt16LE(0), 0);
+  assert.equal(ico.rawPayload.readUInt16LE(2), 1);
+});
+
+test('server serves HuHaa AI assistant manifest with app icons', async (t) => {
+  const { app } = await bootFixtureServer(t);
+  const res = await app.inject({ method: 'GET', url: '/site.webmanifest' });
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.headers['content-type'], 'application/manifest+json; charset=utf-8');
+  const manifest = JSON.parse(res.body);
+  assert.equal(manifest.name, 'HuHaa AI 助手');
+  assert.equal(manifest.short_name, 'HuHaa');
+  assert.match(manifest.description, /HuHaa AI 助手/);
+  assert.ok(manifest.icons.some(icon => icon.sizes === '192x192' && icon.src === '/favicon-192x192.png'));
+  assert.ok(manifest.icons.some(icon => icon.sizes === '512x512' && icon.src === '/favicon-512x512.png'));
+});

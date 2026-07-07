@@ -71,8 +71,8 @@ export interface SkillItem {
    */
   dirName?: string;
 
-  /** Semantic category tags (e.g., 'authentication', 'async') */
-  category?: string[];
+  /** Semantic category from scanner; legacy UI data may provide multiple tags. */
+  category?: string | string[];
 
   /** Which tool/editor owns this skill (e.g., 'Hermes', 'Custom Skills') */
   editor?: string;

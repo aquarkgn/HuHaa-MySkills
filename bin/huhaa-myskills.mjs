@@ -12,6 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
 const PKGS_ROOT = path.join(REPO_ROOT, 'packages');
+const DISPLAY_NAME = 'HuHaa AI 助手';
 
 const require = createRequire(import.meta.url);
 
@@ -69,7 +70,7 @@ async function cmdVersion() {
 }
 
 async function cmdHelp() {
-  console.log(`huhaa-myskills v${VERSION} — local skill / plugin / MCP aggregation hub
+  console.log(`huhaa-myskills v${VERSION} — ${DISPLAY_NAME}：本地技能 / 插件 / MCP 聚合中心
 
 Usage:
   huhaa-myskills <command> [options]
@@ -96,6 +97,7 @@ Env:
   HUHAA_HOME      override user data dir (default: ~/.config/huhaa-myskills)
   PORT            override preferred port (default: 11520, falls back +10)
   HUHAA_SYNC      comma-separated list of editors to sync (e.g. "cursor,vscode")
+  HUHAA_NO_OPEN   set to 1/true/yes to skip opening the browser
 
 Paths:
   config   ${configFile()}
@@ -143,7 +145,7 @@ async function cmdStop() {
   }
   try {
     process.kill(state.pid, 'SIGTERM');
-    console.log(`✓ 已停止 HuHaa-MySkills (pid ${state.pid}, port ${state.port ?? '未知'})`);
+    console.log(`✓ 已停止 ${DISPLAY_NAME} (pid ${state.pid}, port ${state.port ?? '未知'})`);
   } catch (err) {
     console.error(`[stop] 停止失败: ${err.message}`);
     return false;
@@ -191,7 +193,7 @@ async function cmdUninstall() {
   const question = (q) => new Promise(resolve => rl.question(q, resolve));
 
   const dir = homeDir();
-  console.log('\n[uninstall] 即将卸载 HuHaa-MySkills，将执行以下操作：');
+  console.log(`\n[uninstall] 即将卸载 ${DISPLAY_NAME}，将执行以下操作：`);
   console.log('  1. 停止运行中的后台服务');
   console.log(`  2. 删除用户数据目录: ${dir}`);
   console.log('  3. 卸载全局 npm 包: huhaa-myskills');
@@ -275,7 +277,7 @@ async function cmdStats() {
 
   const sortDesc = (obj) => Object.entries(obj).sort((a, b) => b[1] - a[1]);
 
-  console.log(`\nHuHaa-MySkills scan stats`);
+  console.log(`\n${DISPLAY_NAME} scan stats`);
   console.log(`==========================`);
   console.log(`total items:        ${items.length}`);
   console.log(`parse errors:       ${errors.length}`);
@@ -341,7 +343,7 @@ async function cmdDuplicates() {
   const contentDups = [...byContent.entries()].filter(([k, arr]) => !k.endsWith(':00000000') && arr.length > 1);
   const pathDups = [...byAbs.entries()].filter(([k, arr]) => k && arr.length > 1);
 
-  console.log('\nHuHaa-MySkills duplicate diagnostics');
+  console.log(`\n${DISPLAY_NAME} duplicate diagnostics`);
   console.log('====================================');
   console.log(`total items:          ${items.length}`);
   console.log(`duplicate names:      ${nameDups.length} groups`);
@@ -393,7 +395,7 @@ async function cmdStart() {
       const stateData = JSON.parse(fs.readFileSync(stateFile(), 'utf8'));
       if (stateData.pid && isProcessRunning(stateData.pid)) {
         const logFile = path.join(homeDir(), 'huhaa.log');
-        console.log(`✓ HuHaa-MySkills 已在运行: http://localhost:${stateData.port}`);
+        console.log(`✓ ${DISPLAY_NAME} 已在运行: http://localhost:${stateData.port}`);
         console.log(`📝 日志: ${logFile}`);
         return;
       }
@@ -428,7 +430,7 @@ async function startBackgroundServer(port, logFile, homeDirectory) {
   try {
     const stateData = JSON.parse(fs.readFileSync(stateFile(), 'utf8'));
     if (stateData.pid && isProcessRunning(stateData.pid)) {
-      console.log(`✓ HuHaa-MySkills 已在运行: http://localhost:${stateData.port}`);
+      console.log(`✓ ${DISPLAY_NAME} 已在运行: http://localhost:${stateData.port}`);
       console.log(`📝 日志: ${logFile}`);
       return;
     }
@@ -449,15 +451,39 @@ async function startBackgroundServer(port, logFile, homeDirectory) {
     }
   });
 
+  let childExited = false;
+  let exitInfo = '';
+  child.once('exit', (code, signal) => {
+    childExited = true;
+    exitInfo = signal ? `signal ${signal}` : `exit ${code}`;
+  });
+  child.once('error', (err) => {
+    childExited = true;
+    exitInfo = err.message;
+  });
+
   child.unref();
 
-  // 等待子进程启动，检查端口是否开放
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  const healthy = await waitForHealth(port, 10000, () => childExited);
 
-  // 关闭日志文件描述符（子进程已继承）
-  fs.closeSync(logFd);
+  try { fs.closeSync(logFd); } catch {}
 
-  console.log(`✓ HuHaa-MySkills 已在后台运行: http://localhost:${port}`);
+  if (!healthy) {
+    if (!childExited) {
+      try { process.kill(child.pid, 'SIGTERM'); } catch {}
+    }
+    try { fs.unlinkSync(stateFile()); } catch {}
+    const tail = readLogTail(logFile, 40);
+    console.error(`[start] ${DISPLAY_NAME} 后台启动失败${exitInfo ? `（${exitInfo}）` : ''}`);
+    console.error(`日志: ${logFile}`);
+    if (tail) {
+      console.error('\n最近日志:');
+      console.error(tail);
+    }
+    process.exit(1);
+  }
+
+  console.log(`✓ ${DISPLAY_NAME} 已在后台运行: http://localhost:${port}`);
   console.log(`📝 日志: ${logFile}`);
   console.log(`💡 查看日志: tail -f ${logFile}`);
   console.log(`💡 停止服务: huhaa-myskills stop`);
@@ -472,18 +498,56 @@ function isProcessRunning(pid) {
   }
 }
 
+async function waitForHealth(port, timeoutMs, shouldStop) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (shouldStop && shouldStop()) return false;
+    if (await fetchHealth(port)) return true;
+    await delay(250);
+  }
+  return false;
+}
+
+async function fetchHealth(port) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 500);
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/api/health`, { signal: controller.signal });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data && data.ok === true;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function readLogTail(file, lines = 40) {
+  try {
+    const text = fs.readFileSync(file, 'utf8');
+    return text.trimEnd().split(/\r?\n/).slice(-lines).join('\n');
+  } catch {
+    return '';
+  }
+}
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function runServer(port, logFile, homeDirectory) {
-  writeJson(stateFile(), { port, pid: process.pid, startedAt: new Date().toISOString() });
-
   const { startServer } = await import(path.join(PKGS_ROOT, 'server/src/index.mjs'));
-  await startServer({ port });
+  const server = await startServer({ port });
+  const actualPort = server.port || port;
+  writeJson(stateFile(), { port: actualPort, pid: process.pid, startedAt: new Date().toISOString() });
 
-  console.log(`\n  HuHaa-MySkills 运行中:  http://localhost:${port}\n`);
+  console.log(`\n  ${DISPLAY_NAME} 运行中:  http://localhost:${actualPort}\n`);
   console.log(`  数据目录: ${homeDirectory}`);
   console.log(`  日志: ${logFile}`);
   console.log(`  按 Ctrl+C 停止。\n`);
 
-  openBrowser(`http://localhost:${port}`);
+  openBrowser(`http://localhost:${actualPort}`);
 
   const cleanup = () => {
     try { fs.unlinkSync(stateFile()); } catch {}
@@ -636,6 +700,8 @@ async function ensureConfigOrInit() {
 }
 
 function openBrowser(url) {
+  if (shouldSkipBrowserOpen()) return;
+
   const platform = process.platform;
   let cmd, args;
   if (platform === 'darwin') { cmd = 'open'; args = [url]; }
@@ -646,4 +712,9 @@ function openBrowser(url) {
   } catch {
     // best-effort; user can copy-paste the URL
   }
+}
+
+function shouldSkipBrowserOpen() {
+  const value = process.env.HUHAA_NO_OPEN;
+  return value === '1' || value?.toLowerCase() === 'true' || value?.toLowerCase() === 'yes';
 }

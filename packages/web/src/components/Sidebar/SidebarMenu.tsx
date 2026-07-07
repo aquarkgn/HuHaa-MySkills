@@ -2,8 +2,8 @@
  * SidebarMenu.tsx
  * 左侧菜单，按 Tier 分组显示技能
  * Tier 1: 编辑器工具技能
- * Tier 2: 我的技能库
- * Tier 3: 其他技能（可选）
+ * Tier 2: 自定义技能
+ * Tier 3: 其它技能（可选）
  */
 
 'use client';
@@ -52,9 +52,9 @@ export default function SidebarMenu({
           onSelectSkill={onSelectSkill}
         />
 
-        {/* Tier 2: 我的技能库 */}
+        {/* Tier 2: 自定义技能 */}
         <TierGroup
-          title="我的技能库"
+          title="自定义技能"
           icon="👤"
           count={tier2Count}
           expanded={menuState.tier2Expanded}
@@ -64,10 +64,10 @@ export default function SidebarMenu({
           onSelectSkill={onSelectSkill}
         />
 
-        {/* Tier 3: 其他技能（仅在有技能时显示） */}
+        {/* Tier 3: 其它技能（仅在有技能时显示） */}
         {tier3Count > 0 && (
           <TierGroup
-            title="其他技能"
+            title="其它技能"
             icon="🔍"
             count={tier3Count}
             expanded={menuState.tier3Expanded}
