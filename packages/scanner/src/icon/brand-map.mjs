@@ -23,6 +23,7 @@ export const BRAND_APP_MAP = {
     officialIconPages: ['https://cursor.com/'],
     officialIconUrls: [],
     remoteIconCache: true,
+    fingerprints: ['cursor.com', 'cursor.sh'],
     emoji: '🖱️',
   },
   vscode: {
@@ -32,6 +33,7 @@ export const BRAND_APP_MAP = {
     officialIconPages: ['https://code.visualstudio.com/brand'],
     officialIconUrls: ['https://code.visualstudio.com/assets/apple-touch-icon.png'],
     remoteIconCache: true,
+    fingerprints: ['code.visualstudio.com', 'visualstudio.com'],
     emoji: '📝',
   },
   claude: {
@@ -41,6 +43,7 @@ export const BRAND_APP_MAP = {
     officialIconPages: ['https://claude.ai/', 'https://www.anthropic.com/'],
     officialIconUrls: ['https://claude.ai/favicon.ico'],
     remoteIconCache: true,
+    fingerprints: ['claude.ai', 'anthropic.com'],
     emoji: '🤖',
   },
   obsidian: {
@@ -49,6 +52,7 @@ export const BRAND_APP_MAP = {
     officialIconPages: ['https://obsidian.md/'],
     officialIconUrls: [],
     remoteIconCache: true,
+    fingerprints: ['obsidian.md'],
     emoji: '🧠',
   },
   docker: {
@@ -57,6 +61,7 @@ export const BRAND_APP_MAP = {
     officialIconPages: ['https://www.docker.com/products/docker-desktop/'],
     officialIconUrls: [],
     remoteIconCache: true,
+    fingerprints: ['docker.com'],
     emoji: '🐳',
   },
   // CLI / agent brands. Codex may be available as a local app; no stable official
@@ -67,14 +72,16 @@ export const BRAND_APP_MAP = {
     officialIconPages: ['https://openai.com/codex/'],
     officialIconUrls: [],
     remoteIconCache: true,
+    fingerprints: ['openai.com', 'codex.com'],
     emoji: '📋',
   },
   hermes: {
     bundleIds: [],
     appNames: ['Hermes'],
-    officialIconPages: [],
-    officialIconUrls: [],
-    remoteIconCache: false,
+    // 官方图标来源：NousResearch/hermes-agent 仓库 acp_registry/icon.svg（飞翼 logo）
+    officialIconPages: ['https://github.com/NousResearch/hermes-agent'],
+    officialIconUrls: ['https://raw.githubusercontent.com/NousResearch/hermes-agent/main/acp_registry/icon.svg'],
+    remoteIconCache: true,
     emoji: '⚡',
   },
   gstack: {
@@ -92,6 +99,7 @@ export const BRAND_APP_MAP = {
     officialIconPages: ['https://www.google.com/chrome/'],
     officialIconUrls: [],
     remoteIconCache: true,
+    fingerprints: ['google.com', 'googleapis.com', 'gemini.google.com'],
     emoji: '🌐',
   },
   github: {
@@ -100,6 +108,7 @@ export const BRAND_APP_MAP = {
     officialIconPages: ['https://github.com/'],
     officialIconUrls: [],
     remoteIconCache: true,
+    fingerprints: ['github.com', 'githubusercontent.com'],
     emoji: '🐙',
   },
   notion: {
@@ -108,7 +117,28 @@ export const BRAND_APP_MAP = {
     officialIconPages: ['https://www.notion.com/'],
     officialIconUrls: [],
     remoteIconCache: true,
+    fingerprints: ['notion.com', 'notion.so'],
     emoji: '📓',
+  },
+  // Trae 字节跳动 AI IDE。trae-cn 本机装了 Trae CN.app，走本地 .app 图标提取。
+  'trae-cn': {
+    bundleIds: ['cn.trae.app'],
+    appNames: ['Trae CN'],
+    officialIconPages: ['https://www.trae.cn/'],
+    officialIconUrls: [],
+    remoteIconCache: true,
+    fingerprints: ['trae.cn'],
+    emoji: '🛸',
+  },
+  trae: {
+    bundleIds: ['cn.trae.app'],
+    appNames: ['Trae', 'Trae CN'],
+    aliases: ['trae-intl'],
+    officialIconPages: ['https://www.trae.com/'],
+    officialIconUrls: [],
+    remoteIconCache: true,
+    fingerprints: ['trae.com', 'trae.cn'],
+    emoji: '🛸',
   },
   // 仅保留元数据 fallback（无单一可确认官方图标 URL）
   apple: { bundleIds: [], appNames: [], officialIconUrls: [], remoteIconCache: false, emoji: '🍎' },
@@ -161,4 +191,74 @@ export function resolveBrandSpec(key) {
 export function emojiForBrand(key) {
   const canonical = normalizeBrandKey(key);
   return canonical ? BRAND_APP_MAP[canonical]?.emoji : undefined;
+}
+
+// ───────────────────────── provider fingerprint (v0.4) ──────────────────────
+// 对标 cockpit-tools codexProviderPresets 的 baseUrl 规范化匹配，补一层
+// hostname suffix 匹配，让反代/多 region 场景也能命中正确品牌，而不是
+// 一律回退 custom。本模块保持纯数据/纯函数，不读文件；用户手动覆写由
+// 调用方（icon-extractor）注入 overrides 参数。
+
+/**
+ * 从 URL 或裸 hostname 提取小写 hostname。
+ * @param {string} urlOrHost - URL 或 hostname
+ * @returns {string | null}
+ */
+export function extractHostname(urlOrHost) {
+  if (!urlOrHost) return null;
+  const s = String(urlOrHost).trim().toLowerCase();
+  if (!s) return null;
+  // 带 scheme
+  try {
+    const u = new URL(s.startsWith('http') ? s : `https://${s}`);
+    return u.hostname || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 按 hostname suffix 多层匹配品牌。
+ *
+ * 匹配层级（优先级从高到低）：
+ *   1. 用户 overrides（hostnameSuffix -> brand，由调用方注入）
+ *   2. BRAND_APP_MAP 各项的 fingerprints（hostname suffix 匹配，支持多级子域）
+ *   3. 无匹配返回 null（调用方可回退 custom）
+ *
+ * @param {string} urlOrHost - URL 或 hostname
+ * @param {Record<string, string>} [overrides] - 用户手动覆写：{ hostnameSuffix: brandKey }
+ * @returns {string | null} canonical brand key
+ */
+export function resolveBrandByFingerprint(urlOrHost, overrides) {
+  const host = extractHostname(urlOrHost);
+  if (!host) return null;
+
+  // 1. 用户 overrides 优先（精确匹配，再 suffix 匹配）
+  if (overrides && typeof overrides === 'object') {
+    if (overrides[host]) {
+      const canonical = normalizeBrandKey(overrides[host]);
+      if (canonical) return canonical;
+    }
+    for (const [suffix, brand] of Object.entries(overrides)) {
+      if (host === suffix || host.endsWith(`.${suffix}`)) {
+        const canonical = normalizeBrandKey(brand);
+        if (canonical) return canonical;
+      }
+    }
+  }
+
+  // 2. BRAND_APP_MAP fingerprints：hostname suffix 匹配
+  //    host === 'claude.ai' 或 host.endsWith('.claude.ai') 均命中 claude
+  for (const [brand, spec] of Object.entries(BRAND_APP_MAP)) {
+    const fps = spec.fingerprints;
+    if (!fps || !fps.length) continue;
+    for (const suffix of fps) {
+      const s = String(suffix).toLowerCase().trim();
+      if (host === s || host.endsWith(`.${s}`)) {
+        return brand;
+      }
+    }
+  }
+
+  return null;
 }

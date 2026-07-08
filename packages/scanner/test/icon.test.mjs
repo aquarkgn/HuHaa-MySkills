@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { resolveBrandSpec, emojiForBrand, BRAND_APP_MAP, normalizeBrandKey } from '../src/icon/brand-map.mjs';
+import { resolveBrandSpec, emojiForBrand, BRAND_APP_MAP, normalizeBrandKey, resolveBrandByFingerprint, extractHostname } from '../src/icon/brand-map.mjs';
 import { resolveIconRef, getIconForBrand } from '../src/icon/icon-extractor.mjs';
 
 test('resolveBrandSpec resolves known brands and raw bundle ids', () => {
@@ -209,4 +209,67 @@ test('getIconForBrand rejects non-HTTPS, oversized, and failed official remote d
     headers: { 'content-type': 'image/png' },
   });
   assert.equal(await getIconForBrand('remote-download-fail', 64), null);
+});
+
+// ─────────── v0.4 provider fingerprint 测试 ───────────
+
+test('extractHostname: 从 URL 或裸 hostname 提取小写主机名', () => {
+  assert.equal(extractHostname('https://claude.ai/foo'), 'claude.ai');
+  assert.equal(extractHostname('https://www.cursor.com/'), 'www.cursor.com');
+  assert.equal(extractHostname('claude.ai'), 'claude.ai');
+  assert.equal(extractHostname('HTTPS://GitHub.com/x'), 'github.com');
+  assert.equal(extractHostname(''), null);
+  assert.equal(extractHostname(null), null);
+});
+
+test('resolveBrandByFingerprint: hostname suffix 精确命中', () => {
+  assert.equal(resolveBrandByFingerprint('https://claude.ai/'), 'claude');
+  assert.equal(resolveBrandByFingerprint('https://cursor.com/'), 'cursor');
+  assert.equal(resolveBrandByFingerprint('https://github.com/org/repo'), 'github');
+  assert.equal(resolveBrandByFingerprint('https://www.docker.com/products'), 'docker');
+});
+
+test('resolveBrandByFingerprint: 子域命中（多级 suffix 匹配）', () => {
+  assert.equal(resolveBrandByFingerprint('https://api.anthropic.com/'), 'claude');
+  assert.equal(resolveBrandByFingerprint('https://docs.cursor.com/'), 'cursor');
+  assert.equal(resolveBrandByFingerprint('https://raw.githubusercontent.com/'), 'github');
+  assert.equal(resolveBrandByFingerprint('https://blog.notion.so/'), 'notion');
+});
+
+test('resolveBrandByFingerprint: 无匹配返回 null（调用方回退 custom）', () => {
+  assert.equal(resolveBrandByFingerprint('https://example.com/'), null);
+  assert.equal(resolveBrandByFingerprint('https://my-proxy.example.org/'), null);
+  assert.equal(resolveBrandByFingerprint(''), null);
+});
+
+test('resolveBrandByFingerprint: 用户 overrides 优先于内置 fingerprints', () => {
+  // overrides 精确匹配
+  assert.equal(resolveBrandByFingerprint('https://my-proxy.local/', {
+    'my-proxy.local': 'claude',
+  }), 'claude');
+  // overrides suffix 匹配（自定义反代域名）
+  assert.equal(resolveBrandByFingerprint('https://api.my-proxy.local/', {
+    'my-proxy.local': 'cursor',
+  }), 'cursor');
+  // overrides 覆盖内置：把 anthropic.com 重定向到其他品牌
+  assert.equal(resolveBrandByFingerprint('https://anthropic.com/', {
+    'anthropic.com': 'codex',
+  }), 'codex');
+});
+
+test('resolveBrandByFingerprint: 裸 hostname 也能匹配', () => {
+  assert.equal(resolveBrandByFingerprint('claude.ai'), 'claude');
+  assert.equal(resolveBrandByFingerprint('obsidian.md'), 'obsidian');
+});
+
+test('BRAND_APP_MAP: 已加 fingerprints 的品牌字段结构正确', () => {
+  // 确认阶段二给 9 个品牌加的 fingerprints 字段存在且为数组
+  const withFp = Object.entries(BRAND_APP_MAP).filter(([, spec]) => Array.isArray(spec.fingerprints) && spec.fingerprints.length > 0);
+  assert.ok(withFp.length >= 9, `至少 9 个品牌有 fingerprints，实际 ${withFp.length}`);
+  for (const [, spec] of withFp) {
+    for (const fp of spec.fingerprints) {
+      assert.equal(typeof fp, 'string');
+      assert.ok(fp.length > 0);
+    }
+  }
 });

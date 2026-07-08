@@ -12,6 +12,7 @@ import crypto from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { normalizeBrandKey, resolveBrandSpec } from './brand-map.mjs';
+import { atomicWriteBytes, atomicWriteText } from '../core/atomic-write.mjs';
 
 const execFileP = promisify(execFile);
 const IS_MACOS = process.platform === 'darwin';
@@ -164,8 +165,9 @@ async function downloadOfficialIcon(brand, spec) {
       const ext = extensionForContentType(contentType) || extensionForUrl(response.url || rawUrl) || '.img';
       const fileName = `${slugify(normalized)}-remote-${sha256.slice(0, 12)}${ext}`;
       const filePath = path.join(dir, fileName);
-      fs.writeFileSync(filePath, bytes);
-      fs.writeFileSync(remoteMetaPath(normalized), JSON.stringify({
+      // v0.4 原子写：临时文件 + rename，进程中断不残留半截文件
+      atomicWriteBytes(filePath, bytes);
+      atomicWriteText(remoteMetaPath(normalized), JSON.stringify({
         brand: normalized,
         sourceUrl: rawUrl,
         finalUrl: response.url || rawUrl,
