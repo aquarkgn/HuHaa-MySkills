@@ -61,11 +61,32 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag ${{ steps.version.outputs.tag }}
-          git push origin ${{ steps.version.outputs.tag }}
+          TAG=${{ steps.version.outputs.tag }}
+          # 本地 tag 若已存在则不重复创建
+          git tag "$TAG" 2>/dev/null || true
+          # 远程若已有则跳过(避免 rejected 导致整个 job 失败, 进而跳过 release 创建)
+          if git ls-remote --tags origin "refs/tags/$TAG" | grep -q .; then
+            echo "远程 tag $TAG 已存在(可能并发或重跑), 跳过推送"
+          else
+            git push origin "$TAG"
+          fi
+
+      - name: 检查 GitHub Release 是否已存在
+        id: release_check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG=${{ steps.version.outputs.tag }}
+          if gh release view "$TAG" --repo ${{ github.repository }} >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Release $TAG 已存在, 跳过创建"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Release $TAG 不存在, 将创建"
+          fi
 
       - name: 创建 GitHub Release
-        if: steps.tag_check.outputs.exists == 'false'
+        if: steps.release_check.outputs.exists == 'false'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.tag }}
