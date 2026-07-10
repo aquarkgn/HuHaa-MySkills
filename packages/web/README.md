@@ -1,6 +1,6 @@
-# @huhaa/web
+# @skillshelper/web
 
-HuHaa-MySkills 的前端 SPA：**Vite + React 18 + TypeScript(strict) + Tailwind + shadcn 风格组件**。
+SkillsHelper 的前端 SPA：**Vite + React 18 + TypeScript(strict) + Tailwind + shadcn 风格组件**。
 
 ## 构建与托管
 

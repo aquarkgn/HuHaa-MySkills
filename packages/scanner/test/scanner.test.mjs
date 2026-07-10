@@ -7,10 +7,10 @@ import test from 'node:test';
 import { scan, getWatchTargets, scanLegacy, loadConfig } from '../src/index.mjs';
 
 function makeTempHome() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'huhaa-scanner-test-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-scanner-test-'));
   const home = path.join(root, 'home');
   fs.mkdirSync(home, { recursive: true });
-  process.env.HUHAA_HOME = home;
+  process.env.SKILLSHELPER_HOME = home;
   return { root, home };
 }
 

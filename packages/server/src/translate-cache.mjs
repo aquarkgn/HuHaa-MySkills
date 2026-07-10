@@ -3,7 +3,7 @@
 // text 变化时 md5 自然不同，自动重译，无需 mtime 比对。
 //
 // 风格对齐 icon-extractor.mjs：内存 Map 命中即返回，磁盘异步落盘。
-// purge 命令删除整个 HUHAA_HOME 目录，本缓存文件随之清理。
+// purge 命令删除整个 SKILLSHELPER_HOME 目录，本缓存文件随之清理。
 
 import crypto from 'node:crypto';
 import { translateCacheFile, ensureHomeDir, readJson, writeJson } from '../../../bin/lib/paths.mjs';
@@ -22,7 +22,7 @@ function md5(text) {
 
 // LRU 上限：避免 translate-cache.json 无限膨胀。动态读取环境变量（测试用小值）。
 function getMaxEntries() {
-  return parseInt(process.env.HUHAA_TRANSLATE_CACHE_MAX || '5000', 10);
+  return parseInt(process.env.SKILLSHELPER_TRANSLATE_CACHE_MAX || '5000', 10);
 }
 
 function load() {
@@ -119,7 +119,7 @@ export function size() {
 }
 
 /**
- * 重置缓存（仅测试用：清空内存并标记未加载，以便切换 HUHAA_HOME 后重新加载）
+ * 重置缓存（仅测试用：清空内存并标记未加载，以便切换 SKILLSHELPER_HOME 后重新加载）
  */
 export function _resetForTest() {
   memoryCache = new Map();

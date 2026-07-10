@@ -159,7 +159,7 @@ BRAND_RULES = {
         'aliases': ['grafana']
     },
     'Hermes': {
-        'patterns': [r'\bhermes\b', r'hermes-agent', r'huhaa-myskills'],
+        'patterns': [r'\bhermes\b', r'hermes-agent', r'skillshelper'],
         'aliases': ['hermes']
     },
     'Hugging Face': {
@@ -278,9 +278,9 @@ BRAND_RULES = {
         'patterns': [r'ollama'],
         'aliases': ['ollama']
     },
-    'HuHaa': {
-        'patterns': [r'huhaa', r'myskills'],
-        'aliases': ['huhaa']
+    'SkillsHelper': {
+        'patterns': [r'skillshelper', r'myskills'],
+        'aliases': ['skillshelper']
     },
     'X': {
         'patterns': [r'xitter', r'xurl'],
@@ -563,10 +563,10 @@ def main():
     
     results = scan_skills(skills_dir)
     
-    output_file = os.path.expanduser('~/Project/HuHaa-MySkills/BRANDING_COMPLETION_REPORT.txt')
+    output_file = os.path.expanduser('~/Project/SkillsHelper/BRANDING_COMPLETION_REPORT.txt')
     generate_report(results, output_file)
     
-    json_output = os.path.expanduser('~/Project/HuHaa-MySkills/branding-results.json')
+    json_output = os.path.expanduser('~/Project/SkillsHelper/branding-results.json')
     json_data = {
         'timestamp': datetime.now().isoformat(),
         'total': results['total'],

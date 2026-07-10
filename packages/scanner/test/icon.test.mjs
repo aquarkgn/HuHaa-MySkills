@@ -65,17 +65,17 @@ test('getIconForBrand returns null for an unmapped brand', async () => {
 
 
 test('getIconForBrand downloads registered official remote icon and reuses local cache', async (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'huhaa-icon-remote-'));
-  const oldHome = process.env.HUHAA_HOME;
-  const oldRemote = process.env.HUHAA_ICON_REMOTE;
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-icon-remote-'));
+  const oldHome = process.env.SKILLSHELPER_HOME;
+  const oldRemote = process.env.SKILLSHELPER_ICON_REMOTE;
   const oldFetch = globalThis.fetch;
-  process.env.HUHAA_HOME = root;
-  delete process.env.HUHAA_ICON_REMOTE;
+  process.env.SKILLSHELPER_HOME = root;
+  delete process.env.SKILLSHELPER_ICON_REMOTE;
   t.after(() => {
-    if (oldHome === undefined) delete process.env.HUHAA_HOME;
-    else process.env.HUHAA_HOME = oldHome;
-    if (oldRemote === undefined) delete process.env.HUHAA_ICON_REMOTE;
-    else process.env.HUHAA_ICON_REMOTE = oldRemote;
+    if (oldHome === undefined) delete process.env.SKILLSHELPER_HOME;
+    else process.env.SKILLSHELPER_HOME = oldHome;
+    if (oldRemote === undefined) delete process.env.SKILLSHELPER_ICON_REMOTE;
+    else process.env.SKILLSHELPER_ICON_REMOTE = oldRemote;
     globalThis.fetch = oldFetch;
     fs.rmSync(root, { recursive: true, force: true });
     delete BRAND_APP_MAP['remote-test'];
@@ -112,17 +112,17 @@ test('getIconForBrand downloads registered official remote icon and reuses local
   assert.equal(fetchCount, 1);
 });
 
-test('getIconForBrand rejects non-image remote responses and honors HUHAA_ICON_REMOTE=0', async (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'huhaa-icon-reject-'));
-  const oldHome = process.env.HUHAA_HOME;
-  const oldRemote = process.env.HUHAA_ICON_REMOTE;
+test('getIconForBrand rejects non-image remote responses and honors SKILLSHELPER_ICON_REMOTE=0', async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-icon-reject-'));
+  const oldHome = process.env.SKILLSHELPER_HOME;
+  const oldRemote = process.env.SKILLSHELPER_ICON_REMOTE;
   const oldFetch = globalThis.fetch;
-  process.env.HUHAA_HOME = root;
+  process.env.SKILLSHELPER_HOME = root;
   t.after(() => {
-    if (oldHome === undefined) delete process.env.HUHAA_HOME;
-    else process.env.HUHAA_HOME = oldHome;
-    if (oldRemote === undefined) delete process.env.HUHAA_ICON_REMOTE;
-    else process.env.HUHAA_ICON_REMOTE = oldRemote;
+    if (oldHome === undefined) delete process.env.SKILLSHELPER_HOME;
+    else process.env.SKILLSHELPER_HOME = oldHome;
+    if (oldRemote === undefined) delete process.env.SKILLSHELPER_ICON_REMOTE;
+    else process.env.SKILLSHELPER_ICON_REMOTE = oldRemote;
     globalThis.fetch = oldFetch;
     fs.rmSync(root, { recursive: true, force: true });
     delete BRAND_APP_MAP['remote-non-image'];
@@ -139,7 +139,7 @@ test('getIconForBrand rejects non-image remote responses and honors HUHAA_ICON_R
     status: 200,
     headers: { 'content-type': 'text/plain' },
   });
-  delete process.env.HUHAA_ICON_REMOTE;
+  delete process.env.SKILLSHELPER_ICON_REMOTE;
   assert.equal(await getIconForBrand('remote-non-image', 64), null);
 
   BRAND_APP_MAP['remote-disabled'] = {
@@ -148,7 +148,7 @@ test('getIconForBrand rejects non-image remote responses and honors HUHAA_ICON_R
     officialIconUrls: ['https://example.com/icon.png'],
     remoteIconCache: true,
   };
-  process.env.HUHAA_ICON_REMOTE = '0';
+  process.env.SKILLSHELPER_ICON_REMOTE = '0';
   globalThis.fetch = async () => {
     throw new Error('disabled remote icon fetch should not call network');
   };
@@ -157,17 +157,17 @@ test('getIconForBrand rejects non-image remote responses and honors HUHAA_ICON_R
 
 
 test('getIconForBrand rejects non-HTTPS, oversized, and failed official remote downloads', async (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'huhaa-icon-invalid-'));
-  const oldHome = process.env.HUHAA_HOME;
-  const oldRemote = process.env.HUHAA_ICON_REMOTE;
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-icon-invalid-'));
+  const oldHome = process.env.SKILLSHELPER_HOME;
+  const oldRemote = process.env.SKILLSHELPER_ICON_REMOTE;
   const oldFetch = globalThis.fetch;
-  process.env.HUHAA_HOME = root;
-  delete process.env.HUHAA_ICON_REMOTE;
+  process.env.SKILLSHELPER_HOME = root;
+  delete process.env.SKILLSHELPER_ICON_REMOTE;
   t.after(() => {
-    if (oldHome === undefined) delete process.env.HUHAA_HOME;
-    else process.env.HUHAA_HOME = oldHome;
-    if (oldRemote === undefined) delete process.env.HUHAA_ICON_REMOTE;
-    else process.env.HUHAA_ICON_REMOTE = oldRemote;
+    if (oldHome === undefined) delete process.env.SKILLSHELPER_HOME;
+    else process.env.SKILLSHELPER_HOME = oldHome;
+    if (oldRemote === undefined) delete process.env.SKILLSHELPER_ICON_REMOTE;
+    else process.env.SKILLSHELPER_ICON_REMOTE = oldRemote;
     globalThis.fetch = oldFetch;
     fs.rmSync(root, { recursive: true, force: true });
     delete BRAND_APP_MAP['remote-http'];

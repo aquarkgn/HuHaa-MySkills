@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // 官网落地页构建/开发脚本，结构对齐 build/build-web.mjs。
-// - 默认：vite build（生产构建，base='/HuHaa-MySkills/'）
+// - 默认：vite build（生产构建，base='/SkillsHelper/'）
 // - --dev：vite（本地开发服务器，base='/'）
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';

@@ -8,7 +8,7 @@ import path from 'node:path';
 import { scanSkills } from '../src/adapters/skill-adapter.mjs';
 
 function makeFixture() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'huhaa-skills-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-skills-'));
   const write = (rel, content) => {
     const abs = path.join(dir, rel);
     fs.mkdirSync(path.dirname(abs), { recursive: true });

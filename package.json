@@ -1,23 +1,23 @@
 {
-  "name": "huhaa-myskills",
+  "name": "skillshelper",
   "version": "0.3.9",
   "private": false,
-  "description": "HuHaa AI 助手：本地技能 / 插件 / MCP 聚合中心。",
+  "description": "呼哈哈-技能助手：本地技能 / 插件 / MCP 聚合中心。",
   "license": "MIT",
-  "homepage": "https://github.com/aquarkgn/HuHaa-MySkills#readme",
+  "homepage": "https://github.com/aquarkgn/SkillsHelper#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aquarkgn/HuHaa-MySkills.git"
+    "url": "git+https://github.com/aquarkgn/SkillsHelper.git"
   },
   "bugs": {
-    "url": "https://github.com/aquarkgn/HuHaa-MySkills/issues"
+    "url": "https://github.com/aquarkgn/SkillsHelper/issues"
   },
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
   },
   "bin": {
-    "huhaa-myskills": "bin/huhaa-myskills.mjs"
+    "skillshelper": "bin/skillshelper.mjs"
   },
   "files": [
     "bin/",
@@ -36,18 +36,18 @@
     "LICENSE"
   ],
   "scripts": {
-    "start": "node bin/huhaa-myskills.mjs start",
-    "stop": "node bin/huhaa-myskills.mjs stop",
-    "restart": "node bin/huhaa-myskills.mjs restart",
-    "scan": "node bin/huhaa-myskills.mjs scan",
-    "stats": "node bin/huhaa-myskills.mjs stats",
-    "duplicates": "node bin/huhaa-myskills.mjs duplicates",
-    "init": "node bin/huhaa-myskills.mjs init",
-    "purge": "node bin/huhaa-myskills.mjs purge",
-    "uninstall": "node bin/huhaa-myskills.mjs uninstall",
-    "dev": "node bin/huhaa-myskills.mjs restart && cd packages/web && npm run dev",
+    "start": "node bin/skillshelper.mjs start",
+    "stop": "node bin/skillshelper.mjs stop",
+    "restart": "node bin/skillshelper.mjs restart",
+    "scan": "node bin/skillshelper.mjs scan",
+    "stats": "node bin/skillshelper.mjs stats",
+    "duplicates": "node bin/skillshelper.mjs duplicates",
+    "init": "node bin/skillshelper.mjs init",
+    "purge": "node bin/skillshelper.mjs purge",
+    "uninstall": "node bin/skillshelper.mjs uninstall",
+    "dev": "node bin/skillshelper.mjs restart && cd packages/web && npm run dev",
     "dev-bg": "bash scripts/start-dev.sh",
-    "sync": "node bin/huhaa-myskills.mjs sync",
+    "sync": "node bin/skillshelper.mjs sync",
     "build:web": "node build/build-web.mjs",
     "build:site": "node build/build-site.mjs",
     "dev:site": "node build/build-site.mjs --dev",

@@ -1,5 +1,5 @@
 {
-  "name": "@huhaa/server",
+  "name": "@skillshelper/server",
   "version": "0.1.1",
   "private": true,
   "type": "module",
@@ -10,6 +10,6 @@
   "dependencies": {
     "fastify": "^5.0.0",
     "chokidar": "^4.0.3",
-    "@huhaa/scanner": "*"
+    "@skillshelper/scanner": "*"
   }
 }

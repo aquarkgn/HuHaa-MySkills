@@ -42,7 +42,7 @@ test('splitSegments: ~~~ 围栏代码块也识别', () => {
 });
 
 test('translate-raw: deadline 到达后未翻译段填充原文 skipped:timeout', async () => {
-  // 用默认 HUHAA_HOME（读真实 sources.yaml 以扫描到技能）。
+  // 用默认 SKILLSHELPER_HOME（读真实 sources.yaml 以扫描到技能）。
   // translate 因 deadline 立即到而不被调用，不写缓存，无副作用。
   const { app, port } = await startServer({ port: 0 });
 

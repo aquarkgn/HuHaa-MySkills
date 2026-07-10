@@ -122,7 +122,7 @@ describe('Frontend Components - v4.0 Menu System', () => {
   });
 
   it('✓ localStorage 持久化 - 应该保存和恢复菜单状态', () => {
-    const STORAGE_KEY = 'huhaa-menu-state-v4';
+    const STORAGE_KEY = 'skillshelper-menu-state-v4';
 
     // 模拟菜单状态
     const menuState = {

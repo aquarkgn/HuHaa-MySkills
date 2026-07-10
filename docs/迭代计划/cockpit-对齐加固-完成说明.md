@@ -10,7 +10,7 @@
 
 ## 一、总览
 
-按 `cockpit-tools` 深度调研报告的五条工程加固方法论，对 HuHaa-MySkills 现有代码做质量加固。性质是加固，不是功能扩展。红线是核心功能不动，实测扫描产出与加固前逐条零差异。
+按 `cockpit-tools` 深度调研报告的五条工程加固方法论，对 SkillsHelper 现有代码做质量加固。性质是加固，不是功能扩展。红线是核心功能不动，实测扫描产出与加固前逐条零差异。
 
 | 阶段 | 内容 | 风险 | 状态 |
 |------|------|------|------|
@@ -63,7 +63,7 @@
 | `bin/lib/paths.mjs` | 改 | `writeJson` 改调 `atomicWriteJson`，消除裸 writeFileSync |
 | `packages/scanner/src/core/atomic-write.mjs` | 改为 re-export | 实现迁到 bin/lib，scanner 包内引用不变 |
 
-受益写点：翻译缓存（`translate-cache.mjs:106`）、state.json（`bin/huhaa-myskills.mjs:543`）、图标缓存（阶段二已改）。三处真实写全部原子化。
+受益写点：翻译缓存（`translate-cache.mjs:106`）、state.json（`bin/skillshelper.mjs:543`）、图标缓存（阶段二已改）。三处真实写全部原子化。
 
 ### 阶段四：回归与文档
 
@@ -132,7 +132,7 @@ sample item 字段：除新增 `confidence` 外，其余字段与加固前完全
 
 ### 决策 3：不上完整审计链
 
-按计划 2.3 判断，HuHaa-MySkills 是只读扫描工具，三处真实写频率低风险低。阶段三只做原子写 + 失败回退，不上完整审计日志和回读校验。价值不匹配。
+按计划 2.3 判断，SkillsHelper 是只读扫描工具，三处真实写频率低风险低。阶段三只做原子写 + 失败回退，不上完整审计日志和回读校验。价值不匹配。
 
 ### 决策 4：零新增依赖
 
@@ -152,7 +152,7 @@ sample item 字段：除新增 `confidence` 外，其余字段与加固前完全
 
 3. **scanLegacy 双路径仍并存**。`index.mjs` 的 scanLegacy + ADAPTERS 与 tier 路径并行存在，是维护负担。但收敛涉及核心功能风险，不在本次加固范围（见后续建议）。
 
-4. **atomic-write 跨文件系统回退**。`HUHAA_HOME` 被设到跨挂载点时 rename 失败，回退为直接写（保留原行为，不比现状更差）。默认 `~/.config/huhaa-myskills` 不触发此情况。
+4. **atomic-write 跨文件系统回退**。`SKILLSHELPER_HOME` 被设到跨挂载点时 rename 失败，回退为直接写（保留原行为，不比现状更差）。默认 `~/.config/skillshelper` 不触发此情况。
 
 5. **atomic-write.test.mjs 一处注释循环引用**。测试注释提"与 bin/lib/paths.mjs 原 writeJson 格式一致"，但 paths.writeJson 现已改调 atomicWriteJson。断言本身正确（格式确实一致），仅注释措辞略绕，不影响功能。
 

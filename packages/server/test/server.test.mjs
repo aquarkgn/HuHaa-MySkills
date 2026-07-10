@@ -12,10 +12,10 @@ const PKG_VERSION = JSON.parse(
 ).version;
 
 function makeTempHome() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'huhaa-server-test-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-server-test-'));
   const home = path.join(root, 'home');
   fs.mkdirSync(home, { recursive: true });
-  process.env.HUHAA_HOME = home;
+  process.env.SKILLSHELPER_HOME = home;
   return { root, home };
 }
 
@@ -232,16 +232,16 @@ test('server serves favicon files from root paths before SPA fallback', async (t
   assert.equal(ico.rawPayload.readUInt16LE(2), 1);
 });
 
-test('server serves HuHaa AI assistant manifest with app icons', async (t) => {
+test('server serves SkillsHelper manifest with app icons', async (t) => {
   const { app } = await bootFixtureServer(t);
   const res = await app.inject({ method: 'GET', url: '/site.webmanifest' });
 
   assert.equal(res.statusCode, 200);
   assert.equal(res.headers['content-type'], 'application/manifest+json; charset=utf-8');
   const manifest = JSON.parse(res.body);
-  assert.equal(manifest.name, 'HuHaa AI 助手');
-  assert.equal(manifest.short_name, 'HuHaa');
-  assert.match(manifest.description, /HuHaa AI 助手/);
+  assert.equal(manifest.name, '呼哈哈-技能助手');
+  assert.equal(manifest.short_name, '呼哈哈');
+  assert.match(manifest.description, /呼哈哈-技能助手/);
   assert.ok(manifest.icons.some(icon => icon.sizes === '192x192' && icon.src === '/favicon-192x192.png'));
   assert.ok(manifest.icons.some(icon => icon.sizes === '512x512' && icon.src === '/favicon-512x512.png'));
 });

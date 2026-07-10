@@ -6,7 +6,7 @@ import { Features } from '@/sections/Features'
 import { QuickStart } from '@/sections/QuickStart'
 import { Credibility } from '@/sections/Credibility'
 
-const REPO_URL = 'https://github.com/aquarkgn/HuHaa-MySkills'
+const REPO_URL = 'https://github.com/aquarkgn/SkillsHelper'
 
 export default function App() {
   return (

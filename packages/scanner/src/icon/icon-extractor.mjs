@@ -30,8 +30,8 @@ const iconPathCache = new Map(); // `${brand}:${size}` -> iconPath|null
 
 export function cacheDir() {
   const base =
-    process.env.HUHAA_HOME?.trim() ||
-    path.join(process.env.XDG_CONFIG_HOME?.trim() || path.join(os.homedir(), '.config'), 'huhaa-myskills');
+    process.env.SKILLSHELPER_HOME?.trim() ||
+    path.join(process.env.XDG_CONFIG_HOME?.trim() || path.join(os.homedir(), '.config'), 'skillshelper');
   return path.join(expandTilde(base), 'icon-cache');
 }
 
@@ -50,7 +50,7 @@ function clampSize(size) {
 }
 
 function remoteDisabled() {
-  return process.env.HUHAA_ICON_REMOTE === '0';
+  return process.env.SKILLSHELPER_ICON_REMOTE === '0';
 }
 
 function extensionForContentType(contentType) {
@@ -149,7 +149,7 @@ async function downloadOfficialIcon(brand, spec) {
       const response = await fetch(url, {
         headers: {
           accept: 'image/avif,image/webp,image/svg+xml,image/png,image/*,*/*;q=0.8',
-          'user-agent': 'HuHaa-MySkills/official-icon-fetcher',
+          'user-agent': 'SkillsHelper/official-icon-fetcher',
         },
         redirect: 'follow',
       });

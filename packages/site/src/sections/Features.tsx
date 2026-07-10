@@ -7,18 +7,18 @@ interface Feature {
 const FEATURES: Feature[] = [
   {
     tag: '核心',
-    title: '英文描述翻译成中文，中英对照',
-    desc: '技能/工具的英文帮助自动翻译成中文，本地缓存、不重复请求。中英对照切换查看，已是中文的直接跳过；代码块和命令名不翻译，照抄就能用。',
+    title: '扫描多个本地来源，先看清你的能力版图',
+    desc: '发现编辑器技能、个人技能库、插件、MCP 配置与项目运行手册；扫描结果经过去重后进入同一份本地索引。',
   },
   {
     tag: '核心',
-    title: '识别本机已有的技能',
-    desc: '自动扫描本机散落的技能、插件、命令行帮助，告诉你本机到底装了哪些能力、在哪里、能不能用。不用再翻磁盘、靠记忆。',
+    title: '按层级、来源和品牌整理，一秒定位',
+    desc: '以编辑器工具技能、个人技能库、其它来源构成三级结构，配合搜索、排序、分组和筛选，让查找不再依赖路径记忆。',
   },
   {
     tag: '整理',
-    title: '统一查看、搜索、分类、筛选',
-    desc: '散落各处的能力聚到一个面板。按来源分类（官方工具 / 自定义技能 / 其它来源），关键词搜索、排序、筛选，一眼找到要用的。',
+    title: '保留原文语境，需要时用中文理解',
+    desc: '支持中英对照与本地缓存；中文内容不会重复翻译，代码块与命令保留原样。MCP 配置在展示前会脱敏。',
   },
 ]
 
@@ -28,9 +28,9 @@ export function Features() {
     <section id="features" className="border-b border-border bg-muted/30">
       <div className="section">
         <div className="mb-10 text-center">
-          <h2 className="text-h2 font-bold">它帮你做什么</h2>
+          <h2 className="text-h2 font-bold">从发现到维护，一处完成</h2>
           <p className="mt-2 text-body text-muted-foreground">
-            三件事，解决"散落没整理"和"看不懂英文"。
+            不做又一个聊天壳，只把 AI 工作流中的能力资产管理清楚。
           </p>
         </div>
 

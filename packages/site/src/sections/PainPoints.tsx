@@ -7,13 +7,13 @@ interface Pain {
 const PAINS: Pain[] = [
   {
     tag: '痛点一',
-    title: '本机技能散落各处，没整理',
-    desc: '装了多少、在哪儿、能不能用，全靠记忆。想找一个得翻遍磁盘，根本不知道本机到底有哪些能力。',
+    title: '能力散落在不同工具里，找不到也管不住',
+    desc: '技能目录、插件、MCP 配置和项目说明各有入口。装了什么、来自哪里、是否重复，全靠记忆与翻目录。',
   },
   {
     tag: '痛点二',
-    title: '技能描述是英文，看不懂',
-    desc: '帮助文档只有英文，整页机翻又混着术语更乱，连命令名都被硬翻译，照抄就报错。',
+    title: '知道文件存在，却看不懂也无法判断该不该用',
+    desc: '说明常是英文且分散在原始文件中。整页机翻又会误伤命令和代码，结果是信息很多、决策很慢。',
   },
 ]
 
@@ -23,9 +23,9 @@ export function PainPoints() {
     <section className="border-b border-border">
       <div className="section">
         <div className="mb-10 text-center">
-          <h2 className="text-h2 font-bold">两个最烦人的问题</h2>
+          <h2 className="text-h2 font-bold">AI 工作流失控，往往从“散”开始</h2>
           <p className="mt-2 text-body text-muted-foreground">
-            用 AI 助手时，真正卡住你的往往不是模型，而是这些。
+            SkillsHelper 先让能力资产可见，再让它们变得可用。
           </p>
         </div>
 

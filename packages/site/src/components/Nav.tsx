@@ -5,6 +5,8 @@ interface NavProps {
   repoUrl: string
 }
 
+const BRAND_ICON = `${import.meta.env.BASE_URL}brand-icon.png`
+
 /** 顶部导航：固定吸顶，锚点跳转区块，右侧行为按钮 */
 export function Nav({ repoUrl }: NavProps) {
   const [open, setOpen] = useState(false)
@@ -19,8 +21,8 @@ export function Nav({ repoUrl }: NavProps) {
     <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur">
       <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-6">
         <a href="#top" className="flex items-center gap-2 font-semibold">
-          <span className="inline-block h-6 w-6 rounded-sm bg-primary" aria-hidden />
-          HuHaa
+          <img src={BRAND_ICON} alt="" className="h-7 w-7 rounded-md object-cover" aria-hidden="true" />
+          呼哈哈-技能助手
         </a>
 
         <div className="hidden items-center gap-6 md:flex">

@@ -1,7 +1,7 @@
 {
-  "name": "HuHaa AI 助手",
-  "short_name": "HuHaa",
-  "description": "HuHaa AI 助手：本地技能 / 插件 / MCP 聚合中心",
+  "name": "呼哈哈-技能助手",
+  "short_name": "呼哈哈",
+  "description": "呼哈哈-技能助手：本地技能 / 插件 / MCP 聚合中心",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

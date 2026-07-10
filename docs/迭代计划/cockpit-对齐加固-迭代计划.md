@@ -11,7 +11,7 @@
 
 ## 一、执行摘要
 
-本计划把 `cockpit-tools` 调研报告里的五条工程加固方法论，落地到 HuHaa-MySkills 现有代码上。性质是**质量加固**，不是功能扩展：迭代完成后，扫描出来的技能列表、前端展示、API 响应与现在逐条一致，只是底层检测更可描述、品牌识别更抗脏、写盘更抗中断、通用能力更可复用。
+本计划把 `cockpit-tools` 调研报告里的五条工程加固方法论，落地到 SkillsHelper 现有代码上。性质是**质量加固**，不是功能扩展：迭代完成后，扫描出来的技能列表、前端展示、API 响应与现在逐条一致，只是底层检测更可描述、品牌识别更抗脏、写盘更抗中断、通用能力更可复用。
 
 四个加固方向（已与用户确认全面对齐）：
 
@@ -30,7 +30,7 @@
 
 ### 2.1 核心功能边界（本次迭代不动）
 
-HuHaa-MySkills 的核心功能链是 扫描 -> 聚合 -> 展示 -> 搜索/翻译，落在以下代码：
+SkillsHelper 的核心功能链是 扫描 -> 聚合 -> 展示 -> 搜索/翻译，落在以下代码：
 
 | 核心能力 | 代码位置 | 不动红线 |
 |---|---|---|
@@ -42,13 +42,13 @@ HuHaa-MySkills 的核心功能链是 扫描 -> 聚合 -> 展示 -> 搜索/翻译
 | 前端展示 | `packages/web/src/` | 用户可见行为不变 |
 | 图标服务 | `packages/scanner/src/icon/` | `/api/icons/:brand` 行为不变 |
 | 翻译 | `packages/server/src/translate-cache.mjs` 等 | 缓存命中语义不变 |
-| CLI | `bin/huhaa-myskills.mjs` | 入口与参数不变 |
+| CLI | `bin/skillshelper.mjs` | 入口与参数不变 |
 
 验收总则：每个阶段完成后，用同一台机器同一份技能目录扫描，产出与加固前做 diff，除新增的内部字段（如 `confidence`）外必须零差异。
 
 ### 2.2 参评框架性质
 
-`cockpit-tools` 报告里的五条学习点，本质都是"如何让一个多工具配置工具长期可维护"的工程框架，不是功能特性。我们借鉴的是方法论，不是把 HuHaa-MySkills 往账号管理器方向改：
+`cockpit-tools` 报告里的五条学习点，本质都是"如何让一个多工具配置工具长期可维护"的工程框架，不是功能特性。我们借鉴的是方法论，不是把 SkillsHelper 往账号管理器方向改：
 
 | Cockpit 学习点 | 性质 | 我们的对标动作 |
 |---|---|---|
@@ -61,7 +61,7 @@ HuHaa-MySkills 的核心功能链是 扫描 -> 聚合 -> 展示 -> 搜索/翻译
 
 Cockpit 的"原子写 + 备份 + 审计"是为它的核心写操作服务：切号、写回账号配置到 SQLite/JSON/TOML，高频、高风险、要可回滚。
 
-HuHaa-MySkills 本质是只读扫描 + 聚合展示。它真正有的写只有三处：
+SkillsHelper 本质是只读扫描 + 聚合展示。它真正有的写只有三处：
 
 - 翻译缓存写盘 `packages/server/src/translate-cache.mjs:101` `flush()` -> `bin/lib/paths.mjs:51` `writeJson`
 - 图标缓存写盘 `packages/scanner/src/icon/icon-extractor.mjs:167` 和 `:168`（png 与 remote.json 两处 `fs.writeFileSync`）
@@ -339,7 +339,7 @@ ScannerDescriptor {
 **验收标准**：
 
 - `npm test` 全绿
-- 扫描产出 diff：除新增 `confidence` 字段外零差异（用 `HUHAA_DEBUG` dump 两次结果做字段级比对）
+- 扫描产出 diff：除新增 `confidence` 字段外零差异（用 `SKILLSHELPER_DEBUG` dump 两次结果做字段级比对）
 - `descriptor.test.mjs` 覆盖：注册/查询/未注册 brand 回退
 - `tier-editor.test.mjs` 断言：tier1 每个编辑器产出的 item 带 confidence
 
@@ -381,7 +381,7 @@ claude: {
 2. bundle id 正则（现有 `resolveBrandSpec`）
 3. hostname suffix 匹配（新增）
 4. 路径 prefix 匹配（新增，可选）
-5. 用户手动覆写（新增，读 `~/.config/huhaa-myskills/brand-overrides.json`）
+5. 用户手动覆写（新增，读 `~/.config/skillshelper/brand-overrides.json`）
 6. 回退 custom（现有 null 行为）
 
 新增 `resolveBrandByFingerprint(urlOrHost)`：输入 URL 或 hostname，按上述层级返回 brand key。供未来扩展（如从技能内引用的 URL 反推品牌）。
@@ -513,7 +513,7 @@ AI 辅助下完整版本成本低。本计划按完整版本设计：
 
 ### 8.1 better-sqlite3（不建议引入）
 
-Cockpit 用 `rusqlite` 是因为它要读写 VS Code 的 `state.vscdb`（SQLite 格式）。HuHaa-MySkills 扫描的是文件系统技能目录，**不读任何 SQLite**。
+Cockpit 用 `rusqlite` 是因为它要读写 VS Code 的 `state.vscdb`（SQLite 格式）。SkillsHelper 扫描的是文件系统技能目录，**不读任何 SQLite**。
 
 - 场景不匹配。
 - better-sqlite3 是原生编译依赖，会增加 npm 安装时间和 CI 负担（需 prebuilt binary 或编译工具链）。
@@ -547,7 +547,7 @@ zod 可用于校验 ScannerDescriptor 和 SkillItem IR，防脏数据。
 | 三 | rename 跨文件系统失败 | 写盘失败 | 低（还原 writeFileSync） | atomic-write 测试 + 同文件系统保证 |
 | 四 | 文档与实际不符 | 误导 | 无 | 实测验证后写文档 |
 
-跨文件系统 rename 风险补充：`HUHAA_HOME` 默认 `~/.config/huhaa-myskills`，临时文件与目标在同一目录，必同文件系统，rename 原子有效。若用户把 `HUHAA_HOME` 设到跨挂载点，rename 会失败，atomic-write.mjs 需 catch 并回退到直接写（保留原行为，不比现状更差）。
+跨文件系统 rename 风险补充：`SKILLSHELPER_HOME` 默认 `~/.config/skillshelper`，临时文件与目标在同一目录，必同文件系统，rename 原子有效。若用户把 `SKILLSHELPER_HOME` 设到跨挂载点，rename 会失败，atomic-write.mjs 需 catch 并回退到直接写（保留原行为，不比现状更差）。
 
 ---
 
@@ -567,7 +567,7 @@ npm run verify                # build/verify.mjs 综合校验
 每阶段前后各跑一次：
 
 ```
-HUHAA_DEBUG=1 node bin/huhaa-myskills.mjs start   # 触发扫描
+SKILLSHELPER_DEBUG=1 node bin/skillshelper.mjs start   # 触发扫描
 # dump 扫描结果到 json
 # 用 jq 做字段级 diff（排除 confidence 新字段）
 ```

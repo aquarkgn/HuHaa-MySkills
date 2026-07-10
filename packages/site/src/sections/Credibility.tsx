@@ -5,21 +5,21 @@ interface Stat {
 
 // 版本号来自 package.json（真实可查）。
 const STATS: Stat[] = [
-  { value: '中英对照', label: '翻译不丢原文' },
-  { value: '命令名不译', label: '照抄就能用' },
-  { value: '本地缓存', label: '翻译不重复请求' },
-  { value: 'v0.3.7', label: '持续迭代 · MIT' },
+  { value: '多来源', label: '技能、插件与配置统一索引' },
+  { value: '三级分类', label: '来源结构一眼可见' },
+  { value: '本地缓存', label: '翻译和图标避免重复处理' },
+  { value: 'v0.3.9', label: '已发布 npm · MIT' },
 ]
 
-/** 可信度区：用翻译与整理相关的真实能力做支撑，不堆空话 */
+/** 可信度区：只使用代码与已发布版本可复核的事实。 */
 export function Credibility() {
   return (
     <section id="credibility" className="bg-muted/30">
       <div className="section">
         <div className="mb-10 text-center">
-          <h2 className="text-h2 font-bold">为什么能放心用</h2>
+          <h2 className="text-h2 font-bold">为了可控，而不是为了更复杂</h2>
           <p className="mt-2 text-body text-muted-foreground">
-            翻译有缓存、有中英对照、不误译命令，整理全在本机完成。
+            文件扫描保持只读，MCP 配置展示前脱敏；每一项价值都能在本地运行中复核。
           </p>
         </div>
 

@@ -1,11 +1,11 @@
 #!/bin/bash
-# HuHaa-MySkills 前端框架初始化脚本
+# SkillsHelper 前端框架初始化脚本
 # Next.js 15 + React 18 + TypeScript 完整项目结构
 
 set -e
 
-PROJECT_NAME="huhaa-myskills-web"
-WORKSPACE_DIR="/Users/mac/Project/HuHaa-MySkills"
+PROJECT_NAME="skillshelper-web"
+WORKSPACE_DIR="/Users/mac/Project/SkillsHelper"
 
 echo "🚀 初始化 Next.js 前端项目..."
 cd "$WORKSPACE_DIR"
@@ -297,9 +297,9 @@ EOF
 # 8. 创建 package.json 脚本
 cat > package.json << 'EOF'
 {
-  "name": "huhaa-myskills-web",
+  "name": "skillshelper-web",
   "version": "1.0.0",
-  "description": "HuHaa MySkills - 前端应用",
+  "description": "SkillsHelper - 前端应用",
   "private": true,
   "scripts": {
     "dev": "next dev",

@@ -1,8 +1,8 @@
-// @huhaa/scanner — multi-source skill aggregator.
+// @skillshelper/scanner — multi-source skill aggregator.
 //
 // P1 wires hermes + claude-code adapters via the shared markdown-skill
 // scanner. Other adapters land in P4. The orchestrator loads sources.yaml
-// from ~/.config/huhaa-myskills/, dispatches to enabled adapters, and
+// from ~/.config/skillshelper/, dispatches to enabled adapters, and
 // returns a flat IR list.
 
 import fs from 'node:fs';
@@ -170,7 +170,7 @@ export async function scan() {
 
   // ✅ v4.0: 调用三层优先级扫描器
   try {
-    if (process.env.HUHAA_DEBUG) {
+    if (process.env.SKILLSHELPER_DEBUG) {
       console.log('[scan] Calling scanTierSkills (Tier 1 → 2 → 3)...');
     }
 
@@ -182,7 +182,7 @@ export async function scan() {
       limits,
     });
 
-    if (process.env.HUHAA_DEBUG) {
+    if (process.env.SKILLSHELPER_DEBUG) {
       console.log('[scan] tierResult stats:', JSON.stringify(tierResult.stats, null, 2));
     }
 
@@ -202,7 +202,7 @@ export async function scan() {
     return dedupeSemantic(items);
   } catch (e) {
     console.warn('[scan] Three-tier scanner failed:', e.message);
-    if (process.env.HUHAA_DEBUG) {
+    if (process.env.SKILLSHELPER_DEBUG) {
       console.error('[scan] Error stack:', e.stack);
     }
     // 降级：如果三层扫描失败，使用旧的 adapter 模式
@@ -237,7 +237,7 @@ export async function scanLegacy(cfg, limits) {
 
   const out = dedupeSemantic(all);
 
-  if (process.env.HUHAA_DEBUG) {
+  if (process.env.SKILLSHELPER_DEBUG) {
     console.error('[scan] legacy stats:', JSON.stringify(stats, null, 2));
   }
 
