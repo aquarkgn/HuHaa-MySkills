@@ -18,7 +18,12 @@ import { SkillDetail } from './SkillDetail'
 import { cn } from '@/lib/cn'
 import { editorLabel, isNoneEditor, itemEditorKey, PINNED_SKILL_SOURCES } from '@/lib/editors'
 import { copy, open } from '@/lib/api'
-import { kindLabel, displayDescription } from '@/lib/i18n'
+import {
+  kindLabel,
+  displayDescription,
+  pluginCapabilityLabel,
+  pluginSearchText,
+} from '@/lib/i18n'
 import { getSkillIcons } from '@/hooks/getSkillIcons'
 import { OfficialBrandIcon } from '@/components/ui/OfficialBrandIcon'
 import type { SkillItem } from '@/types'
@@ -83,6 +88,27 @@ function shouldShowSourceBadge(item: SkillItem): boolean {
   return editorLabel(itemEditorKey(item)) !== icons.tierLabel
 }
 
+function PluginCapabilityBadges({ item, compact = false }: { item: SkillItem; compact?: boolean }) {
+  const capabilities = item.plugin?.capabilities ?? []
+  if (!capabilities.length) return null
+
+  return (
+    <>
+      {capabilities.map((capability) => (
+        <span
+          key={`${item.id}:${capability.kind}`}
+          className={cn(
+            'rounded-sm bg-sky-500/10 text-caption text-sky-700 dark:text-sky-300',
+            compact ? 'px-1.5 py-0.5' : 'px-2 py-1',
+          )}
+        >
+          {pluginCapabilityLabel(capability)}
+        </span>
+      ))}
+    </>
+  )
+}
+
 function tierKeyOf(item: SkillItem): TierFilter {
   if (item.tierId) return item.tierId
   switch (item.tier) {
@@ -106,6 +132,27 @@ function filterByEditor(items: SkillItem[], editorFilter: string | null): SkillI
     return items.filter((it) => isNoneEditor(itemEditorKey(it)))
   }
   return items.filter((it) => itemEditorKey(it) === editorFilter)
+}
+
+function normalizedSearchValue(value?: string): string {
+  return (value ?? '').trim().toLowerCase()
+}
+
+function searchableNames(item: SkillItem): string[] {
+  return [item.title, item.name, item.i18n?.zh?.name].map(normalizedSearchValue).filter(Boolean)
+}
+
+function exactSearchRank(item: SkillItem, normalizedQuery: string): number | null {
+  const names = searchableNames(item)
+  if (names.some((name) => name === normalizedQuery)) return 0
+  if (names.some((name) => name.startsWith(normalizedQuery))) return 1
+  if (names.some((name) => name.includes(normalizedQuery))) return 2
+  if (pluginSearchText(item).includes(normalizedQuery)) return 3
+  return null
+}
+
+function titleForSort(item: SkillItem): string {
+  return item.title || item.name
 }
 
 function SkillContextPanel({ item }: { item: SkillItem }) {
@@ -286,12 +333,40 @@ export function SkillsView({
         ],
         threshold: 0.4,
         ignoreLocation: true,
+        includeScore: true,
       }),
     [byTier],
   )
 
   const filtered = useMemo(() => {
-    let list = query.trim() ? fuse.search(query).map((r) => r.item) : byTier
+    let list = byTier
+    if (query.trim()) {
+      const normalizedQuery = query.trim().toLowerCase()
+      const ranks = new Map<string, { rank: number; score: number }>()
+
+      for (const item of byTier) {
+        const rank = exactSearchRank(item, normalizedQuery)
+        if (rank !== null) ranks.set(item.id, { rank, score: 0 })
+      }
+
+      for (const result of fuse.search(query)) {
+        const current = ranks.get(result.item.id)
+        const fuzzyRank = { rank: 4, score: result.score ?? 1 }
+        if (!current || fuzzyRank.rank < current.rank) ranks.set(result.item.id, fuzzyRank)
+      }
+
+      list = byTier
+        .filter((item) => ranks.has(item.id))
+        .sort((a, b) => {
+          const aRank = ranks.get(a.id) ?? { rank: 99, score: 1 }
+          const bRank = ranks.get(b.id) ?? { rank: 99, score: 1 }
+          return (
+            aRank.rank - bRank.rank ||
+            aRank.score - bRank.score ||
+            titleForSort(a).localeCompare(titleForSort(b), 'zh-CN')
+          )
+        })
+    }
     if (kindFilter) list = list.filter((it) => it.kind === kindFilter)
     return list
   }, [byTier, fuse, query, kindFilter])
@@ -440,6 +515,8 @@ export function SkillsView({
                   <button
                     key={it.id}
                     type="button"
+                    data-testid="skill-list-item"
+                    data-skill-id={it.id}
                     onClick={() => onSelect(it.id)}
                     aria-pressed={isSelected}
                     className={cn(
@@ -483,6 +560,7 @@ export function SkillsView({
                             {sourceLabel}
                           </span>
                         )}
+                        <PluginCapabilityBadges item={it} compact />
                       </span>
                     </span>
                   </button>

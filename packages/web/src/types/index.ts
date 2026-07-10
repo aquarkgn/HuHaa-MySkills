@@ -12,6 +12,25 @@ export type SkillKind =
   | 'doc'
   | 'agent-rule'
 
+export type PluginCapabilityKind = 'skill' | 'mcp' | 'app' | 'interactive' | 'write'
+
+export interface PluginCapability {
+  kind: PluginCapabilityKind
+  label: string
+  count?: number
+}
+
+export interface PluginMetadata {
+  manifestPath: string
+  version?: string
+  author?: string
+  homepage?: string
+  category?: string
+  capabilities: PluginCapability[]
+  defaultPrompts?: string[]
+  logoPath?: string
+}
+
 export interface SkillItem {
   id: string
   kind: SkillKind
@@ -36,6 +55,7 @@ export interface SkillItem {
   links?: { label: string; url: string }[]
   updatedAt: string
   parseError?: string
+  plugin?: PluginMetadata
   /**
    * i18n 翻译结果（仅 description 走在线翻译，name 保持原英文）。
    * 后端在 HUHAA_TRANSLATE=1 时按需填充；缓存命中的也在列表接口返回。

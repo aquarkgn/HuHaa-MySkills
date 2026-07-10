@@ -15,6 +15,7 @@ import { scanDirectorySkills } from './adapters/directory-skill.mjs';
 import { scanFileDocs } from './adapters/file-docs.mjs';
 import { scanMcpConfigs } from './adapters/mcp-config.mjs';
 import { scanHermesPlugins } from './adapters/hermes-plugin.mjs';
+import { scanCodexPlugins } from './adapters/codex-plugin.mjs';
 import { expandRoots, expandTilde } from './utils.mjs';
 import { scanTierSkills } from './adapters/scan-tier.mjs';
 
@@ -96,6 +97,20 @@ const ADAPTERS = {
     return result;
   },
 
+  'codex-plugin': async (cfg, limits) => {
+    const result = await scanCodexPlugins({
+      source: 'codex-plugin',
+      editor: 'Codex',
+      roots: cfg.roots || [],
+      limits,
+    });
+    result.items.forEach(it => {
+      it.tier = 'tool';
+      it.brand = 'codex';
+    });
+    return result;
+  },
+
   // Tier 2: Directory-based skills (already returns tier='directory', dirName)
   'directory-skill': async (cfg, limits) => scanDirectorySkills({
     paths: cfg.paths || [],
@@ -123,6 +138,15 @@ const ADAPTERS = {
   // Removed: 'mcp-config', 'mcp', 'skills', 'skill' — no longer scanned
   // Future: obsidian
 };
+
+const DEFAULT_CODEX_PLUGIN_SOURCE = Object.freeze({
+  enabled: true,
+  roots: ['~/.codex/plugins/cache'],
+});
+
+function codexPluginConfig(cfg) {
+  return cfg.sources?.['codex-plugin'] ?? DEFAULT_CODEX_PLUGIN_SOURCE;
+}
 
 function normalizeGlobs(cfg, defaults) {
   if (Array.isArray(cfg.globs)) return cfg.globs.filter(Boolean);
@@ -164,7 +188,17 @@ export async function scan() {
 
     // 三层扫描器可能产生同名重复（gstack 为 .cursor/.factory/.kiro 等多编辑器
     // 生成的副本，source/kind/name 全相同），用语义去重合并为一条，保留主文件。
-    const items = tierResult.items || [];
+    const items = [...(tierResult.items || [])];
+    const pluginConfig = codexPluginConfig(cfg);
+    if (pluginConfig.enabled) {
+      try {
+        const pluginResult = await ADAPTERS['codex-plugin'](pluginConfig, limits);
+        items.push(...pluginResult.items.map(withLegacyMetadata));
+      } catch (error) {
+        // 插件扫描失败不能让既有 Tier 1-3 技能整体退回旧扫描路径。
+        console.warn('[scan] Codex plugin scan failed:', error.message);
+      }
+    }
     return dedupeSemantic(items);
   } catch (e) {
     console.warn('[scan] Three-tier scanner failed:', e.message);
@@ -209,7 +243,10 @@ export async function scanLegacy(cfg, limits) {
 
   // 补上 v4.0 必需字段：tier（必须）、pathHash（必须）、editorBrand（可选）
   // 注意：本文件是 ESM，crypto/path 已在顶部 import，不能用 require。
-  return out.map(item => {
+  return out.map(withLegacyMetadata);
+}
+
+function withLegacyMetadata(item) {
     // 计算 pathHash（如果有 filePath）
     let pathHash = '';
     if (item.paths?.abs) {
@@ -238,7 +275,6 @@ export async function scanLegacy(cfg, limits) {
       pathHash, // MD5(filePath) 用于去重
       editorBrand, // 品牌名，用于 Tier1 分组和图标
     };
-  });
 }
 
 export async function getWatchTargets() {
@@ -261,6 +297,13 @@ export async function getWatchTargets() {
     }
   }
 
+  // 旧版 sources.yaml 没有 codex-plugin 配置时也应立即识别本机插件。
+  // 用户可显式写 enabled: false 关闭这条默认扫描路径。
+  if (cfg.sources?.['codex-plugin'] === undefined) {
+    const roots = await expandRoots(DEFAULT_CODEX_PLUGIN_SOURCE.roots);
+    for (const root of roots) targets.add(`${root}/**/.codex-plugin/plugin.json`);
+  }
+
   return [...targets];
 }
 
@@ -272,6 +315,8 @@ function defaultWatchGlobs(name) {
       return ['**/SKILL.md'];
     case 'hermes-plugin':
       return ['**/{plugin.yaml,plugin.yml,plugin.json,manifest.json,package.json,README.md,readme.md}'];
+    case 'codex-plugin':
+      return ['**/.codex-plugin/plugin.json'];
     case 'project-runbook':
       return ['docs/RUNBOOK-*.md', 'AGENTS.md', 'CLAUDE.md', '.cursorrules', '.cursor/rules/**/*.{md,mdc}'];
     case 'cursor':

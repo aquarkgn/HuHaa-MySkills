@@ -8,6 +8,25 @@ export type SkillKind =
   | 'runbook'
   | 'doc'
 
+export type PluginCapabilityKind = 'skill' | 'mcp' | 'app' | 'interactive' | 'write'
+
+export interface PluginCapability {
+  kind: PluginCapabilityKind
+  label: string
+  count?: number
+}
+
+export interface PluginMetadata {
+  manifestPath: string
+  version?: string
+  author?: string
+  homepage?: string
+  category?: string
+  capabilities: PluginCapability[]
+  defaultPrompts?: string[]
+  logoPath?: string
+}
+
 export interface SkillItem {
   id: string
   kind: SkillKind
@@ -59,6 +78,8 @@ export interface SkillItem {
   iconUrl?: string
   /** emoji 兜底值 */
   iconFallback?: string
+  /** Codex 等本地插件的安全结构化元数据，不含 MCP 配置正文。 */
+  plugin?: PluginMetadata
 }
 
 export interface Stats {

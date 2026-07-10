@@ -55,6 +55,11 @@ sources:
       - ~/.hermes/plugins
       - ~/.hermes/profiles/*/plugins
 
+  codex-plugin:
+    enabled: true
+    roots:
+      - ~/.codex/plugins/cache
+
   project-runbook:
     enabled: true
     # Add your project roots here. The default scans ~/Project/*.

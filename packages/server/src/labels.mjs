@@ -5,6 +5,7 @@ export const LABELS = {
     'project-runbook': '项目文档',
     'mcp-config': 'MCP 配置',
     'mcp': 'MCP 工具',
+    'codex-plugin': 'Codex 插件',
   },
   editors: {
     'Hermes Agent': 'Hermes 代理',
@@ -19,6 +20,7 @@ export const LABELS = {
     'config': '配置',
     'mcp-tool': 'MCP 工具',
     'mcp': 'MCP',
+    'plugin': '插件',
   },
   categories: {
     'devops': '云原生运维',

@@ -37,6 +37,46 @@ export const BRAND_LABEL: Record<string, string> = {
   continue: 'Continue',
 }
 
+const PLUGIN_CAPABILITY_LABEL: Record<string, string> = {
+  skill: '技能',
+  mcp: 'MCP 服务',
+  app: '应用',
+  interactive: '可交互',
+  write: '可写入',
+}
+
+const PLUGIN_CATEGORY_LABEL: Record<string, string> = {
+  productivity: '效率工具',
+}
+
+const PLUGIN_KEYWORD_LABEL: Record<string, string> = {
+  build: '构建',
+  deploy: '部署',
+  sites: '建站',
+  website: '网站',
+  'landing page': '落地页',
+  portfolio: '作品集',
+  dashboard: '仪表盘',
+  'kpi dashboard': 'KPI 仪表盘',
+  portal: '门户',
+  tracker: '追踪',
+  hub: '中心',
+  'internal tool': '内部工具',
+  games: '游戏',
+}
+
+function staticPluginDescription(item: {
+  name?: string
+  description?: string
+  plugin?: unknown
+}): string {
+  if (!item.plugin || !item.description) return ''
+  if (item.name === 'sites' && /build and deploy websites with sites/i.test(item.description)) {
+    return '使用 Sites 构建和部署网站'
+  }
+  return ''
+}
+
 export function kindLabel(kind?: string): string {
   if (!kind) return ''
   return KIND_LABEL[kind] ?? kind
@@ -50,6 +90,27 @@ export function tierLabel(tier?: string): string {
 export function brandLabel(brand?: string): string {
   if (!brand) return ''
   return BRAND_LABEL[brand] ?? brand
+}
+
+export function pluginCapabilityLabel(capability: { kind: string; count?: number }): string {
+  const label = PLUGIN_CAPABILITY_LABEL[capability.kind] ?? capability.kind
+  return capability.count && capability.count > 1 ? `${label} ${capability.count}` : label
+}
+
+export function pluginCategoryLabel(category?: string): string {
+  if (!category) return ''
+  return PLUGIN_CATEGORY_LABEL[category.toLowerCase()] ?? category
+}
+
+export function pluginSearchText(item: {
+  plugin?: { capabilities?: Array<{ kind: string; count?: number }>; category?: string }
+  tags?: string[]
+}): string {
+  if (!item.plugin) return ''
+  const capabilityText = (item.plugin.capabilities ?? []).map(pluginCapabilityLabel)
+  const category = pluginCategoryLabel(item.plugin.category)
+  const translatedTags = (item.tags ?? []).map((tag) => PLUGIN_KEYWORD_LABEL[tag.toLowerCase()] ?? '')
+  return [...capabilityText, category, ...translatedTags].filter(Boolean).join(' ').toLowerCase()
 }
 
 // 翻译展示开关（localStorage）—— 控制前端是否优先展示译文。
@@ -78,10 +139,20 @@ export function setTranslateDisplayEnabled(enabled: boolean): void {
  * 取技能描述：启用翻译展示时优先返回译文，否则返回原文。
  */
 export function displayDescription(item: {
+  name?: string
   description?: string
+  plugin?: unknown
   i18n?: { zh?: { description?: string } }
 }): string {
   const original = item.description || ''
   if (!isTranslateDisplayEnabled()) return original
-  return item.i18n?.zh?.description || original
+  return item.i18n?.zh?.description || staticPluginDescription(item) || original
+}
+
+export function pluginDescriptionFallback(item: {
+  name?: string
+  description?: string
+  plugin?: unknown
+}): string {
+  return staticPluginDescription(item)
 }

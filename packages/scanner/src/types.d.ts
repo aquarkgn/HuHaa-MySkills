@@ -13,6 +13,25 @@ export interface ParamSpec {
   default?: unknown;
 }
 
+export type PluginCapabilityKind = 'skill' | 'mcp' | 'app' | 'interactive' | 'write';
+
+export interface PluginCapability {
+  kind: PluginCapabilityKind;
+  label: string;
+  count?: number;
+}
+
+export interface PluginMetadata {
+  manifestPath: string;
+  version?: string;
+  author?: string;
+  homepage?: string;
+  category?: string;
+  capabilities: PluginCapability[];
+  defaultPrompts?: string[];
+  logoPath?: string;
+}
+
 export interface SkillItem {
   /** sha1(absPath) — stable across runs, doubles as web-side key */
   id: string;
@@ -30,6 +49,7 @@ export interface SkillItem {
     | 'project'
     | 'project-runbook'
     | 'hermes-plugin'
+    | 'codex-plugin'
     | 'directory'
     | 'mcp-config';
 
@@ -86,6 +106,9 @@ export interface SkillItem {
 
   /** present when frontmatter / format parse failed; UI shows red badge */
   parseError?: string;
+
+  /** structured, safe metadata for local plugin manifests */
+  plugin?: PluginMetadata;
 
   // NEW FIELDS for Skills Tab Redesign v0.3.3
   /** Tier 1/2/3 categorization — controls display logic and icon in UI */

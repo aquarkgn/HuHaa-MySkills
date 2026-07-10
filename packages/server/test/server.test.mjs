@@ -24,7 +24,7 @@ function write(file, text) {
   fs.writeFileSync(file, text);
 }
 
-async function bootFixtureServer(t) {
+async function bootFixtureServer(t, { withCodexPlugin = false } = {}) {
   const { root, home } = makeTempHome();
   // v4.0 tier 扫描器使用 ~ 展开后的硬编码路径（~/.hermes/skills 等），
   // 不再读取 sources.yaml 的 hermes.roots。把 HOME 指向临时目录，让 tier1
@@ -40,6 +40,34 @@ description: Skill used by API tests
 ---
 # API test skill
 `);
+  if (withCodexPlugin) {
+    const pluginDir = path.join(home, '.codex', 'plugins', 'cache', 'openai-bundled', 'sites', '0.1.0');
+    write(path.join(pluginDir, '.codex-plugin', 'plugin.json'), JSON.stringify({
+      name: 'sites',
+      version: '0.1.0',
+      description: 'Build and deploy websites with Sites.',
+      mcpServers: './.mcp.json',
+      interface: {
+        displayName: 'Sites',
+        logo: './assets/logo.svg',
+        capabilities: ['Interactive', 'Write'],
+      },
+    }));
+    write(path.join(pluginDir, 'assets', 'logo.svg'), '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><rect width="8" height="8" fill="#0ea5e9"/></svg>');
+    write(path.join(pluginDir, '.mcp.json'), JSON.stringify({ env: { API_TOKEN: 'server-test-secret' } }));
+
+    const badLogoDir = path.join(home, '.codex', 'plugins', 'cache', 'local', 'bad-logo', '1.0.0');
+    write(path.join(badLogoDir, '.codex-plugin', 'plugin.json'), JSON.stringify({
+      name: 'bad-logo',
+      version: '1.0.0',
+      description: 'Plugin with a non-image logo.',
+      interface: {
+        displayName: 'Bad Logo',
+        logo: './assets/logo.txt',
+      },
+    }));
+    write(path.join(badLogoDir, 'assets', 'logo.txt'), 'not an image');
+  }
   // sources.yaml 必须存在（loadConfig 返回 null 时 scan() 直接返回 []）。
   // tier 扫描器不消费其 roots，但需要其 truthy 以继续扫描；保留 limits。
   write(path.join(home, 'sources.yaml'), `limits:
@@ -86,6 +114,41 @@ test('server exposes health, list, detail, stats, and reload state without raw i
   const reloadState = await app.inject({ method: 'GET', url: '/api/reload-state' });
   assert.equal(reloadState.statusCode, 200);
   assert.equal(JSON.parse(reloadState.body).items, 1);
+});
+
+test('server exposes safe Codex plugin metadata without leaking MCP configuration', async (t) => {
+  const { app } = await bootFixtureServer(t, { withCodexPlugin: true });
+  const list = JSON.parse((await app.inject({ method: 'GET', url: '/api/skills' })).body);
+  const plugin = list.find((item) => item.source === 'codex-plugin' && item.name === 'sites');
+
+  assert.equal(plugin.name, 'sites');
+  assert.equal(plugin.kind, 'plugin');
+  assert.equal(plugin.editorBrand, 'codex');
+  assert.equal(plugin.raw, undefined);
+  assert.match(plugin.iconUrl, /^\/api\/plugin-icons\//);
+  assert.deepEqual(plugin.plugin.capabilities.map((capability) => capability.kind), ['mcp', 'interactive', 'write']);
+  assert.doesNotMatch(JSON.stringify(plugin), /server-test-secret/);
+
+  const detail = await app.inject({ method: 'GET', url: `/api/skills/${plugin.id}` });
+  assert.equal(detail.statusCode, 200);
+  const detailBody = JSON.parse(detail.body);
+  assert.equal(detailBody.iconUrl, plugin.iconUrl);
+  assert.doesNotMatch(JSON.stringify(detailBody), /server-test-secret/);
+
+  const icon = await app.inject({ method: 'GET', url: plugin.iconUrl });
+  assert.equal(icon.statusCode, 200);
+  assert.equal(icon.headers['content-type'], 'image/svg+xml');
+  assert.match(icon.body, /<svg\b/);
+
+  const missingIcon = await app.inject({ method: 'GET', url: '/api/plugin-icons/no-such-plugin' });
+  assert.equal(missingIcon.statusCode, 404);
+
+  const traversalIcon = await app.inject({ method: 'GET', url: '/api/plugin-icons/..%2F..%2Fpackage.json' });
+  assert.equal(traversalIcon.statusCode, 404);
+
+  const badLogo = list.find((item) => item.name === 'bad-logo');
+  const badLogoIcon = await app.inject({ method: 'GET', url: `/api/plugin-icons/${badLogo.id}` });
+  assert.equal(badLogoIcon.statusCode, 404);
 });
 
 test('server copies invocation prompt through pbcopy using a whitelisted item id', async (t) => {

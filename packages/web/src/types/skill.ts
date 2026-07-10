@@ -12,6 +12,25 @@
 
 export type SkillKind = 'skill' | 'plugin' | 'mcp' | 'runbook' | 'doc';
 
+export type PluginCapabilityKind = 'skill' | 'mcp' | 'app' | 'interactive' | 'write';
+
+export interface PluginCapability {
+  kind: PluginCapabilityKind;
+  label: string;
+  count?: number;
+}
+
+export interface PluginMetadata {
+  manifestPath: string;
+  version?: string;
+  author?: string;
+  homepage?: string;
+  category?: string;
+  capabilities: PluginCapability[];
+  defaultPrompts?: string[];
+  logoPath?: string;
+}
+
 export type SkillSource =
   | 'hermes'
   | 'claude-code'
@@ -119,6 +138,8 @@ export interface SkillItem {
     translatedAt?: string;
     translationModel?: string;
   };
+
+  plugin?: PluginMetadata;
 }
 
 /**

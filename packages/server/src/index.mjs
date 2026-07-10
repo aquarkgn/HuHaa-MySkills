@@ -187,6 +187,26 @@ export async function startServer({ port = 11520 } = {}) {
     });
   }
 
+  function attachIconRef(base, size = 64) {
+    if (safePluginLogoPath(base)) {
+      base.iconUrl = `/api/plugin-icons/${encodeURIComponent(base.id)}`;
+      return base;
+    }
+
+    // 列表接口也补齐官方图标引用，保证旧侧栏和技能列表都能直接渲染真实应用图标。
+    const { iconUrl, iconFallback } = resolveIconRef(
+      {
+        icon: base.icon,
+        brand: base.brand || base.editorBrand,
+        source: base.source,
+      },
+      size,
+    );
+    if (iconUrl && !base.iconUrl) base.iconUrl = iconUrl;
+    if (iconFallback && !base.iconFallback) base.iconFallback = iconFallback;
+    return base;
+  }
+
   const hasSpa = fs.existsSync(path.join(WEB_DIST, 'index.html'));
   const assetsDir = path.join(WEB_DIST, 'assets');
 
@@ -234,17 +254,7 @@ export async function startServer({ port = 11520 } = {}) {
         if (base.editorBrand === 'hermes-plugin') base.editorBrand = 'hermes';
       }
 
-      // 列表接口也补齐官方图标引用，保证旧侧栏和技能列表都能直接渲染真实应用图标。
-      const { iconUrl, iconFallback } = resolveIconRef(
-        {
-          icon: base.icon,
-          brand: base.brand || base.editorBrand,
-          source: base.source,
-        },
-        64,
-      );
-      if (iconUrl && !base.iconUrl) base.iconUrl = iconUrl;
-      if (iconFallback && !base.iconFallback) base.iconFallback = iconFallback;
+      attachIconRef(base, 64);
       
       // 确保有 pathHash 字段
       if (!base.pathHash && base.paths?.abs) {
@@ -304,6 +314,7 @@ export async function startServer({ port = 11520 } = {}) {
     if (Object.keys(zh).length) {
       result.i18n = { zh, translatedAt: new Date().toISOString() };
     }
+    attachIconRef(result, 64);
     return result;
   });
 
@@ -436,6 +447,20 @@ export async function startServer({ port = 11520 } = {}) {
       reply.code(500);
       return { ok: false, error: e.message };
     }
+  });
+
+  app.get('/api/plugin-icons/:id', async (req, reply) => {
+    const id = decodeURIComponent(req.params.id || '');
+    const item = irById.get(id);
+    const iconPath = safePluginLogoPath(item);
+    if (!iconPath) {
+      reply.code(404);
+      return { ok: false, error: 'plugin icon not found' };
+    }
+
+    reply.type(contentTypeFor(iconPath));
+    reply.header('cache-control', 'public, max-age=86400');
+    return fs.createReadStream(iconPath);
   });
 
   app.get('/api/reload-state', async () => ({
@@ -748,18 +773,43 @@ export function splitSegments(text) {
 }
 
 function contentTypeFor(abs) {
-  if (abs.endsWith('.html')) return 'text/html; charset=utf-8';
-  if (abs.endsWith('.js')) return 'text/javascript; charset=utf-8';
-  if (abs.endsWith('.css')) return 'text/css; charset=utf-8';
-  if (abs.endsWith('.json')) return 'application/json; charset=utf-8';
-  if (abs.endsWith('.webmanifest')) return 'application/manifest+json; charset=utf-8';
-  if (abs.endsWith('.txt')) return 'text/plain; charset=utf-8';
-  if (abs.endsWith('.svg')) return 'image/svg+xml';
-  if (abs.endsWith('.png')) return 'image/png';
-  if (abs.endsWith('.ico')) return 'image/x-icon';
-  if (abs.endsWith('.jpg') || abs.endsWith('.jpeg')) return 'image/jpeg';
-  if (abs.endsWith('.woff2')) return 'font/woff2';
+  const lower = abs.toLowerCase();
+  if (lower.endsWith('.html')) return 'text/html; charset=utf-8';
+  if (lower.endsWith('.js')) return 'text/javascript; charset=utf-8';
+  if (lower.endsWith('.css')) return 'text/css; charset=utf-8';
+  if (lower.endsWith('.json')) return 'application/json; charset=utf-8';
+  if (lower.endsWith('.webmanifest')) return 'application/manifest+json; charset=utf-8';
+  if (lower.endsWith('.txt')) return 'text/plain; charset=utf-8';
+  if (lower.endsWith('.svg')) return 'image/svg+xml';
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.ico')) return 'image/x-icon';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.gif')) return 'image/gif';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.woff2')) return 'font/woff2';
   return 'application/octet-stream';
+}
+
+function safePluginLogoPath(item) {
+  const logoPath = item?.plugin?.logoPath;
+  const pluginDir = item?.paths?.abs;
+  if (!item?.id || !logoPath || !pluginDir) return null;
+
+  const resolvedLogo = path.resolve(logoPath);
+  const resolvedPluginDir = path.resolve(pluginDir);
+  if (!resolvedLogo.startsWith(resolvedPluginDir + path.sep)) return null;
+  if (!/\.(svg|png|ico|jpe?g|gif|webp)$/i.test(resolvedLogo)) return null;
+
+  try {
+    const logoReal = fs.realpathSync(resolvedLogo);
+    const pluginReal = fs.realpathSync(resolvedPluginDir);
+    if (!logoReal.startsWith(pluginReal + path.sep)) return null;
+    const stat = fs.statSync(logoReal);
+    if (!stat.isFile()) return null;
+    return logoReal;
+  } catch {
+    return null;
+  }
 }
 
 function pickCopyText(item, what) {

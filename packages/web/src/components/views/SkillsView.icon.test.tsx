@@ -29,6 +29,7 @@ type RenderSkillsOptions = Partial<{
   onTier: (tier: 'tier-1' | 'tier-2' | 'tier-3' | null) => void
   kindFilter: string | null
   onKind: (kind: string | null) => void
+  query: string
 }>
 
 function renderSkills(items: SkillItem[], options: RenderSkillsOptions = {}) {
@@ -39,7 +40,7 @@ function renderSkills(items: SkillItem[], options: RenderSkillsOptions = {}) {
       onEditorFilter={options.onEditorFilter}
       tierFilter={options.tierFilter ?? null}
       onTier={options.onTier}
-      query=""
+      query={options.query ?? ''}
       onQuery={vi.fn()}
       kindFilter={options.kindFilter ?? null}
       onKind={options.onKind ?? vi.fn()}
@@ -62,6 +63,28 @@ describe('SkillsView 官方图标', () => {
     const img = container.querySelector('img')
     expect(img).toBeTruthy()
     expect(img).toHaveAttribute('src', '/api/icons/cursor?size=64')
+  })
+
+  it('插件条目使用服务端暴露的插件 logo 地址', () => {
+    const { container } = renderSkills([
+      mkSkill({
+        id: 'sites',
+        kind: 'plugin',
+        name: 'sites',
+        title: 'Sites',
+        editorBrand: 'codex',
+        iconUrl: '/api/plugin-icons/sites',
+        plugin: {
+          manifestPath: '/tmp/sites/.codex-plugin/plugin.json',
+          capabilities: [],
+          logoPath: '/tmp/sites/assets/logo.svg',
+        },
+      }),
+    ])
+
+    const img = container.querySelector('img')
+    expect(img).toBeTruthy()
+    expect(img).toHaveAttribute('src', '/api/plugin-icons/sites')
   })
 
   it('没有 iconUrl 时使用 editorBrand 请求官方图标', () => {
@@ -201,6 +224,91 @@ describe('SkillsView 官方图标', () => {
     expect(onEditorFilter).toHaveBeenCalledWith(null)
     expect(onTier).toHaveBeenCalledWith(null)
     expect(onKind).toHaveBeenCalledWith(null)
+  })
+
+  it('插件显示中文能力标签，并支持中文功能词搜索', () => {
+    renderSkills(
+      [
+        mkSkill({
+          id: 'sites',
+          kind: 'plugin',
+          name: 'sites',
+          title: 'Sites',
+          description: 'Build and deploy websites with Sites',
+          editor: 'Codex',
+          editorBrand: 'codex',
+          tags: ['build', 'deploy', 'sites', 'website'],
+          plugin: {
+            manifestPath: '/tmp/sites/.codex-plugin/plugin.json',
+            capabilities: [
+              { kind: 'skill', label: 'skills', count: 1 },
+              { kind: 'mcp', label: 'mcpServers' },
+              { kind: 'app', label: 'apps' },
+              { kind: 'interactive', label: 'Interactive' },
+              { kind: 'write', label: 'Write' },
+            ],
+          },
+        }),
+      ],
+      { query: '建站' },
+    )
+
+    expect(screen.getAllByText('技能').length).toBeGreaterThan(0)
+    expect(screen.getByText('MCP 服务')).toBeInTheDocument()
+    expect(screen.getByText('可交互')).toBeInTheDocument()
+    expect(screen.getByText('可写入')).toBeInTheDocument()
+    expect(screen.getAllByText('Sites').length).toBeGreaterThan(0)
+    expect(screen.getByText('使用 Sites 构建和部署网站')).toBeInTheDocument()
+  })
+
+  it('搜索插件全名时精确命中排在第一位', () => {
+    const { container } = renderSkills(
+      [
+        mkSkill({
+          id: 'presentations',
+          kind: 'plugin',
+          name: 'presentations',
+          title: 'Presentations',
+          description: 'Create Sites pitch decks',
+          editorBrand: 'codex',
+          tags: ['sites'],
+          plugin: {
+            manifestPath: '/tmp/presentations/.codex-plugin/plugin.json',
+            capabilities: [],
+          },
+        }),
+        mkSkill({
+          id: 'sites',
+          kind: 'plugin',
+          name: 'sites',
+          title: 'Sites',
+          description: 'Build and deploy websites with Sites',
+          editorBrand: 'codex',
+          tags: ['sites'],
+          plugin: {
+            manifestPath: '/tmp/sites/.codex-plugin/plugin.json',
+            capabilities: [],
+          },
+        }),
+        mkSkill({
+          id: 'spreadsheets',
+          kind: 'plugin',
+          name: 'spreadsheets',
+          title: 'Spreadsheets',
+          description: 'Track Sites launch data',
+          editorBrand: 'codex',
+          tags: ['sites'],
+          plugin: {
+            manifestPath: '/tmp/spreadsheets/.codex-plugin/plugin.json',
+            capabilities: [],
+          },
+        }),
+      ],
+      { query: 'sites' },
+    )
+
+    const listItems = Array.from(container.querySelectorAll('[data-testid="skill-list-item"]'))
+    expect(listItems[0]).toHaveAttribute('data-skill-id', 'sites')
   })
 
   it('点击范围按钮回传 tier-3，用于首页其它技能快捷入口', () => {

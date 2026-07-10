@@ -11,7 +11,13 @@ import {
 } from '@/lib/api'
 import { renderMarkdown } from '@/lib/markdown'
 import { editorLabel, itemEditorKey } from '@/lib/editors'
-import { kindLabel, isTranslateDisplayEnabled } from '@/lib/i18n'
+import {
+  kindLabel,
+  isTranslateDisplayEnabled,
+  pluginCapabilityLabel,
+  pluginCategoryLabel,
+  pluginDescriptionFallback,
+} from '@/lib/i18n'
 import { cn } from '@/lib/cn'
 import type { SkillItem } from '@/types'
 
@@ -23,6 +29,53 @@ interface SkillDetailProps {
 type RawStatus = 'loading' | 'ready' | 'error'
 type TranslateStatus = 'idle' | 'loading' | 'ready' | 'error'
 type TabMode = 'zh' | 'raw'
+
+function PluginDetails({ item }: { item: SkillItem }) {
+  const plugin = item.plugin
+  if (!plugin) return null
+
+  return (
+    <section className="mt-5 rounded-md border border-border bg-background/60 p-4">
+      <h3 className="text-body-sm font-semibold text-foreground">插件能力</h3>
+      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-body-sm">
+        {plugin.version && <><dt className="text-muted-foreground">版本</dt><dd>{plugin.version}</dd></>}
+        {plugin.author && <><dt className="text-muted-foreground">开发者</dt><dd>{plugin.author}</dd></>}
+        {plugin.category && <><dt className="text-muted-foreground">分类</dt><dd>{pluginCategoryLabel(plugin.category)}</dd></>}
+        {plugin.homepage && (
+          <>
+            <dt className="text-muted-foreground">官网</dt>
+            <dd>
+              <a className="text-primary underline-offset-2 hover:underline" href={plugin.homepage} target="_blank" rel="noreferrer">
+                打开官网
+              </a>
+            </dd>
+          </>
+        )}
+        <dt className="text-muted-foreground">清单</dt>
+        <dd className="break-all font-mono text-caption">{plugin.manifestPath}</dd>
+      </dl>
+
+      {plugin.capabilities.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          {plugin.capabilities.map((capability) => (
+            <span key={capability.kind} className="rounded-sm bg-sky-500/10 px-2 py-1 text-caption text-sky-700 dark:text-sky-300">
+              {pluginCapabilityLabel(capability)}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {plugin.defaultPrompts && plugin.defaultPrompts.length > 0 && (
+        <div className="mt-4 border-t border-border pt-3">
+          <p className="text-caption font-semibold text-muted-foreground">示例提示词</p>
+          <ul className="mt-2 space-y-1 text-body-sm text-muted-foreground">
+            {plugin.defaultPrompts.map((prompt) => <li key={prompt}>- {prompt}</li>)}
+          </ul>
+        </div>
+      )}
+    </section>
+  )
+}
 
 export function SkillDetail({ item, variant = 'full' }: SkillDetailProps) {
   const [raw, setRaw] = useState<string>('')
@@ -200,8 +253,10 @@ export function SkillDetail({ item, variant = 'full' }: SkillDetailProps) {
         )}
       </h2>
       <p className="mt-2 text-body-sm text-muted-foreground">
-        {tabMode === 'zh' && descZhFinal ? descZhFinal : item.description || '（无描述）'}
+        {tabMode === 'zh' ? descZhFinal || pluginDescriptionFallback(item) || item.description || '（无描述）' : item.description || '（无描述）'}
       </p>
+
+      <PluginDetails item={item} />
 
       {variant === 'full' && (
         <>

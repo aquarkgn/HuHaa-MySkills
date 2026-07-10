@@ -36,6 +36,7 @@ test('scan aggregates enabled sources and strips duplicate semantic skill export
   const codexRoot = path.join(root, 'project-a');
   const cursorRoot = path.join(root, 'project-b');
   const directorySkillsRoot = path.join(root, 'custom-skills');
+  const codexPluginsRoot = path.join(root, 'codex-plugins');
 
   write(path.join(hermesRoot, 'devops', 'deploy-helper', 'SKILL.md'), `---
 name: deploy-helper
@@ -60,6 +61,12 @@ description: Custom auth flow implementation
 ---
 # Auth Flow
 `);
+  write(path.join(codexPluginsRoot, 'openai-bundled', 'sites', '0.1.0', '.codex-plugin', 'plugin.json'), JSON.stringify({
+    name: 'sites',
+    version: '0.1.0',
+    description: 'Build and deploy websites with Sites.',
+    interface: { displayName: 'Sites', capabilities: ['Interactive', 'Write'] },
+  }));
 
   write(sources, `sources:
   hermes:
@@ -78,6 +85,10 @@ description: Custom auth flow implementation
     enabled: true
     paths:
       - ${JSON.stringify(directorySkillsRoot)}
+  codex-plugin:
+    enabled: true
+    roots:
+      - ${JSON.stringify(codexPluginsRoot)}
 limits:
   maxFiles: 100
   maxFileBytes: 1048576
@@ -90,6 +101,7 @@ limits:
   assert.equal(bySource.codex?.length, 1);
   assert.equal(bySource.cursor?.length, 1);
   assert.equal(bySource.directory?.length, 1, 'directory-skill should return one item');
+  assert.equal(bySource['codex-plugin']?.length, 1, 'codex plugin should be scanned');
 
   // Verify Tier 1 tool skills have tier='tier-1' (scanLegacy 把 'tool' 转成 'tier-1') and brand
   const hermesSkill = bySource.hermes[0];
@@ -107,6 +119,12 @@ limits:
   assert.equal(dirSkill.dirName, 'auth-flow', 'directory-skill should have dirName="auth-flow"');
   assert.equal(dirSkill.source, 'directory', 'directory-skill should have source="directory"');
   assert.equal(dirSkill.name, 'auth-flow');
+
+  const codexPlugin = bySource['codex-plugin'][0];
+  assert.equal(codexPlugin.tier, 'tier-1');
+  assert.equal(codexPlugin.editorBrand, 'codex');
+  assert.equal(codexPlugin.kind, 'plugin');
+  assert.equal(codexPlugin.plugin.manifestPath.endsWith('/.codex-plugin/plugin.json'), true);
 });
 
 test('getWatchTargets includes config file plus configured source files and globs', async (t) => {
@@ -115,8 +133,10 @@ test('getWatchTargets includes config file plus configured source files and glob
 
   const hermesRoot = path.join(root, 'skills');
   const directorySkillsRoot = path.join(root, 'custom-skills');
+  const codexPluginsRoot = path.join(root, 'codex-plugins');
   fs.mkdirSync(hermesRoot, { recursive: true });
   fs.mkdirSync(directorySkillsRoot, { recursive: true });
+  fs.mkdirSync(codexPluginsRoot, { recursive: true });
 
   write(path.join(home, 'sources.yaml'), `sources:
   hermes:
@@ -127,10 +147,37 @@ test('getWatchTargets includes config file plus configured source files and glob
     enabled: true
     paths:
       - ${JSON.stringify(directorySkillsRoot)}
+  codex-plugin:
+    enabled: true
+    roots:
+      - ${JSON.stringify(codexPluginsRoot)}
 `);
 
   const targets = await getWatchTargets();
   assert.ok(targets.includes(path.join(home, 'sources.yaml')));
   assert.ok(targets.some(t => t.endsWith('/skills/**/SKILL.md')));
   assert.ok(targets.some(t => t.endsWith('/custom-skills/**/SKILL.md')));
+  assert.ok(targets.some(t => t.endsWith('/codex-plugins/**/.codex-plugin/plugin.json')));
+});
+
+test('scan uses the Codex plugin cache by default for existing sources.yaml files', async (t) => {
+  const { root, home } = makeTempHome();
+  const oldHome = process.env.HOME;
+  process.env.HOME = home;
+  t.after(() => {
+    process.env.HOME = oldHome;
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  write(path.join(home, 'sources.yaml'), 'limits:\n  maxFiles: 100\n  maxFileBytes: 1048576\n');
+  write(path.join(home, '.codex', 'plugins', 'cache', 'openai-bundled', 'sites', '0.1.0', '.codex-plugin', 'plugin.json'), JSON.stringify({
+    name: 'sites',
+    version: '0.1.0',
+    description: 'Build and deploy websites with Sites.',
+  }));
+
+  const items = await scan();
+  const plugin = items.find((item) => item.source === 'codex-plugin');
+  assert.equal(plugin?.name, 'sites');
+  assert.equal(plugin?.editorBrand, 'codex');
 });

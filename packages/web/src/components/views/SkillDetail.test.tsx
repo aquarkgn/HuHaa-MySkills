@@ -66,6 +66,38 @@ describe('SkillDetail（P7 markdown 正文）', () => {
     render(<SkillDetail item={item} />)
     expect(await screen.findByText('正文加载失败')).toBeInTheDocument()
   })
+
+  it('插件详情显示中文能力和安全清单路径', async () => {
+    const pluginItem: SkillItem = {
+      ...item,
+      id: 'sites',
+      kind: 'plugin',
+      name: 'sites',
+      title: 'Sites',
+      plugin: {
+        manifestPath: '/Users/x/.codex/plugins/cache/sites/.codex-plugin/plugin.json',
+        version: '0.1.27',
+        author: 'OpenAI',
+        category: 'Productivity',
+        capabilities: [
+          { kind: 'skill', label: 'skills', count: 2 },
+          { kind: 'mcp', label: 'mcpServers' },
+          { kind: 'app', label: 'apps' },
+          { kind: 'interactive', label: 'Interactive' },
+          { kind: 'write', label: 'Write' },
+        ],
+      },
+    }
+    vi.mocked(fetchSkillDetail).mockResolvedValue({ ...pluginItem, raw: '# Sites' })
+
+    render(<SkillDetail item={pluginItem} variant="reader" />)
+
+    expect(await screen.findByText('插件能力')).toBeInTheDocument()
+    expect(screen.getByText('技能 2')).toBeInTheDocument()
+    expect(screen.getByText('MCP 服务')).toBeInTheDocument()
+    expect(screen.getByText('效率工具')).toBeInTheDocument()
+    expect(screen.getByText('/Users/x/.codex/plugins/cache/sites/.codex-plugin/plugin.json')).toBeInTheDocument()
+  })
 })
 
 describe('SkillDetail 切换技能正文翻译', () => {
