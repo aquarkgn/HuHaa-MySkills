@@ -273,3 +273,50 @@ test('BRAND_APP_MAP: 已加 fingerprints 的品牌字段结构正确', () => {
     }
   }
 });
+
+test('BRAND_APP_MAP.hermes: 远程 URL 已禁用，依赖本地烘焙的 official icon', () => {
+  const hermes = BRAND_APP_MAP.hermes;
+  assert.ok(hermes);
+  // 官方 icon 改用用户提供的本地烘焙图，禁用远程回退以避免命中营销 banner。
+  assert.deepEqual(hermes.officialIconUrls, []);
+  assert.equal(hermes.remoteIconCache, false);
+  assert.equal(hermes.localIconBase, 'icons/hermes');
+  assert.ok(hermes.fingerprints.includes('hermes-agent.nousresearch.com'));
+});
+
+test('getIconForBrand: 本地兜底优先于远程下载', async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-icon-local-'));
+  // 在临时目录里复刻 web/public/icons/hermes-{size}.png 的结构
+  const fakeWebPublic = path.join(root, 'packages', 'web', 'public');
+  const iconsDir = path.join(fakeWebPublic, 'icons');
+  fs.mkdirSync(iconsDir, { recursive: true });
+  // 用 32 / 128 两个尺寸，验证 size=64 时会回退到 128
+  fs.writeFileSync(path.join(iconsDir, 'hermes-32.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+  fs.writeFileSync(path.join(iconsDir, 'hermes-128.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x99]));
+
+  const oldCwd = process.cwd();
+  const oldHome = process.env.SKILLSHELPER_HOME;
+  process.chdir(root);
+  process.env.SKILLSHELPER_HOME = root;
+  t.after(() => {
+    process.chdir(oldCwd);
+    if (oldHome === undefined) delete process.env.SKILLSHELPER_HOME;
+    else process.env.SKILLSHELPER_HOME = oldHome;
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  // 不允许 fetch —— 如果走了远程路径会抛错
+  const oldFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    throw new Error('local fallback should not call network');
+  };
+  t.after(() => { globalThis.fetch = oldFetch; });
+
+  const p32 = await getIconForBrand('hermes', 32);
+  assert.ok(p32?.endsWith('hermes-32.png'));
+
+  // 请求 64，文件不存在 → 应回退到 128（largest fallback first）
+  const p64 = await getIconForBrand('hermes', 64);
+  assert.ok(p64?.endsWith('hermes-128.png'), `期望回退到 hermes-128，实际 ${p64}`);
+});
+

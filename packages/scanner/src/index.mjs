@@ -16,6 +16,8 @@ import { scanFileDocs } from './adapters/file-docs.mjs';
 import { scanMcpConfigs } from './adapters/mcp-config.mjs';
 import { scanHermesPlugins } from './adapters/hermes-plugin.mjs';
 import { scanCodexPlugins } from './adapters/codex-plugin.mjs';
+import { scanClaudeAgents } from './adapters/claude-agents.mjs';
+import { scanClaudePlugins } from './adapters/claude-plugin.mjs';
 import { expandRoots, expandTilde } from './utils.mjs';
 import { scanTierSkills } from './adapters/scan-tier.mjs';
 
@@ -111,6 +113,32 @@ const ADAPTERS = {
     return result;
   },
 
+  'claude-agents': async (cfg, limits) => {
+    const result = await scanClaudeAgents({
+      source: 'claude-agents',
+      editor: 'Claude Code',
+      roots: cfg.roots || [],
+      limits,
+    });
+    result.items.forEach(it => {
+      it.tier = 'tool';
+    });
+    return result;
+  },
+
+  'claude-plugin': async (cfg, limits) => {
+    const result = await scanClaudePlugins({
+      source: 'claude-plugin',
+      editor: 'Claude Code',
+      roots: cfg.roots || [],
+      limits,
+    });
+    result.items.forEach(it => {
+      it.tier = 'tool';
+    });
+    return result;
+  },
+
   // Tier 2: Directory-based skills (already returns tier='directory', dirName)
   'directory-skill': async (cfg, limits) => scanDirectorySkills({
     paths: cfg.paths || [],
@@ -144,8 +172,26 @@ const DEFAULT_CODEX_PLUGIN_SOURCE = Object.freeze({
   roots: ['~/.codex/plugins/cache'],
 });
 
+const DEFAULT_CLAUDE_AGENTS_SOURCE = Object.freeze({
+  enabled: true,
+  roots: ['~/.claude/agents'],
+});
+
+const DEFAULT_CLAUDE_PLUGIN_SOURCE = Object.freeze({
+  enabled: true,
+  roots: ['~/.claude/plugins/cache'],
+});
+
 function codexPluginConfig(cfg) {
   return cfg.sources?.['codex-plugin'] ?? DEFAULT_CODEX_PLUGIN_SOURCE;
+}
+
+function claudeAgentsConfig(cfg) {
+  return cfg.sources?.['claude-agents'] ?? DEFAULT_CLAUDE_AGENTS_SOURCE;
+}
+
+function claudePluginConfig(cfg) {
+  return cfg.sources?.['claude-plugin'] ?? DEFAULT_CLAUDE_PLUGIN_SOURCE;
 }
 
 function normalizeGlobs(cfg, defaults) {
@@ -197,6 +243,26 @@ export async function scan() {
       } catch (error) {
         // 插件扫描失败不能让既有 Tier 1-3 技能整体退回旧扫描路径。
         console.warn('[scan] Codex plugin scan failed:', error.message);
+      }
+    }
+
+    const agentsConfig = claudeAgentsConfig(cfg);
+    if (agentsConfig.enabled) {
+      try {
+        const agentsResult = await ADAPTERS['claude-agents'](agentsConfig, limits);
+        items.push(...agentsResult.items.map(withLegacyMetadata));
+      } catch (error) {
+        console.warn('[scan] Claude agents scan failed:', error.message);
+      }
+    }
+
+    const claudePluginConf = claudePluginConfig(cfg);
+    if (claudePluginConf.enabled) {
+      try {
+        const claudePluginResult = await ADAPTERS['claude-plugin'](claudePluginConf, limits);
+        items.push(...claudePluginResult.items.map(withLegacyMetadata));
+      } catch (error) {
+        console.warn('[scan] Claude plugin scan failed:', error.message);
       }
     }
     return dedupeSemantic(items);
@@ -268,6 +334,8 @@ function withLegacyMetadata(item) {
     let editorBrand = item.brand || item.source;
     if (editorBrand === 'claude-code') editorBrand = 'claude';
     if (editorBrand === 'hermes-plugin') editorBrand = 'hermes';
+    if (editorBrand === 'claude-agents') editorBrand = 'claude';
+    if (editorBrand === 'claude-plugin') editorBrand = 'claude';
 
     return {
       ...item,

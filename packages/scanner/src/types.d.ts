@@ -50,6 +50,8 @@ export interface SkillItem {
     | 'project-runbook'
     | 'hermes-plugin'
     | 'codex-plugin'
+    | 'claude-agents'
+    | 'claude-plugin'
     | 'directory'
     | 'mcp-config';
 

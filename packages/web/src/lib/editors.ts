@@ -50,7 +50,7 @@ const RULES: Rule[] = [
 ]
 
 const FALLBACK: Omit<EditorMeta, 'label'> = { color: '#6B7280', icon: Boxes }
-export const PINNED_SKILL_SOURCES = ['my-skills', 'other-skills'] as const
+export const PINNED_SKILL_SOURCES = ['my-skills', 'Claude Code'] as const
 
 const LABELS: Record<string, string> = {
   'my-skills': '自定义技能',

@@ -2,8 +2,9 @@
 //
 // Priority chain:
 //   1. local macOS .app icon (official installed application icon)
-//   2. registered official remote icon URL, downloaded once and cached locally
-//   3. no icon (frontend renders a neutral placeholder; never a fake brand icon)
+//   2. bundled local icon under packages/web/public/<localIconBase>-{size}.png
+//   3. registered official remote icon URL, downloaded once and cached locally
+//   4. no icon (frontend renders a neutral placeholder; never a fake brand icon)
 
 import os from 'node:os';
 import path from 'node:path';
@@ -11,6 +12,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import { normalizeBrandKey, resolveBrandSpec } from './brand-map.mjs';
 import { atomicWriteBytes, atomicWriteText } from '../core/atomic-write.mjs';
 
@@ -317,8 +319,10 @@ async function findIcnsPath(appPath) {
 
 /**
  * Get a cached official icon path for a brand at a given size.
- * Local .app extraction is preferred; registered remote icons are downloaded
- * once and then served from the local cache directory.
+ * Priority:
+ *   1. local macOS .app bundle (most authoritative)
+ *   2. bundled local icon (web/public/icons/<localIconBase>-{size}.png) — no network
+ *   3. registered remote icon URL, downloaded once and cached locally
  * @param {string} brand
  * @param {number} [size=64]
  * @returns {Promise<string|null>}
@@ -352,6 +356,13 @@ export async function getIconForBrand(brand, size = 64) {
     }
   }
 
+  // Bundled local fallback (offline-safe, no network).
+  const localIcon = resolveLocalIcon(spec, sz);
+  if (localIcon) {
+    iconPathCache.set(key, localIcon);
+    return localIcon;
+  }
+
   const remoteCached = readRemoteCache(cacheBrand);
   if (remoteCached) {
     iconPathCache.set(key, remoteCached);
@@ -361,6 +372,55 @@ export async function getIconForBrand(brand, size = 64) {
   const remote = await downloadOfficialIcon(cacheBrand, spec);
   iconPathCache.set(key, remote);
   return remote;
+}
+
+/**
+ * Locate a bundled local icon for the spec.
+ * Convention: <repo>/packages/web/public/<localIconBase>-<size>.<ext>
+ * Falls back across 32/64/128 if the requested size is missing.
+ * @param {object} spec
+ * @param {number} size
+ * @returns {string|null}
+ */
+function resolveLocalIcon(spec, size) {
+  const base = spec?.localIconBase;
+  if (!base) return null;
+  const dirCandidates = locateWebPublicDirs();
+  const candidates = [size, 128, 64, 32, 192, 512];
+  const extensions = ['.png', '.svg', '.ico'];
+  for (const dir of dirCandidates) {
+    for (const c of candidates) {
+      for (const ext of extensions) {
+        const abs = path.join(dir, `${base}-${c}${ext}`);
+        if (fs.existsSync(abs) && fs.statSync(abs).isFile()) return abs;
+      }
+    }
+  }
+  return null;
+}
+
+let _webPublicDirs = null;
+function locateWebPublicDirs() {
+  if (_webPublicDirs) return _webPublicDirs;
+  const candidates = [];
+  const cwd = process.cwd();
+  // dev: repo root or packages/web cwd
+  for (const p of [
+    path.join(cwd, 'packages', 'web', 'public'),
+    path.join(cwd, '..', 'packages', 'web', 'public'),
+    path.join(cwd, '..', '..', 'packages', 'web', 'public'),
+    path.join(cwd, 'public'),
+    path.join(cwd, '..', 'public'),
+  ]) {
+    if (fs.existsSync(p) && fs.statSync(p).isDirectory()) candidates.push(p);
+  }
+  // packaged: server sits in packages/server, icons live in packages/web/public
+  try {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    candidates.push(path.resolve(here, '..', '..', 'web', 'public'));
+  } catch {}
+  _webPublicDirs = candidates;
+  return _webPublicDirs;
 }
 
 /**

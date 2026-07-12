@@ -232,6 +232,26 @@ test('server serves favicon files from root paths before SPA fallback', async (t
   assert.equal(ico.rawPayload.readUInt16LE(2), 1);
 });
 
+test('server serves project brand icons and bundled hermes icons from root paths (no SPA fallback)', async (t) => {
+  const { app } = await bootFixtureServer(t);
+
+  // Topbar 引用的项目 brand icon
+  const brandIcon = await app.inject({ method: 'GET', url: '/brand-icon.png' });
+  assert.equal(brandIcon.statusCode, 200, 'brand-icon.png must be served from root, not SPA fallback');
+  assert.equal(brandIcon.headers['content-type'], 'image/png');
+  assert.deepEqual([...brandIcon.rawPayload.subarray(0, 8)], [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+  const brandLogo = await app.inject({ method: 'GET', url: '/brand-logo.png' });
+  assert.equal(brandLogo.statusCode, 200, 'brand-logo.png must be served from root');
+  assert.equal(brandLogo.headers['content-type'], 'image/png');
+
+  // bundled hermes 离线兜底图标（web/public/icons/）
+  const hermes32 = await app.inject({ method: 'GET', url: '/icons/hermes-32.png' });
+  assert.equal(hermes32.statusCode, 200, 'icons/hermes-32.png must be served from root');
+  assert.equal(hermes32.headers['content-type'], 'image/png');
+  assert.equal(hermes32.rawPayload.length > 0, true);
+});
+
 test('server serves SkillsHelper manifest with app icons', async (t) => {
   const { app } = await bootFixtureServer(t);
   const res = await app.inject({ method: 'GET', url: '/site.webmanifest' });

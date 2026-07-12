@@ -36,18 +36,19 @@ function parseConfigFile({ abs, source, editor, limits }) {
   const { text, truncated, mtime, error } = readFileSafe(abs, limits.maxFileBytes);
   const rootKind = classifyRoot(abs);
   const fileName = path.basename(abs);
+  const brand = inferBrandFromPath(abs);
   if (error || truncated) {
-    return [baseItem({ abs, source, editor, name: fileName, description: error || 'file too large', raw: '', mtime, rootKind })];
+    return [baseItem({ abs, source, editor, brand, name: fileName, description: error || 'file too large', raw: '', mtime, rootKind })];
   }
 
   const parsed = parseAny(abs, text);
   if (!parsed.ok) {
-    return [baseItem({ abs, source, editor, name: fileName, description: `MCP/config file: ${fileName}`, raw: redactText(text), mtime, rootKind, parseError: parsed.error })];
+    return [baseItem({ abs, source, editor, brand, name: fileName, description: `MCP/config file: ${fileName}`, raw: redactText(text), mtime, rootKind, parseError: parsed.error })];
   }
 
   const servers = extractMcpServers(parsed.value);
   if (!servers.length) {
-    return [baseItem({ abs, source, editor, name: fileName, description: `Config file: ${fileName}`, raw: safeStringify(parsed.value), mtime, rootKind })];
+    return [baseItem({ abs, source, editor, brand, name: fileName, description: `Config file: ${fileName}`, raw: safeStringify(parsed.value), mtime, rootKind })];
   }
 
   return servers.map(([serverName, cfg]) => {
@@ -59,7 +60,7 @@ function parseConfigFile({ abs, source, editor, limits }) {
       : url
         ? `MCP server · url: ${url}`
         : 'MCP server';
-    return {
+    const item = {
       id: sha1Id(`${abs}#${serverName}`),
       kind: 'mcp',
       source,
@@ -74,10 +75,24 @@ function parseConfigFile({ abs, source, editor, limits }) {
       raw: safeStringify({ [serverName]: safeCfg }),
       updatedAt: new Date(mtime).toISOString(),
     };
+    if (brand) {
+      item.brand = brand;
+      item.editorBrand = brand;
+    }
+    return item;
   });
 }
 
-function baseItem({ abs, source, editor, name, description, raw, mtime, rootKind, parseError }) {
+function inferBrandFromPath(abs) {
+  const normalized = abs.toLowerCase();
+  if (normalized.includes('/.codex/') || normalized.includes('codex')) return 'codex';
+  if (normalized.includes('/.claude/') || normalized.includes('claude_desktop') || normalized.includes('/claude')) return 'claude';
+  if (normalized.includes('/.hermes/') || normalized.includes('/hermes/')) return 'hermes';
+  if (normalized.includes('/.cursor/') || normalized.includes('cursor')) return 'cursor';
+  return undefined;
+}
+
+function baseItem({ abs, source, editor, brand, name, description, raw, mtime, rootKind, parseError }) {
   const item = {
     id: sha1Id(abs),
     kind: 'config',
@@ -92,6 +107,10 @@ function baseItem({ abs, source, editor, name, description, raw, mtime, rootKind
     raw,
     updatedAt: new Date(mtime).toISOString(),
   };
+  if (brand) {
+    item.brand = brand;
+    item.editorBrand = brand;
+  }
   if (parseError) item.parseError = parseError;
   return item;
 }

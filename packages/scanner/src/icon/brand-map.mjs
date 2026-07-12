@@ -78,10 +78,14 @@ export const BRAND_APP_MAP = {
   hermes: {
     bundleIds: [],
     appNames: ['Hermes'],
-    // 官方图标来源：NousResearch/hermes-agent 仓库 acp_registry/icon.svg（飞翼 logo）
-    officialIconPages: ['https://github.com/NousResearch/hermes-agent'],
-    officialIconUrls: ['https://raw.githubusercontent.com/NousResearch/hermes-agent/main/acp_registry/icon.svg'],
-    remoteIconCache: true,
+    // 官方图标来源：用户提供的 Hermes Agent icon，已烘焙到本地 public/icons/hermes-{size}.png。
+    // 远程抓取成本高且容易命中营销 banner，这里禁用远程回退，只走 localIconBase。
+    officialIconPages: [],
+    officialIconUrls: [],
+    remoteIconCache: false,
+    // 本地兜底：web/public/icons/hermes-{size}.png，必须在 dist 中存在
+    localIconBase: 'icons/hermes',
+    fingerprints: ['hermes-agent.nousresearch.com'],
     emoji: '⚡',
   },
   gstack: {

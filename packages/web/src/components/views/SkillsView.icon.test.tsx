@@ -169,7 +169,7 @@ describe('SkillsView 官方图标', () => {
       option.textContent,
     )
 
-    expect(options).toEqual(['全部来源', 'Claude Code 1', '自定义技能 1', '其它技能 0'])
+    expect(options).toEqual(['全部来源', '自定义技能 1', 'Claude Code 1'])
   })
 
   it('自定义技能条目不重复显示 my-skills 来源短码', () => {

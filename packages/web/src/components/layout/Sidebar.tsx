@@ -36,7 +36,7 @@ export function Sidebar({
   const byEditor = stats?.byEditor ?? {}
   const pinnedSourceSet = new Set<string>(PINNED_SKILL_SOURCES)
   const editors = Object.entries(byEditor)
-    .filter(([k]) => !isNoneEditor(k) && !pinnedSourceSet.has(k))
+    .filter(([k, count]) => !isNoneEditor(k) && !pinnedSourceSet.has(k) && count > 0)
     .sort((a, b) => b[1] - a[1])
   const pinnedEditors = PINNED_SKILL_SOURCES.map((key) => [key, byEditor[key] ?? 0] as const)
   const noneCount = Object.entries(byEditor).find(([k]) => isNoneEditor(k))?.[1] ?? 0
