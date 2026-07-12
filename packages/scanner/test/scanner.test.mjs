@@ -1,10 +1,14 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import { scan, getWatchTargets, scanLegacy, loadConfig } from '../src/index.mjs';
+
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 function makeTempHome() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-scanner-test-'));
@@ -180,4 +184,33 @@ test('scan uses the Codex plugin cache by default for existing sources.yaml file
   const plugin = items.find((item) => item.source === 'codex-plugin');
   assert.equal(plugin?.name, 'sites');
   assert.equal(plugin?.editorBrand, 'codex');
+});
+
+test('CLI scan writes machine-readable JSON to stdout and progress logs to stderr', (t) => {
+  const { root, home } = makeTempHome();
+  const userHome = path.join(root, 'user-home');
+  fs.mkdirSync(userHome, { recursive: true });
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+  write(path.join(home, 'sources.yaml'), `limits:
+  maxFiles: 100
+  maxFileBytes: 1048576
+`);
+
+  const result = spawnSync(process.execPath, [path.join(REPO_ROOT, 'bin/skillshelper.mjs'), 'scan', '--json'], {
+    cwd: REPO_ROOT,
+    env: {
+      ...process.env,
+      HOME: userHome,
+      SKILLSHELPER_HOME: home,
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(result.stdout, /\[scan\]/, 'stdout should not contain progress logs');
+  assert.match(result.stderr, /\[scan\]/, 'stderr should contain scan progress logs');
+
+  const parsed = JSON.parse(result.stdout);
+  assert.ok(Array.isArray(parsed), 'stdout should be a JSON array');
 });

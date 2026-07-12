@@ -35,33 +35,33 @@ export async function scanTierSkills(options = {}) {
   };
 
   // Step 1: 扫描第1层
-  console.log('[scan] Tier 1: scanning editor tools...');
+  console.error('[scan] Tier 1: scanning editor tools...');
   const tier1Result = await scanTier1EditorSkills({ projectRoot, limits: mergedLimits });
   const tier1Items = tier1Result.items;
   const tier1PathHashes = tier1Result.pathHashes;
-  console.log(`[scan] Tier 1: found ${tier1Items.length} skills`);
+  console.error(`[scan] Tier 1: found ${tier1Items.length} skills`);
 
   // Step 2: 扫描第2层（排除第1层已有的）
-  console.log('[scan] Tier 2: scanning user skills library...');
+  console.error('[scan] Tier 2: scanning user skills library...');
   const tier2Result = await scanTier2UserSkills({
     tier1PathHashes,
     limits: mergedLimits,
   });
   const tier2Items = tier2Result.items;
   const tier2PathHashes = tier2Result.pathHashes;
-  console.log(`[scan] Tier 2: found ${tier2Items.length} skills`);
+  console.error(`[scan] Tier 2: found ${tier2Items.length} skills`);
 
   // Step 3: 扫描第3层（如果启用，排除第1、2层已有的）
   let tier3Items = [];
   if (scanTier3) {
-    console.log('[scan] Tier 3: scanning other locations...');
+    console.error('[scan] Tier 3: scanning other locations...');
     const tier3Result = await scanTier3OtherSkills({
       tier1PathHashes,
       tier2PathHashes,
       limits: mergedLimits,
     });
     tier3Items = tier3Result.items;
-    console.log(`[scan] Tier 3: found ${tier3Items.length} skills`);
+    console.error(`[scan] Tier 3: found ${tier3Items.length} skills`);
   }
 
   // 合并结果

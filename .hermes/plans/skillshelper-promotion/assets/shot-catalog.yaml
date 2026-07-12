@@ -101,7 +101,7 @@ shots:
       gaps:
         - 使用干净终端环境录制 npm 安装和版本输出。
         - 录制前确认 `skillshelper@latest` 仍指向目标版本。
-        - 如果展示 `scan --json`，注意当前输出会混入 `[scan]` 日志，自动化脚本不应假设 stdout 是纯 JSON。
+        - 如果展示 `scan --json`，同时录制 stdout 可直接保存为 JSON、stderr 显示扫描进度的区别。
       acceptance:
         - 画面中能看到 `skillshelper v0.4.0`。
         - 使用 `SKILLSHELPER_HOME` 或干净配置目录，避免污染个人真实配置。
