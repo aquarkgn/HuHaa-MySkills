@@ -49,7 +49,7 @@ describe('DashboardView 发布级首页', () => {
       />,
     )
 
-    expect(screen.getByText('HuHaa AI 助手')).toBeInTheDocument()
+    expect(screen.getByText('呼哈哈-技能助手')).toBeInTheDocument()
     expect(screen.getByText('本地工作台已就绪')).toBeInTheDocument()
     expect(screen.getByText('技能条目')).toBeInTheDocument()
     expect(screen.getByText('命令品牌')).toBeInTheDocument()
@@ -128,7 +128,7 @@ describe('DashboardView 发布级首页', () => {
       />,
     )
 
-    expect(screen.getByText('HuHaa AI 助手')).toBeInTheDocument()
+    expect(screen.getByText('呼哈哈-技能助手')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
     expect(screen.getByText('暂无来源统计，等待下一次扫描。')).toBeInTheDocument()
   })

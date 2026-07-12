@@ -1,5 +1,12 @@
 import { fetchSkillDetail, fetchSkills } from '@/lib/api'
+import { claudeAgentsProvider } from './claudeAgents'
+import { claudeMcpProvider } from './claudeMcp'
+import { claudePluginProvider } from './claudePlugin'
+import { codexMcpProvider } from './codexMcp'
+import { codexPluginProvider } from './codexPlugin'
 import { gstackListProvider } from './gstackList'
+import { hermesPluginsProvider } from './hermesPlugins'
+import { hermesSkillsProvider } from './hermesSkills'
 import type { CliEnrichmentContext, CliSubcommandEnrichment, CliSubcommandEnrichmentProvider } from './types'
 
 const DEFAULT_CONTEXT: CliEnrichmentContext = {
@@ -9,6 +16,13 @@ const DEFAULT_CONTEXT: CliEnrichmentContext = {
 
 const PROVIDERS: readonly CliSubcommandEnrichmentProvider[] = Object.freeze([
   gstackListProvider,
+  hermesSkillsProvider,
+  hermesPluginsProvider,
+  codexPluginProvider,
+  codexMcpProvider,
+  claudeAgentsProvider,
+  claudeMcpProvider,
+  claudePluginProvider,
 ])
 
 function normalizeBrand(brand: string): string {

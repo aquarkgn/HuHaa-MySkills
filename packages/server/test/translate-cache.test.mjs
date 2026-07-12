@@ -8,8 +8,8 @@ import { getCached, setCached, flush, size, _resetForTest } from '../src/transla
 import { translateCacheFile } from '../../../bin/lib/paths.mjs';
 
 function makeTempHome() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'huhaa-tc-test-'));
-  process.env.HUHAA_HOME = root;
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-tc-test-'));
+  process.env.SKILLSHELPER_HOME = root;
   return root;
 }
 
@@ -65,7 +65,7 @@ test('translate-cache: 文本变化后 md5 不同，自动失效', () => {
 test('translate-cache: LRU 超限时淘汰最旧条目', () => {
   _resetForTest();
   makeTempHome();
-  process.env.HUHAA_TRANSLATE_CACHE_MAX = '3'; // 测试用小上限
+  process.env.SKILLSHELPER_TRANSLATE_CACHE_MAX = '3'; // 测试用小上限
   // 重新加载模块级常量需重新 import，但 MAX_ENTRIES 在模块加载时读取。
   // 此处验证已加载模块的行为：用 _resetForTest 后写入超过上限的条目。
   // 注意：因 MAX_ENTRIES 在 import 时固化，此测试依赖测试启动时的 env。
@@ -75,13 +75,13 @@ test('translate-cache: LRU 超限时淘汰最旧条目', () => {
   setCached('text-4', '译文-4', 'en'); // 超限，text-1 应被淘汰
   assert.equal(getCached('text-1'), null, 'text-1 应被 LRU 淘汰');
   assert.equal(getCached('text-4').result, '译文-4');
-  delete process.env.HUHAA_TRANSLATE_CACHE_MAX;
+  delete process.env.SKILLSHELPER_TRANSLATE_CACHE_MAX;
 });
 
 test('translate-cache: LRU 命中时移到末尾（避免热条目被淘汰）', () => {
   _resetForTest();
   makeTempHome();
-  process.env.HUHAA_TRANSLATE_CACHE_MAX = '3';
+  process.env.SKILLSHELPER_TRANSLATE_CACHE_MAX = '3';
   setCached('a', '甲', 'en');
   setCached('b', '乙', 'en');
   setCached('c', '丙', 'en');
@@ -92,5 +92,5 @@ test('translate-cache: LRU 命中时移到末尾（避免热条目被淘汰）',
   assert.equal(getCached('a').result, '甲', 'a 刚被访问，不应被淘汰');
   assert.equal(getCached('b'), null, 'b 应被淘汰');
   assert.equal(getCached('d').result, '丁');
-  delete process.env.HUHAA_TRANSLATE_CACHE_MAX;
+  delete process.env.SKILLSHELPER_TRANSLATE_CACHE_MAX;
 });

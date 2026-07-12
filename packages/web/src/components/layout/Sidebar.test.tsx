@@ -64,14 +64,14 @@ describe('Sidebar 工作区导航', () => {
     expect(screen.queryByText('claude')).toBeNull()
   })
 
-  it('技能库来源项使用统一中文名称展示自定义技能和其它技能，并固定在普通来源之后', () => {
+  it('技能库来源项使用统一中文名称展示自定义技能，并固定 Claude Code 在普通来源之后', () => {
     const { container } = render(
       <Sidebar
         module="skills"
         view="skills"
         editorFilter={null}
         selectedCommandBrand={null}
-        stats={statsWith({ Hermes: 175, Claude: 60, 'my-skills': 22, Codex: 5 })}
+        stats={statsWith({ Hermes: 175, 'Claude Code': 60, 'my-skills': 22, Codex: 5 })}
         onHome={noop}
         onSettings={noop}
         onCommandBrand={noop}
@@ -80,18 +80,76 @@ describe('Sidebar 工作区导航', () => {
     )
 
     expect(screen.getByText('自定义技能')).toBeInTheDocument()
-    expect(screen.getByText('其它技能')).toBeInTheDocument()
-    expect(screen.getByText('0')).toBeInTheDocument()
+    expect(screen.getByText('Claude Code')).toBeInTheDocument()
+    expect(screen.queryByText('其它技能')).toBeNull()
     expect(screen.queryByText('我的技能')).toBeNull()
     expect(screen.queryByText('my-skills')).toBeNull()
     expect(screen.queryByText('other-skills')).toBeNull()
 
     const sourceLabels = Array.from(container.querySelectorAll('button'))
       .map((button) => button.textContent ?? '')
-      .filter((text) => /Hermes|Claude|Codex|自定义技能|其它技能/.test(text))
+      .filter((text) => /Hermes|Claude Code|Codex|自定义技能/.test(text))
       .map((text) => text.replace(/\d+$/, ''))
 
-    expect(sourceLabels).toEqual(['Hermes', 'Claude', 'Codex', '自定义技能', '其它技能'])
+    expect(sourceLabels).toEqual(['Hermes', 'Codex', '自定义技能', 'Claude Code'])
+  })
+
+  it('Claude Code 在后端 byEditor 缺失时仍以 0 计数渲染', () => {
+    const { container } = render(
+      <Sidebar
+        module="skills"
+        view="skills"
+        editorFilter={null}
+        selectedCommandBrand={null}
+        stats={statsWith({ Hermes: 10, Codex: 5 })}
+        onHome={noop}
+        onSettings={noop}
+        onCommandBrand={noop}
+        onEditor={noop}
+      />,
+    )
+
+    const claudeButton = screen.getByText('Claude Code').closest('button')
+    expect(claudeButton).toBeInTheDocument()
+    expect(claudeButton?.querySelector('img')?.getAttribute('src')).toBe('/api/icons/claude?size=20')
+    expect(claudeButton?.textContent).toContain('0')
+    expect(screen.queryByText('其它技能')).toBeNull()
+  })
+
+  it('其它技能只在 byEditor 实际有值时渲染，0 不渲染', () => {
+    const { container } = render(
+      <Sidebar
+        module="skills"
+        view="skills"
+        editorFilter={null}
+        selectedCommandBrand={null}
+        stats={statsWith({ Hermes: 10, 'other-skills': 0 })}
+        onHome={noop}
+        onSettings={noop}
+        onCommandBrand={noop}
+        onEditor={noop}
+      />,
+    )
+
+    expect(screen.queryByText('其它技能')).toBeNull()
+  })
+
+  it('其它技能在 byEditor 有值时正常渲染', () => {
+    render(
+      <Sidebar
+        module="skills"
+        view="skills"
+        editorFilter={null}
+        selectedCommandBrand={null}
+        stats={statsWith({ Hermes: 10, 'other-skills': 3 })}
+        onHome={noop}
+        onSettings={noop}
+        onCommandBrand={noop}
+        onEditor={noop}
+      />,
+    )
+
+    expect(screen.getByText('其它技能')).toBeInTheDocument()
   })
 
   it('byEditor 全为 (none) 时只显示「未分类」来源项', () => {

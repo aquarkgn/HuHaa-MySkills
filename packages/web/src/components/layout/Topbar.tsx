@@ -1,6 +1,5 @@
 import {
   AlertCircle,
-  Boxes,
   CheckCircle2,
   Loader2,
   Moon,
@@ -21,6 +20,8 @@ const MODULES: { key: ModuleKey; label: string; soon?: boolean }[] = [
   { key: 'commands', label: '命令手册' },
   { key: 'editor', label: '编辑器', soon: true },
 ]
+
+const BRAND_ICON = `${import.meta.env.BASE_URL}brand-icon.png`
 
 interface TopbarProps {
   module: ModuleKey
@@ -87,13 +88,16 @@ export function Topbar({
         type="button"
         onClick={() => onModule('home')}
         className="flex shrink-0 items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-muted"
-        aria-label="返回 HuHaa AI 助手首页"
+        aria-label="返回 呼哈哈-技能助手首页"
       >
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground">
-          <Boxes size={19} />
-        </span>
+        <img
+          src={BRAND_ICON}
+          alt=""
+          className="h-9 w-9 shrink-0 rounded-md object-cover"
+          aria-hidden="true"
+        />
         <span className="hidden w-[8.25rem] flex-col text-left sm:flex xl:w-[9rem]">
-          <span className="whitespace-nowrap text-body-sm font-bold text-foreground">HuHaa AI 助手</span>
+          <span className="whitespace-nowrap text-body-sm font-bold text-foreground">呼哈哈-技能助手</span>
           <span className="hidden whitespace-nowrap text-[11px] leading-none text-muted-foreground xl:block">
             本地技能工作台
           </span>

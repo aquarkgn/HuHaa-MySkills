@@ -7,7 +7,7 @@
 // Usage:
 //   import { scanDirectorySkills } from './adapters/directory-skill.mjs';
 //   const result = await scanDirectorySkills({
-//     paths: ['~/Project/HuHaa-MySkills/packages/skills', '~/Work/custom-skills'],
+//     paths: ['~/Project/SkillsHelper/packages/skills', '~/Work/custom-skills'],
 //     limits,
 //   });
 

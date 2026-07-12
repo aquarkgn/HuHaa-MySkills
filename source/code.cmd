@@ -1,4 +1,4 @@
-~/Project/HuHaa-MySkills (main ✗) code -h
+~/Project/SkillsHelper (main ✗) code -h
 Visual Studio Code 1.126.0
 
 Usage: code [options] [paths...]

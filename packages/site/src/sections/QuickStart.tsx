@@ -6,17 +6,17 @@ interface Step {
 }
 
 // 命令来源已验证：
-// - npm install -g huhaa-myskills@latest  -> docs/Frontend-Spec.md:1190
-// - huhaa-myskills start                   -> bin/huhaa-myskills.mjs:121
+// - npm install -g skillshelper@latest  -> docs/Frontend-Spec.md:1190
+// - skillshelper start                   -> bin/skillshelper.mjs:121
 const STEPS: Step[] = [
-  { cmd: 'npm install -g huhaa-myskills@latest', desc: '全局安装 CLI' },
-  { cmd: 'huhaa-myskills start', desc: '启动本地面板（默认端口 11520）' },
+  { cmd: 'npm install -g skillshelper@latest', desc: '全局安装 CLI' },
+  { cmd: 'skillshelper start', desc: '启动本地面板（默认端口 11520）' },
 ]
 
 const DEV_STEPS: Step[] = [
-  { cmd: 'git clone https://github.com/aquarkgn/HuHaa-MySkills.git', desc: '克隆仓库' },
+  { cmd: 'git clone https://github.com/aquarkgn/SkillsHelper.git', desc: '克隆仓库' },
   { cmd: 'npm install', desc: '安装依赖' },
-  { cmd: 'npm start && npm run dev', desc: '启动后端 + 前端开发服务器' },
+  { cmd: 'npm run dev', desc: '重启本地 API 并启动前端开发服务器' },
 ]
 
 function CmdRow({ cmd, desc }: Step) {
@@ -49,9 +49,9 @@ export function QuickStart() {
     <section id="quickstart" className="border-b border-border">
       <div className="section">
         <div className="mb-10 text-center">
-          <h2 className="text-h2 font-bold">装上就能用</h2>
+          <h2 className="text-h2 font-bold">从本机开始，几分钟看见全局</h2>
           <p className="mt-2 text-body text-muted-foreground">
-            本地运行，数据不出本机。一行安装，一行启动，浏览器打开就是整理好的面板。
+            一行安装，一行启动。扫描与索引保留在本机；使用中文对照时才会请求翻译服务，结果会缓存到本地。
           </p>
         </div>
 

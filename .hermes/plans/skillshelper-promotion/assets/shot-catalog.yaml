@@ -1,0 +1,103 @@
+# SkillsHelper 推广镜头唯一事实来源。发布前必须复核 evidence，不使用此处以外的数字口径。
+schema_version: 1
+brand: 呼哈哈-技能助手
+campaign: SHL-LAUNCH
+default_status: planned
+shots:
+  - id: SH-001
+    title: 痛点开场
+    objective: 让目标用户在五秒内理解“能力资产分散”的问题。
+    duration_seconds: 5
+    claim: 技能、插件和 MCP 配置分散在不同工具中，难以统一查找。
+    format: motion-graphic-or-real-window-switching
+    evidence:
+      - type: editorial
+        source: 用户工作流的真实多工具场景；不使用无法核验的行业数字。
+    recording_notes: 不展示个人通知、账户或敏感目录。
+
+  - id: SH-002
+    title: 产品定位
+    objective: 说清 SkillsHelper 是能力工作台，而不是聊天产品。
+    duration_seconds: 6
+    claim: SkillsHelper 将本地 AI 工作流能力统一为可搜索、可理解、可维护的工作台。
+    format: landing-page-and-dashboard
+    evidence:
+      - type: source
+        source: README.md 与 packages/site/src/sections/Hero.tsx
+    recording_notes: 使用产品新名称；仓库与英文名统一为 SkillsHelper，CLI 写作 skillshelper。
+
+  - id: SH-003
+    title: 本地启动与扫描
+    objective: 证明产品可运行且扫描发生在本机。
+    duration_seconds: 8
+    claim: 一条开发命令即可启动本地 API 与前端工作台。
+    format: terminal-to-browser
+    evidence:
+      - type: command
+        source: npm run dev
+      - type: source
+        source: package.json scripts.dev
+    recording_notes: 录制当天验证端口和健康检查；不把本机扫描数量写进固定字幕。
+
+  - id: SH-004
+    title: 三级分类
+    objective: 展示来源结构，建立“中枢”心智。
+    duration_seconds: 8
+    claim: 技能按编辑器工具、个人技能库和其它来源分为三级展示。
+    format: dashboard-sidebar
+    evidence:
+      - type: source
+        source: docs/scan_skills_rules.md R7
+      - type: source
+        source: packages/web/src/App.tsx
+    recording_notes: 展开三个层级；使用界面当前实际命名。
+
+  - id: SH-005
+    title: 搜索、筛选与分组
+    objective: 用一个连续交互展示直接收益。
+    duration_seconds: 9
+    claim: 可通过关键词、来源和分组快速定位需要的能力。
+    format: dashboard-interaction
+    evidence:
+      - type: source
+        source: packages/web/src/hooks/useOtherSkills.ts
+    recording_notes: 选一个在录制环境中稳定有结果的关键词；录制前先搜索验证。
+
+  - id: SH-006
+    title: 真实图标
+    objective: 展示细节差异化，而非仅靠功能名词。
+    duration_seconds: 7
+    claim: 在支持的系统中，品牌图标优先从本机应用提取，缺失时自动降级。
+    format: dashboard-closeup-and-terminal
+    evidence:
+      - type: command
+        source: curl -s -o /tmp/skillshelper-icon.png "http://127.0.0.1:11520/api/icons/cursor?size=64"
+      - type: source
+        source: docs/scan_skills_rules.md R6
+    recording_notes: 非 macOS 或未安装对应应用时，只录制降级表现，不宣称“真实图标”。
+
+  - id: SH-007
+    title: 原文、中文对照与安全边界
+    objective: 回答“能否看懂”和“本地数据是否可控”。
+    duration_seconds: 8
+    claim: 中文对照保留原文，代码块与命令不翻译；扫描只读，MCP 展示会脱敏。
+    format: detail-view
+    evidence:
+      - type: source
+        source: packages/server/src/index.mjs translate-raw route
+      - type: source
+        source: config/sources.example.yaml Safety section
+    recording_notes: 明确说明触发翻译时需要网络，避免宣称“所有数据永不出本机”。
+
+  - id: SH-008
+    title: 行动号召
+    objective: 把兴趣转化为仓库访问、安装或订阅。
+    duration_seconds: 9
+    claim: 可在 GitHub 获取源码，在 npm 安装 CLI，并关注后续真实演示。
+    format: repo-and-cta
+    evidence:
+      - type: command
+        source: npm view skillshelper version dist-tags.latest --json
+      - type: source
+        source: package.json repository and bin
+    recording_notes: 录制当天重查版本；不引用过期 release 数、star 数或本机技能数量。

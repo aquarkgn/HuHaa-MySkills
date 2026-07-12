@@ -1,6 +1,6 @@
 # 技能扫描规则（Scan Rules）
 
-> 本文档定义 HuHaa-MySkills 的技能扫描规范，是稳定的工程规则，供扫描器（`packages/scanner`）与服务端（`packages/server`）遵循。
+> 本文档定义 SkillsHelper 的技能扫描规范，是稳定的工程规则，供扫描器（`packages/scanner`）与服务端（`packages/server`）遵循。
 > 版本：v4.0 · 上次更新：2026-07-02
 
 设计参考开源项目 **Pearcleaner**（macOS 清理工具，Swift/SwiftUI）的「软件扫描逻辑」与「图标获取展示」，在 Node.js + Fastify + React 架构下等价落地。
@@ -188,7 +188,7 @@ ScanResult {
 
 ### R6.4 图标缓存
 
-- 缓存目录：`~/.config/huhaa-myskills/icon-cache/`（受 `HUHAA_HOME` / `XDG_CONFIG_HOME` 影响）
+- 缓存目录：`~/.config/skillshelper/icon-cache/`（受 `SKILLSHELPER_HOME` / `XDG_CONFIG_HOME` 影响）
 - 文件名：`{appSlug}-{size}.png`
 - **失效策略**：源 `.app` 的 mtime 新于缓存 PNG 时重建
 - 进程内维护 `brand → appPath` / `brand:size → pngPath` 内存索引，避免重复 `sips`

@@ -130,7 +130,7 @@ export function DashboardView({
               <CheckCircle2 size={14} />
               本地工作台已就绪
             </div>
-            <h1 className="mt-1 text-h3 font-bold text-foreground">HuHaa AI 助手</h1>
+            <h1 className="mt-1 text-h3 font-bold text-foreground">呼哈哈-技能助手</h1>
             <p className="mt-1 max-w-3xl text-body-sm text-muted-foreground">
               集中浏览本机技能、插件与常用 CLI 帮助，快速找到可复用的 AI 辅助能力。
             </p>

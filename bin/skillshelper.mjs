@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// huhaa-myskills CLI
+// skillshelper CLI
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
 const PKGS_ROOT = path.join(REPO_ROOT, 'packages');
-const DISPLAY_NAME = 'HuHaa AI 助手';
+const DISPLAY_NAME = '呼哈哈-技能助手';
 
 const require = createRequire(import.meta.url);
 
@@ -59,21 +59,21 @@ const handlers = {
 
 const fn = handlers[cmd] || cmdHelp;
 fn().catch(err => {
-  console.error('[huhaa-myskills] error:', err && err.stack || err);
+  console.error('[skillshelper] error:', err && err.stack || err);
   process.exit(1);
 });
 
 // ---------------- commands ----------------
 
 async function cmdVersion() {
-  console.log(`huhaa-myskills v${VERSION}`);
+  console.log(`skillshelper v${VERSION}`);
 }
 
 async function cmdHelp() {
-  console.log(`huhaa-myskills v${VERSION} — ${DISPLAY_NAME}：本地技能 / 插件 / MCP 聚合中心
+  console.log(`skillshelper v${VERSION} — ${DISPLAY_NAME}：本地技能 / 插件 / MCP 聚合中心
 
 Usage:
-  huhaa-myskills <command> [options]
+  skillshelper <command> [options]
 
 Commands:
   start     Scan + start server + open browser (runs in background by default)
@@ -82,8 +82,8 @@ Commands:
   scan      Scan only, dump IR JSON to stdout
   stats     Scan + print human-readable summary (counts / brands / errors / samples)
   duplicates Scan + print duplicate diagnostics by name/content/path
-  init      Write default sources.yaml to ~/.config/huhaa-myskills/
-  purge     Remove all user data under ~/.config/huhaa-myskills/
+  init      Write default sources.yaml to ~/.config/skillshelper/
+  purge     Remove all user data under ~/.config/skillshelper/
   uninstall Stop service + uninstall global npm package (prompts before deleting user data)
   sync      Sync current skills to selected editors
   dev       Dev mode: Vite frontend hot reload (connect to backend separately)
@@ -94,16 +94,16 @@ Options:
   -f, --foreground    Keep running in foreground (for debugging)
 
 Env:
-  HUHAA_HOME      override user data dir (default: ~/.config/huhaa-myskills)
+  SKILLSHELPER_HOME      override user data dir (default: ~/.config/skillshelper)
   PORT            override preferred port (default: 11520, falls back +10)
-  HUHAA_SYNC      comma-separated list of editors to sync (e.g. "cursor,vscode")
-  HUHAA_NO_OPEN   set to 1/true/yes to skip opening the browser
+  SKILLSHELPER_SYNC      comma-separated list of editors to sync (e.g. "cursor,vscode")
+  SKILLSHELPER_NO_OPEN   set to 1/true/yes to skip opening the browser
 
 Paths:
   config   ${configFile()}
   cache    ${cacheFile()}
   state    ${stateFile()}
-  logs     ${path.join(homeDir(), 'huhaa.log')}
+  logs     ${path.join(homeDir(), 'skillshelper.log')}
 `);
 }
 
@@ -118,7 +118,7 @@ async function cmdInit() {
   const tpl = path.join(REPO_ROOT, 'config', 'sources.example.yaml');
   fs.copyFileSync(tpl, dst);
   console.log(`[init] wrote ${dst}`);
-  console.log('[init] edit it to add / remove sources, then run: huhaa-myskills start');
+  console.log('[init] edit it to add / remove sources, then run: skillshelper start');
 }
 
 async function cmdPurge() {
@@ -196,7 +196,7 @@ async function cmdUninstall() {
   console.log(`\n[uninstall] 即将卸载 ${DISPLAY_NAME}，将执行以下操作：`);
   console.log('  1. 停止运行中的后台服务');
   console.log(`  2. 删除用户数据目录: ${dir}`);
-  console.log('  3. 卸载全局 npm 包: huhaa-myskills');
+  console.log('  3. 卸载全局 npm 包: skillshelper');
   console.log('\n⚠️  此操作不可恢复，代码仓库本身不会被删除。');
 
   const ans = await question('\n是否全部卸载？输入 y 确认，其它键取消: ');
@@ -224,9 +224,9 @@ async function cmdUninstall() {
   console.log('\n[3/3] 卸载全局 npm 包...');
   const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
   await new Promise((resolve) => {
-    const child = spawn(npmCmd, ['uninstall', '-g', 'huhaa-myskills'], { stdio: 'inherit' });
+    const child = spawn(npmCmd, ['uninstall', '-g', 'skillshelper'], { stdio: 'inherit' });
     child.on('close', (code) => {
-      if (code === 0) console.log('✓ 已卸载全局 npm 包 huhaa-myskills');
+      if (code === 0) console.log('✓ 已卸载全局 npm 包 skillshelper');
       else console.warn(`[uninstall] npm 退出码 ${code}（若未全局安装可忽略）`);
       resolve();
     });
@@ -394,7 +394,7 @@ async function cmdStart() {
     try {
       const stateData = JSON.parse(fs.readFileSync(stateFile(), 'utf8'));
       if (stateData.pid && isProcessRunning(stateData.pid)) {
-        const logFile = path.join(homeDir(), 'huhaa.log');
+        const logFile = path.join(homeDir(), 'skillshelper.log');
         console.log(`✓ ${DISPLAY_NAME} 已在运行: http://localhost:${stateData.port}`);
         console.log(`📝 日志: ${logFile}`);
         return;
@@ -414,7 +414,7 @@ async function cmdStart() {
   }
 
   const homeDirectory = homeDir();
-  const logFile = path.join(homeDirectory, 'huhaa.log');
+  const logFile = path.join(homeDirectory, 'skillshelper.log');
 
   // 后台模式：fork 子进程
   if (!isForeground) {
@@ -486,7 +486,7 @@ async function startBackgroundServer(port, logFile, homeDirectory) {
   console.log(`✓ ${DISPLAY_NAME} 已在后台运行: http://localhost:${port}`);
   console.log(`📝 日志: ${logFile}`);
   console.log(`💡 查看日志: tail -f ${logFile}`);
-  console.log(`💡 停止服务: huhaa-myskills stop`);
+  console.log(`💡 停止服务: skillshelper stop`);
 }
 
 function isProcessRunning(pid) {
@@ -566,7 +566,7 @@ async function cmdDev() {
 }
 
 async function cmdSync() {
-  const syncEnv = process.env.HUHAA_SYNC;
+  const syncEnv = process.env.SKILLSHELPER_SYNC;
   const editors = syncEnv
     ? syncEnv.split(',').map(e => e.trim().toLowerCase())
     : null;
@@ -715,6 +715,6 @@ function openBrowser(url) {
 }
 
 function shouldSkipBrowserOpen() {
-  const value = process.env.HUHAA_NO_OPEN;
+  const value = process.env.SKILLSHELPER_NO_OPEN;
   return value === '1' || value?.toLowerCase() === 'true' || value?.toLowerCase() === 'yes';
 }

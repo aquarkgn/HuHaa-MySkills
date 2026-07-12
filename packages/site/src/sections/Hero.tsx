@@ -4,9 +4,10 @@ interface HeroProps {
   repoUrl: string
 }
 
-const INSTALL_CMD = 'npm install -g huhaa-myskills@latest'
+const INSTALL_CMD = 'npm install -g skillshelper@latest'
+const BRAND_LOGO = `${import.meta.env.BASE_URL}brand-logo.png`
 
-/** Hero：中英主定位 + 安装命令 + CTA + 截图占位 */
+/** Hero：品牌主定位、安装命令、CTA 与产品画面占位 */
 export function Hero({ repoUrl }: HeroProps) {
   const [copied, setCopied] = useState(false)
 
@@ -23,25 +24,31 @@ export function Hero({ repoUrl }: HeroProps) {
   return (
     <section id="top" className="canvas-dotted border-b border-border">
       <div className="section flex flex-col items-center gap-8 py-20 text-center md:py-28">
+        <img
+          src={BRAND_LOGO}
+          alt="呼哈哈-技能助手"
+          className="h-auto w-full max-w-[300px] object-contain md:max-w-[360px]"
+        />
+
         {/* 品牌标识徽章 */}
         <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-caption text-muted-foreground shadow-sm">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
-          本地 AI 助手 · 技能 / 工具 / 命令 整理与翻译
+          呼哈哈-技能助手 · 本地 AI 工作流能力中枢
         </span>
 
         {/* 标题：多色霓虹效果，问句冷色调、答案暖色调形成层次 */}
         <h1 className="max-w-3xl text-balance text-4xl font-bold leading-tight md:text-5xl">
-          <span className="neon-cool">本机技能、工具、命令散落各处、看不懂英文？</span>
+          <span className="neon-cool">AI 技能、插件、MCP 配置散落各处？</span>
           <br className="hidden md:inline" />
-          <span className="neon-warm">这里一次性整理好。</span>
+          <span className="neon-warm">把它们变成你的能力工作台。</span>
         </h1>
 
         {/* 副标：长句拆短，重点词高亮 */}
         <p className="max-w-2xl text-body text-muted-foreground md:text-lg">
-          自动扫描本机技能、插件、命令行帮助，
+          扫描本机技能、插件、MCP 配置与项目运行手册，
           <span className="text-foreground">统一查看、搜索、分类、筛选</span>；
-          英文描述自动翻译成中文并本地缓存，
-          <span className="text-foreground">中英对照，命令名不误译</span>。
+          需要时查看中文对照，
+          <span className="text-foreground">命令与代码保持原样</span>。
         </p>
 
         {/* 安装命令 */}
@@ -71,7 +78,7 @@ export function Hero({ repoUrl }: HeroProps) {
           </a>
         </div>
 
-        {/* 截图占位：诚实标注待录制，加产品特征暗示 */}
+        {/* 截图位保留给真实产品录屏，避免用概念图替代功能证据。 */}
         <div className="mt-4 w-full max-w-4xl">
           <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
             {/* 浏览器窗口示意：顶部三点 */}
@@ -81,9 +88,9 @@ export function Hero({ repoUrl }: HeroProps) {
               <span className="h-2.5 w-2.5 rounded-full bg-primary/50" />
             </div>
             <div className="flex flex-col items-center gap-2 text-muted-foreground">
-              <span className="text-body-sm">产品截图待录制</span>
+              <span className="text-body-sm">真实产品录屏将在此展示</span>
               <span className="text-caption">
-                本机技能列表 · 中英对照 · 搜索 / 分类 / 筛选
+                多来源扫描 · 三级分类 · 搜索 / 筛选 · 中文对照
               </span>
             </div>
           </div>

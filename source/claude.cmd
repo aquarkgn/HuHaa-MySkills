@@ -1,4 +1,4 @@
-~/Project/HuHaa-MySkills (main ✗) claude -h
+~/Project/SkillsHelper (main ✗) claude -h
 Usage: claude [options] [command] [prompt]
 
 Claude Code - starts an interactive session by default, use -p/--print for non-interactive output

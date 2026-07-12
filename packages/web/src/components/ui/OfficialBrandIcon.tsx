@@ -50,7 +50,7 @@ export function OfficialBrandIcon({
   }, [iconSrc])
 
   const wrapperStyle = { height: size, width: size }
-  const innerSize = Math.max(12, Math.round(size * 0.72))
+  const innerSize = Math.max(12, size - 2)
 
   if (iconSrc && !failed) {
     return (

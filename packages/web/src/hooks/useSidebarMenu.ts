@@ -12,7 +12,7 @@ export interface MenuState {
   collapsedBrands: Set<string>; // Tier 1 内部折叠的编辑器品牌
 }
 
-const STORAGE_KEY = 'huhaa-menu-state-v4';
+const STORAGE_KEY = 'skillshelper-menu-state-v4';
 
 export function useSidebarMenu() {
   const [menuState, setMenuState] = useState<MenuState>(() => {

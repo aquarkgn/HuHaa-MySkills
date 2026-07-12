@@ -12,10 +12,10 @@ const PKG_VERSION = JSON.parse(
 ).version;
 
 function makeTempHome() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'huhaa-server-test-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-server-test-'));
   const home = path.join(root, 'home');
   fs.mkdirSync(home, { recursive: true });
-  process.env.HUHAA_HOME = home;
+  process.env.SKILLSHELPER_HOME = home;
   return { root, home };
 }
 
@@ -232,16 +232,36 @@ test('server serves favicon files from root paths before SPA fallback', async (t
   assert.equal(ico.rawPayload.readUInt16LE(2), 1);
 });
 
-test('server serves HuHaa AI assistant manifest with app icons', async (t) => {
+test('server serves project brand icons and bundled hermes icons from root paths (no SPA fallback)', async (t) => {
+  const { app } = await bootFixtureServer(t);
+
+  // Topbar 引用的项目 brand icon
+  const brandIcon = await app.inject({ method: 'GET', url: '/brand-icon.png' });
+  assert.equal(brandIcon.statusCode, 200, 'brand-icon.png must be served from root, not SPA fallback');
+  assert.equal(brandIcon.headers['content-type'], 'image/png');
+  assert.deepEqual([...brandIcon.rawPayload.subarray(0, 8)], [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+  const brandLogo = await app.inject({ method: 'GET', url: '/brand-logo.png' });
+  assert.equal(brandLogo.statusCode, 200, 'brand-logo.png must be served from root');
+  assert.equal(brandLogo.headers['content-type'], 'image/png');
+
+  // bundled hermes 离线兜底图标（web/public/icons/）
+  const hermes32 = await app.inject({ method: 'GET', url: '/icons/hermes-32.png' });
+  assert.equal(hermes32.statusCode, 200, 'icons/hermes-32.png must be served from root');
+  assert.equal(hermes32.headers['content-type'], 'image/png');
+  assert.equal(hermes32.rawPayload.length > 0, true);
+});
+
+test('server serves SkillsHelper manifest with app icons', async (t) => {
   const { app } = await bootFixtureServer(t);
   const res = await app.inject({ method: 'GET', url: '/site.webmanifest' });
 
   assert.equal(res.statusCode, 200);
   assert.equal(res.headers['content-type'], 'application/manifest+json; charset=utf-8');
   const manifest = JSON.parse(res.body);
-  assert.equal(manifest.name, 'HuHaa AI 助手');
-  assert.equal(manifest.short_name, 'HuHaa');
-  assert.match(manifest.description, /HuHaa AI 助手/);
+  assert.equal(manifest.name, '呼哈哈-技能助手');
+  assert.equal(manifest.short_name, '呼哈哈');
+  assert.match(manifest.description, /呼哈哈-技能助手/);
   assert.ok(manifest.icons.some(icon => icon.sizes === '192x192' && icon.src === '/favicon-192x192.png'));
   assert.ok(manifest.icons.some(icon => icon.sizes === '512x512' && icon.src === '/favicon-512x512.png'));
 });

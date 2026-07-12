@@ -1,8 +1,8 @@
-// @huhaa/scanner — multi-source skill aggregator.
+// @skillshelper/scanner — multi-source skill aggregator.
 //
 // P1 wires hermes + claude-code adapters via the shared markdown-skill
 // scanner. Other adapters land in P4. The orchestrator loads sources.yaml
-// from ~/.config/huhaa-myskills/, dispatches to enabled adapters, and
+// from ~/.config/skillshelper/, dispatches to enabled adapters, and
 // returns a flat IR list.
 
 import fs from 'node:fs';
@@ -16,6 +16,8 @@ import { scanFileDocs } from './adapters/file-docs.mjs';
 import { scanMcpConfigs } from './adapters/mcp-config.mjs';
 import { scanHermesPlugins } from './adapters/hermes-plugin.mjs';
 import { scanCodexPlugins } from './adapters/codex-plugin.mjs';
+import { scanClaudeAgents } from './adapters/claude-agents.mjs';
+import { scanClaudePlugins } from './adapters/claude-plugin.mjs';
 import { expandRoots, expandTilde } from './utils.mjs';
 import { scanTierSkills } from './adapters/scan-tier.mjs';
 
@@ -111,6 +113,32 @@ const ADAPTERS = {
     return result;
   },
 
+  'claude-agents': async (cfg, limits) => {
+    const result = await scanClaudeAgents({
+      source: 'claude-agents',
+      editor: 'Claude Code',
+      roots: cfg.roots || [],
+      limits,
+    });
+    result.items.forEach(it => {
+      it.tier = 'tool';
+    });
+    return result;
+  },
+
+  'claude-plugin': async (cfg, limits) => {
+    const result = await scanClaudePlugins({
+      source: 'claude-plugin',
+      editor: 'Claude Code',
+      roots: cfg.roots || [],
+      limits,
+    });
+    result.items.forEach(it => {
+      it.tier = 'tool';
+    });
+    return result;
+  },
+
   // Tier 2: Directory-based skills (already returns tier='directory', dirName)
   'directory-skill': async (cfg, limits) => scanDirectorySkills({
     paths: cfg.paths || [],
@@ -144,8 +172,26 @@ const DEFAULT_CODEX_PLUGIN_SOURCE = Object.freeze({
   roots: ['~/.codex/plugins/cache'],
 });
 
+const DEFAULT_CLAUDE_AGENTS_SOURCE = Object.freeze({
+  enabled: true,
+  roots: ['~/.claude/agents'],
+});
+
+const DEFAULT_CLAUDE_PLUGIN_SOURCE = Object.freeze({
+  enabled: true,
+  roots: ['~/.claude/plugins/cache'],
+});
+
 function codexPluginConfig(cfg) {
   return cfg.sources?.['codex-plugin'] ?? DEFAULT_CODEX_PLUGIN_SOURCE;
+}
+
+function claudeAgentsConfig(cfg) {
+  return cfg.sources?.['claude-agents'] ?? DEFAULT_CLAUDE_AGENTS_SOURCE;
+}
+
+function claudePluginConfig(cfg) {
+  return cfg.sources?.['claude-plugin'] ?? DEFAULT_CLAUDE_PLUGIN_SOURCE;
 }
 
 function normalizeGlobs(cfg, defaults) {
@@ -170,7 +216,7 @@ export async function scan() {
 
   // ✅ v4.0: 调用三层优先级扫描器
   try {
-    if (process.env.HUHAA_DEBUG) {
+    if (process.env.SKILLSHELPER_DEBUG) {
       console.log('[scan] Calling scanTierSkills (Tier 1 → 2 → 3)...');
     }
 
@@ -182,7 +228,7 @@ export async function scan() {
       limits,
     });
 
-    if (process.env.HUHAA_DEBUG) {
+    if (process.env.SKILLSHELPER_DEBUG) {
       console.log('[scan] tierResult stats:', JSON.stringify(tierResult.stats, null, 2));
     }
 
@@ -199,10 +245,30 @@ export async function scan() {
         console.warn('[scan] Codex plugin scan failed:', error.message);
       }
     }
+
+    const agentsConfig = claudeAgentsConfig(cfg);
+    if (agentsConfig.enabled) {
+      try {
+        const agentsResult = await ADAPTERS['claude-agents'](agentsConfig, limits);
+        items.push(...agentsResult.items.map(withLegacyMetadata));
+      } catch (error) {
+        console.warn('[scan] Claude agents scan failed:', error.message);
+      }
+    }
+
+    const claudePluginConf = claudePluginConfig(cfg);
+    if (claudePluginConf.enabled) {
+      try {
+        const claudePluginResult = await ADAPTERS['claude-plugin'](claudePluginConf, limits);
+        items.push(...claudePluginResult.items.map(withLegacyMetadata));
+      } catch (error) {
+        console.warn('[scan] Claude plugin scan failed:', error.message);
+      }
+    }
     return dedupeSemantic(items);
   } catch (e) {
     console.warn('[scan] Three-tier scanner failed:', e.message);
-    if (process.env.HUHAA_DEBUG) {
+    if (process.env.SKILLSHELPER_DEBUG) {
       console.error('[scan] Error stack:', e.stack);
     }
     // 降级：如果三层扫描失败，使用旧的 adapter 模式
@@ -237,7 +303,7 @@ export async function scanLegacy(cfg, limits) {
 
   const out = dedupeSemantic(all);
 
-  if (process.env.HUHAA_DEBUG) {
+  if (process.env.SKILLSHELPER_DEBUG) {
     console.error('[scan] legacy stats:', JSON.stringify(stats, null, 2));
   }
 
@@ -268,6 +334,8 @@ function withLegacyMetadata(item) {
     let editorBrand = item.brand || item.source;
     if (editorBrand === 'claude-code') editorBrand = 'claude';
     if (editorBrand === 'hermes-plugin') editorBrand = 'hermes';
+    if (editorBrand === 'claude-agents') editorBrand = 'claude';
+    if (editorBrand === 'claude-plugin') editorBrand = 'claude';
 
     return {
       ...item,

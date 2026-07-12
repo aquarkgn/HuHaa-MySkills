@@ -1,4 +1,4 @@
-// @huhaa/server — Fastify HTTP API + placeholder UI.
+// @skillshelper/server — Fastify HTTP API + placeholder UI.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -30,6 +30,12 @@ const ROOT_STATIC_FILES = [
   'favicon-32x32.png',
   'favicon-192x192.png',
   'favicon-512x512.png',
+  'brand-icon.png',
+  'brand-logo.png',
+  'icons/hermes-32.png',
+  'icons/hermes-128.png',
+  'icons/hermes-192.png',
+  'icons/hermes-512.png',
   'site.webmanifest',
   'robots.txt',
 ];
@@ -301,9 +307,9 @@ export async function startServer({ port = 11520 } = {}) {
       const cached = getCached(result.name);
       if (cached && cached.result !== result.name) zh.name = cached.result;
     }
-    // HUHAA_TRANSLATE=1 时主动翻译 description（缓存未命中）
+    // SKILLSHELPER_TRANSLATE=1 时主动翻译 description（缓存未命中）
     if (
-      process.env.HUHAA_TRANSLATE === '1' &&
+      process.env.SKILLSHELPER_TRANSLATE === '1' &&
       result.description &&
       !zh.description &&
       !isChinese(result.description)
@@ -441,7 +447,7 @@ export async function startServer({ port = 11520 } = {}) {
         };
       }
       reply.type(contentTypeForIconPath(iconPath));
-      reply.header('cache-control', 'public, max-age=86400');
+      reply.header('cache-control', 'public, max-age=300, must-revalidate');
       return fs.createReadStream(iconPath);
     } catch (e) {
       reply.code(500);
@@ -459,7 +465,7 @@ export async function startServer({ port = 11520 } = {}) {
     }
 
     reply.type(contentTypeFor(iconPath));
-    reply.header('cache-control', 'public, max-age=86400');
+    reply.header('cache-control', 'public, max-age=300, must-revalidate');
     return fs.createReadStream(iconPath);
   });
 
@@ -715,6 +721,9 @@ async function serveRootStatic(file, reply) {
   reply.type(contentTypeFor(abs));
   if (file.endsWith('.webmanifest') || file === 'robots.txt') {
     reply.header('cache-control', 'no-cache, no-store, must-revalidate');
+  } else if (/^favicon|\.png$|\.svg$|\.ico$|\.webp$|\.jpg$/.test(file)) {
+    // 图标/品牌资源：5 分钟缓存 + must-revalidate，避免 24h 缓存导致换图标不生效
+    reply.header('cache-control', 'public, max-age=300, must-revalidate');
   } else {
     reply.header('cache-control', 'public, max-age=86400');
   }
@@ -970,7 +979,7 @@ function placeholderHtml({ port, items }) {
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>HuHaa AI 助手 · P2</title>
+<title>呼哈哈-技能助手 · P2</title>
 <style>
   :root { color-scheme: light dark; }
   body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
@@ -1001,7 +1010,7 @@ function placeholderHtml({ port, items }) {
 </style>
 </head>
 <body>
-  <h1>HuHaa AI 助手 <span style="font-size:13px;color:#888">P2</span></h1>
+  <h1>呼哈哈-技能助手 <span style="font-size:13px;color:#888">P2</span></h1>
   <div class="meta">
     本地聚合中枢 · ${total} 条 skill 已加载 · 显示前 ${sample.length} 条 ·
     <a href="/api/skills">/api/skills</a> ·

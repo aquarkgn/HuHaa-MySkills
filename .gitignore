@@ -7,9 +7,18 @@ packages/site/dist/
 .vite/
 
 #idea 相关文件
-.hermes/
+.hermes/*
+!.hermes/plans/
+.hermes/plans/*
+!.hermes/plans/skillshelper-promotion/
+!.hermes/plans/skillshelper-promotion/**
 
-# 用户运行时数据现在落 ~/.config/huhaa-myskills/，仓内不再有 data/ 目录。
+# 呼哈哈-技能助手推广视频在本工作区管理，但大文件默认不提交。
+.hermes/plans/skillshelper-promotion/videos/**/*.{mp4,mov,m4v,avi,mkv,webm,wav,mp3,aac,flac,prproj,drp,fcpxml}
+!.hermes/plans/skillshelper-promotion/videos/**/README.md
+!.hermes/plans/skillshelper-promotion/videos/**/.gitkeep
+
+# 用户运行时数据现在落 ~/.config/skillshelper/，仓内不再有 data/ 目录。
 # 留这一条防有人手动放：
 data/
 !packages/web/src/data/

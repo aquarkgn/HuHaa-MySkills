@@ -1,4 +1,4 @@
-~/Project/HuHaa-MySkills (main ✗) codex -h
+~/Project/SkillsHelper (main ✗) codex -h
 Codex CLI
 
 Usage: codex [OPTIONS] [PROMPT]

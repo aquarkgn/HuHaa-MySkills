@@ -5,7 +5,7 @@
 // 测试环境（jsdom）可能无 IndexedDB，所有操作用 try/catch 保护，失败时
 // 静默降级（调用方回退到内存缓存 + 网络请求）。
 
-const DB_NAME = 'huhaa-translate-cache';
+const DB_NAME = 'skillshelper-translate-cache';
 const STORE = 'raw';
 const DB_VERSION = 1;
 

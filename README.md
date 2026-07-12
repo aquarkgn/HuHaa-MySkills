@@ -1,97 +1,105 @@
-# 📚 HuHaa-MySkills 文档
+# 呼哈哈-技能助手
 
-## 前端相关
+> 把散落在本机、编辑器、插件与 MCP 配置中的 AI 能力，整理成一个可搜索、可理解、可持续维护的工作台。
 
-- **[docs/Frontend-Spec.md](./docs/Frontend-Spec.md)** — 🎨 完整前端规范（工程 + 设计 + 框架 + 重构计划 + 实现）
+[![npm](https://img.shields.io/npm/v/skillshelper?label=npm)](https://www.npmjs.com/package/skillshelper)
+[![license](https://img.shields.io/badge/license-MIT-7c3aed)](./LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A520-339933)](https://nodejs.org/)
 
-## 业务需求
+**呼哈哈-技能助手**是产品对外名称，英文与技术标识统一为 **SkillsHelper**。npm 包名和 CLI 命令使用可发布的小写形式 `skillshelper`。
 
-- **[docs/hermes_docs_project_plan.md](./docs/hermes_docs_project_plan.md)** — 📋 项目需求与功能规划
+## 不再靠记忆找技能
 
-## 资源
+AI 工作流越来越复杂：技能文件散在不同编辑器里，插件与 MCP 配置各有入口，说明大多是英文，想确认“我到底装了什么、在哪、怎么用”往往要翻目录、查配置、切窗口。
 
-- `docs/assets/layout-wireframe.png` — 布局蓝图
-- `docs/assets/theme-reference.png` — 视觉参考
+SkillsHelper 把这些本地能力汇总为一个清晰的面板：
 
----
+- **发现**：扫描编辑器技能、个人技能库、插件、MCP 配置和项目运行手册。
+- **整理**：按来源与三级结构归类，支持搜索、筛选、排序和分组。
+- **理解**：保留原始内容，并为可翻译的说明提供中文对照；命令和代码块不被误译。
+- **识别**：优先展示本机应用的真实图标，缺失时自动回退到清晰的标识。
 
-**快速开始**：见 docs/Frontend-Spec.md §VI 「快速启动指南」
-
-## 🔑 关键技术决策
-
-### 后端设计
-- **API 端点**: `/api/other-skills`（列表）、`/api/icons/:brand`（真实图标）
-- **扫描器**: 通用 `skill-adapter.mjs`，支持任意 SKILL.md 位置
-- **文件匹配**: `**/SKILL.md` glob 递归扫描，目录名大小写不敏感、文件名大小写敏感
-- **图标**: macOS 内置命令（`mdfind`/`plutil`/`sips`）提取，无 Swift 依赖；非 macOS 自动降级 emoji
-
-### 前端设计
-- **数据获取**: Hook 模式（`useOtherSkills`），支持搜索/排序/分组
-- **图标展示**: `SkillIcon` 组件，真实图标优先、emoji 兜底
-- **UI 布局**: 响应式双列（list + detail）
-- **错误处理**: 自定义 `OtherSkillsError` 类
-
-### 数据流
-```
-SKILL.md 文件 (160+)
-    ↓
-skill-adapter.mjs (扫描 + frontmatter 解析 + icon 字段)
-    ↓
-/api/other-skills (注入 iconUrl/iconFallback)  ──►  /api/icons/:brand (按需提取真实图标 PNG + 缓存)
-    ↓
-useOtherSkills Hook (搜索、过滤、排序、分组)
-    ↓
-OtherSkillsView + SkillIcon (真实图标 / emoji 降级)
+```mermaid
+flowchart LR
+  A[本机技能与配置] --> B[扫描与去重]
+  B --> C[统一索引]
+  C --> D[搜索 / 分类 / 翻译]
+  D --> E[SkillsHelper 工作台]
 ```
 
----
+## 适合谁
 
-## 🚀 快速开始
+- 同时使用 Codex、Claude、Cursor、VS Code 等 AI 开发工具的人。
+- 在维护个人技能库、插件和 MCP 服务，却缺少统一视图的人。
+- 希望让本地 AI 工作流更可见、更可检索、更便于交接的开发者和工具作者。
 
-### 开发模式
+## 60 秒上手
+
+需要 Node.js 20 或更高版本。
+
 ```bash
-cd /Users/mac/Project/HuHaa-MySkills
+npm install -g skillshelper@latest
+skillshelper start
+```
 
-# 启动后端服务（默认 11520，占用则自动切换）
-npm start
+命令会扫描已配置的来源、在后台启动本地服务并打开浏览器。首次使用时，可先生成并调整扫描来源：
 
-# 前端开发（Vite）
+```bash
+skillshelper init
+# 编辑 ~/.config/skillshelper/sources.yaml
+skillshelper restart
+```
+
+常用命令：
+
+| 命令 | 用途 |
+| --- | --- |
+| `skillshelper start` | 扫描并启动本地工作台 |
+| `skillshelper stats` | 查看扫描统计与来源概览 |
+| `skillshelper scan` | 仅扫描并输出结构化数据 |
+| `skillshelper sync` | 将当前技能同步到选定编辑器 |
+| `skillshelper stop` | 停止后台服务 |
+
+## 开发
+
+```bash
+git clone https://github.com/aquarkgn/SkillsHelper.git
+cd SkillsHelper
+npm install
 npm run dev
-
-# 点击菜单：其它技能 → 查看真实技能 + 真实工具图标
 ```
 
-### 验证
+`npm run dev` 会重启本地 API 并启动 Vite 开发服务器。常用校验：
+
 ```bash
-# 列表数据（含 iconUrl 字段）
-curl -s "http://127.0.0.1:11520/api/other-skills?roots=~/.hermes/skills&fileGlob=**/SKILL.md" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).skills.length))"
-
-# 真实图标（Cursor / VS Code）
-curl -s -o /tmp/i.png "http://127.0.0.1:11520/api/icons/cursor?size=64" && file /tmp/i.png
-
-# 后端测试
-npm test          # 12/12
+npm test
 npm run typecheck:web
+npm run typecheck:site
+npm run build:site
 ```
 
----
+## 本地优先，也说明边界
 
-## 📊 版本历史
+- 扫描、索引、图标缓存和用户配置保存在本机；扫描器只读取已配置的文件来源。
+- MCP 配置在进入展示层前会做敏感字段脱敏。
+- 中文对照使用翻译服务时，需要网络连接；翻译结果会缓存在本地，避免重复请求。代码块和命令保持原样。
 
-| 版本 | 日期 | 主要功能 | 状态 |
-|------|------|--------|------|
-| v0.3.2 | - | 基础架构 | ✅ |
-| v0.3.3 | 2026-06-30 | Dashboard + Skills Sources | ✅ |
-| v0.3.4 | 2026-07-01 | Other Skills（真实数据） | ✅ |
-| v0.3.5 | 2026-07-01 | 真实图标(R6) + 扫描性能(R7) · 规则 v3.0 | ✅ 已实现，待发布 |
-| 待定 | - | 桌面模式 / 功能扩展 | 📋 规划中 |
+详细扫描范围、分级与图标降级规则见 [扫描技能规则](./docs/scan_skills_rules.md)。
 
----
+## 项目结构
 
-## 🔍 项目规范
+```text
+packages/
+├── scanner/  # 多来源扫描、去重、图标解析
+├── server/   # Fastify API、翻译与缓存
+├── web/      # 本地工作台
+└── site/     # SkillsHelper 对外介绍页
+```
 
-所有开发须遵循：
-- **CLAUDE.md** — AI 协作规则（全中文、strict mode）
-- **docs/Frontend-Engineering.md** — 技术栈和编码规范
-- **根目录整洁** — 仅保留 README.md、CLAUDE.md、package.json 等核心文件
-- **计划文档** — 统一放 `.hermes/plans/`
+## 推广与产品资料
+
+推广计划、镜头资产管理、发布素材规范和视频文件索引统一维护在 `.hermes/plans/skillshelper-promotion/`。这里的文档以“真实录屏为证据、AI 只辅助包装”为原则，并会随着版本发布更新。
+
+## 贡献与许可
+
+欢迎通过 [Issues](https://github.com/aquarkgn/SkillsHelper/issues) 提交问题或建议。项目采用 [MIT License](./LICENSE)。

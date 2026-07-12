@@ -1,10 +1,10 @@
-# HuHaa-MySkills sources.yaml
+# SkillsHelper sources.yaml
 #
-# This file is copied to ~/.config/huhaa-myskills/sources.yaml by `npm run init`.
+# This file is copied to ~/.config/skillshelper/sources.yaml by `npm run init`.
 # Paths support ~ expansion and simple glob expansion in roots.
 #
 # Environment overrides:
-# - HUHAA_HOME: user data directory
+# - SKILLSHELPER_HOME: user data directory
 # - PORT: preferred HTTP port
 #
 # Safety:

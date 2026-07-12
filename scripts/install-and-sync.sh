@@ -1,12 +1,12 @@
 #!/bin/bash
 
 ###############################################################################
-# HuHaa AI 助手远程安装与技能同步入口 (v0.1.5)
+# 呼哈哈-技能助手远程安装与技能同步入口 (v0.1.5)
 #
 # 用法：
-#   curl -fsSL https://raw.githubusercontent.com/aquarkgn/HuHaa-MySkills/main/install-and-sync.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/aquarkgn/SkillsHelper/main/install-and-sync.sh | bash
 #   或
-#   curl -fsSL https://raw.githubusercontent.com/aquarkgn/HuHaa-MySkills/main/install-and-sync.sh | bash -s -- --sync-only
+#   curl -fsSL https://raw.githubusercontent.com/aquarkgn/SkillsHelper/main/install-and-sync.sh | bash -s -- --sync-only
 #
 # 参数：
 #   --sync-only    只执行同步，不安装
@@ -18,8 +18,8 @@
 set -euo pipefail
 
 # 配置
-REPO_URL="https://github.com/aquarkgn/HuHaa-MySkills.git"
-REPO_RAW="https://raw.githubusercontent.com/aquarkgn/HuHaa-MySkills"
+REPO_URL="https://github.com/aquarkgn/SkillsHelper.git"
+REPO_RAW="https://raw.githubusercontent.com/aquarkgn/SkillsHelper"
 BRANCH="main"
 SYNC_ONLY=false
 LOCAL_PATH=""
@@ -68,7 +68,7 @@ get_temp_dir() {
   if command -v mktemp &>/dev/null; then
     mktemp -d
   else
-    local tmpdir="/tmp/huhaa-myskills-$$"
+    local tmpdir="/tmp/skillshelper-$$"
     mkdir -p "$tmpdir"
     echo "$tmpdir"
   fi
@@ -103,7 +103,7 @@ download_and_sync() {
   fi
 
   if [[ -n "$LOCAL_PATH" ]]; then
-    export HUHAA_LOCAL_PATH="$LOCAL_PATH"
+    export SKILLSHELPER_LOCAL_PATH="$LOCAL_PATH"
   fi
 
   log_success "同步脚本已下载"
@@ -129,7 +129,7 @@ local_install() {
   log_success "项目已克隆到临时目录"
 
   # 执行同步
-  export HUHAA_LOCAL_PATH="$local_path"
+  export SKILLSHELPER_LOCAL_PATH="$local_path"
   download_and_sync
 }
 
@@ -142,13 +142,13 @@ npm_install() {
 
   log_info "正在进行 npm 全局安装..."
 
-  if npm install -g "github:aquarkgn/HuHaa-MySkills#$BRANCH"; then
+  if npm install -g "github:aquarkgn/SkillsHelper#$BRANCH"; then
     log_success "npm 全局安装完成"
 
     # 获取安装位置
     local npm_prefix
     npm_prefix=$(npm prefix -g)
-    export HUHAA_LOCAL_PATH="$npm_prefix/node_modules/huhaa-myskills"
+    export SKILLSHELPER_LOCAL_PATH="$npm_prefix/node_modules/skillshelper"
 
     return 0
   else
@@ -160,7 +160,7 @@ npm_install() {
 # 主函数
 main() {
   echo -e "\n${CYAN}╔════════════════════════════════════════════════════════╗${NC}"
-  echo -e "${CYAN}║     HuHaa AI 助手 v0.1.5 - 编辑器技能自动同步        ║${NC}"
+  echo -e "${CYAN}║     呼哈哈-技能助手 v0.1.5 - 编辑器技能自动同步        ║${NC}"
   echo -e "${CYAN}╚════════════════════════════════════════════════════════╝${NC}\n"
 
   parse_args "$@"
@@ -177,7 +177,7 @@ main() {
         log_error "本地路径不存在: $LOCAL_PATH"
         exit 1
       fi
-      export HUHAA_LOCAL_PATH="$LOCAL_PATH"
+      export SKILLSHELPER_LOCAL_PATH="$LOCAL_PATH"
       download_and_sync
     fi
   else
@@ -199,10 +199,10 @@ main() {
   echo -e "${GREEN}╚════════════════════════════════════════════════════════╝${NC}\n"
 
   log_info "后续步骤："
-  echo "  1. 启动 HuHaa: npm start"
+  echo "  1. 启动 SkillsHelper: npm start"
   echo "  2. 查看技能中心: http://localhost:11520"
   echo "  3. 在编辑器中使用你的技能"
-  echo -e "\n更多信息: https://github.com/aquarkgn/HuHaa-MySkills\n"
+  echo -e "\n更多信息: https://github.com/aquarkgn/SkillsHelper\n"
 }
 
 # 执行主程序

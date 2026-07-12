@@ -1,4 +1,4 @@
-~/Project/HuHaa-MySkills (main ✗) gstack -h
+~/Project/SkillsHelper (main ✗) gstack -h
 gstack — installer for Garry Tan's gstack skill pack
 
 Usage:
