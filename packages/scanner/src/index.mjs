@@ -217,7 +217,7 @@ export async function scan() {
   // ✅ v4.0: 调用三层优先级扫描器
   try {
     if (process.env.SKILLSHELPER_DEBUG) {
-      console.log('[scan] Calling scanTierSkills (Tier 1 → 2 → 3)...');
+      console.error('[scan] Calling scanTierSkills (Tier 1 → 2 → 3)...');
     }
 
     const tierResult = await scanTierSkills({
@@ -229,7 +229,7 @@ export async function scan() {
     });
 
     if (process.env.SKILLSHELPER_DEBUG) {
-      console.log('[scan] tierResult stats:', JSON.stringify(tierResult.stats, null, 2));
+      console.error('[scan] tierResult stats:', JSON.stringify(tierResult.stats, null, 2));
     }
 
     // 三层扫描器可能产生同名重复（gstack 为 .cursor/.factory/.kiro 等多编辑器
@@ -272,7 +272,7 @@ export async function scan() {
       console.error('[scan] Error stack:', e.stack);
     }
     // 降级：如果三层扫描失败，使用旧的 adapter 模式
-    console.log('[scan] Falling back to legacy adapters...');
+    console.error('[scan] Falling back to legacy adapters...');
     return scanLegacy(cfg, limits);
   }
 }
