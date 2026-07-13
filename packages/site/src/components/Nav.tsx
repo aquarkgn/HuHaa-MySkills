@@ -22,7 +22,7 @@ export function Nav({ repoUrl }: NavProps) {
       <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-6">
         <a href="#top" className="flex items-center gap-2 font-semibold">
           <img src={BRAND_ICON} alt="" className="h-7 w-7 rounded-md object-cover" aria-hidden="true" />
-          呼哈哈-技能助手
+          SkillHelper
         </a>
 
         <div className="hidden items-center gap-6 md:flex">

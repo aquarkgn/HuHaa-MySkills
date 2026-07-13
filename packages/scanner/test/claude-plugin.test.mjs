@@ -12,7 +12,7 @@ function write(file, text) {
 }
 
 test('scanClaudePlugins 解析 <plugin>/.claude-plugin/plugin.json', async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-claude-plugin-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-claude-plugin-'));
   write(
     path.join(root, 'enterprise-devops', '.claude-plugin', 'plugin.json'),
     JSON.stringify({
@@ -43,7 +43,7 @@ test('scanClaudePlugins 解析 <plugin>/.claude-plugin/plugin.json', async () =>
 });
 
 test('scanClaudePlugins manifest 解析失败时附 parseError 但仍返回 item', async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-claude-plugin-broken-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-claude-plugin-broken-'));
   write(path.join(root, 'broken', '.claude-plugin', 'plugin.json'), '{ "name": "broken" ');
 
   const result = await scanClaudePlugins({ roots: [root] });
@@ -53,7 +53,7 @@ test('scanClaudePlugins manifest 解析失败时附 parseError 但仍返回 item
 });
 
 test('scanClaudePlugins 收集 components 字段（agents/mcp/skills 等）', async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-claude-plugin-components-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-claude-plugin-components-'));
   write(
     path.join(root, 'full', '.claude-plugin', 'plugin.json'),
     JSON.stringify({

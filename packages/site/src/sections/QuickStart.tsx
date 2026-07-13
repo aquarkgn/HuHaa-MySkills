@@ -6,11 +6,11 @@ interface Step {
 }
 
 // 命令来源已验证：
-// - npm install -g skillshelper@latest  -> docs/Frontend-Spec.md:1190
-// - skillshelper start                   -> bin/skillshelper.mjs:121
+// - npm install -g skillhelper@latest  -> docs/Frontend-Spec.md:1190
+// - skillhelper start                   -> bin/skillhelper.mjs:121
 const STEPS: Step[] = [
-  { cmd: 'npm install -g skillshelper@latest', desc: '全局安装 CLI' },
-  { cmd: 'skillshelper start', desc: '启动本地面板（默认端口 11520）' },
+  { cmd: 'npm install -g skillhelper@latest', desc: '全局安装 CLI' },
+  { cmd: 'skillhelper start', desc: '启动本地面板（默认端口 11520）' },
 ]
 
 const DEV_STEPS: Step[] = [

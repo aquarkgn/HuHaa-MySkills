@@ -159,7 +159,7 @@ BRAND_RULES = {
         'aliases': ['grafana']
     },
     'Hermes': {
-        'patterns': [r'\bhermes\b', r'hermes-agent', r'skillshelper'],
+        'patterns': [r'\bhermes\b', r'hermes-agent', r'skillhelper'],
         'aliases': ['hermes']
     },
     'Hugging Face': {
@@ -278,9 +278,9 @@ BRAND_RULES = {
         'patterns': [r'ollama'],
         'aliases': ['ollama']
     },
-    'SkillsHelper': {
-        'patterns': [r'skillshelper', r'myskills'],
-        'aliases': ['skillshelper']
+    'SkillHelper': {
+        'patterns': [r'skillhelper', r'myskills'],
+        'aliases': ['skillhelper']
     },
     'X': {
         'patterns': [r'xitter', r'xurl'],

@@ -1,5 +1,5 @@
-// XDG-style paths for skillshelper.
-// All user-side state lives under SKILLSHELPER_HOME (default: ~/.config/skillshelper).
+// XDG-style paths for skillhelper.
+// All user-side state lives under SKILLHELPER_HOME (default: ~/.config/skillhelper).
 // Nothing is written outside this dir, so `purge` cleans everything.
 
 import os from 'node:os';
@@ -8,14 +8,14 @@ import fs from 'node:fs';
 import { atomicWriteJson } from './atomic-write.mjs';
 
 export function homeDir() {
-  if (process.env.SKILLSHELPER_HOME && process.env.SKILLSHELPER_HOME.trim()) {
-    return path.resolve(expandTilde(process.env.SKILLSHELPER_HOME));
+  if (process.env.SKILLHELPER_HOME && process.env.SKILLHELPER_HOME.trim()) {
+    return path.resolve(expandTilde(process.env.SKILLHELPER_HOME));
   }
   // XDG_CONFIG_HOME respected if set, else ~/.config
   const xdg = process.env.XDG_CONFIG_HOME && process.env.XDG_CONFIG_HOME.trim()
     ? path.resolve(expandTilde(process.env.XDG_CONFIG_HOME))
     : path.join(os.homedir(), '.config');
-  return path.join(xdg, 'skillshelper');
+  return path.join(xdg, 'skillhelper');
 }
 
 export function configFile() {

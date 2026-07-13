@@ -1,18 +1,18 @@
-# 呼哈哈-技能助手
+# SkillHelper
 
 > 把散落在本机、编辑器、插件与 MCP 配置中的 AI 能力，整理成一个可搜索、可理解、可持续维护的工作台。
 
-[![npm](https://img.shields.io/npm/v/skillshelper?label=npm)](https://www.npmjs.com/package/skillshelper)
+[![npm](https://img.shields.io/npm/v/skillhelper?label=npm)](https://www.npmjs.com/package/skillhelper)
 [![license](https://img.shields.io/badge/license-MIT-7c3aed)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A520-339933)](https://nodejs.org/)
 
-**呼哈哈-技能助手**是产品对外名称，英文与技术标识统一为 **SkillsHelper**。npm 包名和 CLI 命令使用可发布的小写形式 `skillshelper`。
+**SkillHelper** 是产品对外名称。npm 包名和 CLI 命令当前使用可发布的小写形式 `skillhelper`。
 
 ## 不再靠记忆找技能
 
 AI 工作流越来越复杂：技能文件散在不同编辑器里，插件与 MCP 配置各有入口，说明大多是英文，想确认“我到底装了什么、在哪、怎么用”往往要翻目录、查配置、切窗口。
 
-SkillsHelper 把这些本地能力汇总为一个清晰的面板：
+SkillHelper 把这些本地能力汇总为一个清晰的面板：
 
 - **发现**：扫描编辑器技能、个人技能库、插件、MCP 配置和项目运行手册。
 - **整理**：按来源与三级结构归类，支持搜索、筛选、排序和分组。
@@ -24,7 +24,7 @@ flowchart LR
   A[本机技能与配置] --> B[扫描与去重]
   B --> C[统一索引]
   C --> D[搜索 / 分类 / 翻译]
-  D --> E[SkillsHelper 工作台]
+  D --> E[SkillHelper 工作台]
 ```
 
 ## 适合谁
@@ -38,27 +38,27 @@ flowchart LR
 需要 Node.js 20 或更高版本。
 
 ```bash
-npm install -g skillshelper@latest
-skillshelper start
+npm install -g skillhelper@latest
+skillhelper start
 ```
 
 命令会扫描已配置的来源、在后台启动本地服务并打开浏览器。首次使用时，可先生成并调整扫描来源：
 
 ```bash
-skillshelper init
-# 编辑 ~/.config/skillshelper/sources.yaml
-skillshelper restart
+skillhelper init
+# 编辑 ~/.config/skillhelper/sources.yaml
+skillhelper restart
 ```
 
 常用命令：
 
 | 命令 | 用途 |
 | --- | --- |
-| `skillshelper start` | 扫描并启动本地工作台 |
-| `skillshelper stats` | 查看扫描统计与来源概览 |
-| `skillshelper scan` | 仅扫描并输出结构化数据 |
-| `skillshelper sync` | 将当前技能同步到选定编辑器 |
-| `skillshelper stop` | 停止后台服务 |
+| `skillhelper start` | 扫描并启动本地工作台 |
+| `skillhelper stats` | 查看扫描统计与来源概览 |
+| `skillhelper scan` | 仅扫描并输出结构化数据 |
+| `skillhelper sync` | 将当前技能同步到选定编辑器 |
+| `skillhelper stop` | 停止后台服务 |
 
 ## 开发
 
@@ -93,12 +93,12 @@ packages/
 ├── scanner/  # 多来源扫描、去重、图标解析
 ├── server/   # Fastify API、翻译与缓存
 ├── web/      # 本地工作台
-└── site/     # SkillsHelper 对外介绍页
+└── site/     # SkillHelper 对外介绍页
 ```
 
 ## 推广与产品资料
 
-推广计划、镜头资产管理、发布素材规范和视频文件索引统一维护在 `.hermes/plans/skillshelper-promotion/`。这里的文档以“真实录屏为证据、AI 只辅助包装”为原则，并会随着版本发布更新。
+推广计划、镜头资产管理、发布素材规范和视频文件索引统一维护在 `.hermes/plans/skillhelper-promotion/`。这里的文档以“真实录屏为证据、AI 只辅助包装”为原则，并会随着版本发布更新。
 
 ## 贡献与许可
 

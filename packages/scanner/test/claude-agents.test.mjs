@@ -12,7 +12,7 @@ function write(file, text) {
 }
 
 test('scanClaudeAgents 解析 agents/*.md 的 frontmatter', async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-claude-agents-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-claude-agents-'));
   write(
     path.join(root, 'agents', 'reviewer.md'),
     `---
@@ -50,7 +50,7 @@ You investigate topics in depth.
 });
 
 test('scanClaudeAgents 忽略非 .md 文件', async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-claude-agents-md-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-claude-agents-md-'));
   write(
     path.join(root, 'agents', 'README.txt'),
     `---
@@ -64,7 +64,7 @@ not an agent
 });
 
 test('scanClaudeAgents 在 frontmatter 未闭合时把整个文件当作 body', async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-claude-agents-unclosed-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-claude-agents-unclosed-'));
   write(
     path.join(root, 'agents', 'incomplete.md'),
     `---

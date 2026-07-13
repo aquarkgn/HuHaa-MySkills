@@ -1,10 +1,10 @@
-# SkillsHelper sources.yaml
+# SkillHelper sources.yaml
 #
-# This file is copied to ~/.config/skillshelper/sources.yaml by `npm run init`.
+# This file is copied to ~/.config/skillhelper/sources.yaml by `npm run init`.
 # Paths support ~ expansion and simple glob expansion in roots.
 #
 # Environment overrides:
-# - SKILLSHELPER_HOME: user data directory
+# - SKILLHELPER_HOME: user data directory
 # - PORT: preferred HTTP port
 #
 # Safety:

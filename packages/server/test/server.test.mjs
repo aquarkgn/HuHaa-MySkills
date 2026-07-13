@@ -12,10 +12,10 @@ const PKG_VERSION = JSON.parse(
 ).version;
 
 function makeTempHome() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-server-test-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-server-test-'));
   const home = path.join(root, 'home');
   fs.mkdirSync(home, { recursive: true });
-  process.env.SKILLSHELPER_HOME = home;
+  process.env.SKILLHELPER_HOME = home;
   return { root, home };
 }
 
@@ -252,7 +252,7 @@ test('server serves project brand icons and bundled hermes icons from root paths
   assert.equal(hermes32.rawPayload.length > 0, true);
 });
 
-test('server serves SkillsHelper manifest with app icons', async (t) => {
+test('server serves SkillHelper manifest with app icons', async (t) => {
   const { app } = await bootFixtureServer(t);
   const res = await app.inject({ method: 'GET', url: '/site.webmanifest' });
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 type Theme = 'light' | 'dark'
 
-const STORAGE_KEY = 'skillshelper-theme'
+const STORAGE_KEY = 'skillhelper-theme'
 
 function getInitialTheme(): Theme {
   if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) {

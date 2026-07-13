@@ -1,5 +1,5 @@
 {
-  "name": "@skillshelper/server",
+  "name": "@skillhelper/server",
   "version": "0.1.1",
   "private": true,
   "type": "module",
@@ -10,6 +10,6 @@
   "dependencies": {
     "fastify": "^5.0.0",
     "chokidar": "^4.0.3",
-    "@skillshelper/scanner": "*"
+    "@skillhelper/scanner": "*"
   }
 }

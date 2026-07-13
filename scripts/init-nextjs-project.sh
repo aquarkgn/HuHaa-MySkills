@@ -1,10 +1,10 @@
 #!/bin/bash
-# SkillsHelper 前端框架初始化脚本
+# SkillHelper 前端框架初始化脚本
 # Next.js 15 + React 18 + TypeScript 完整项目结构
 
 set -e
 
-PROJECT_NAME="skillshelper-web"
+PROJECT_NAME="skillhelper-web"
 WORKSPACE_DIR="/Users/mac/Project/SkillsHelper"
 
 echo "🚀 初始化 Next.js 前端项目..."
@@ -297,9 +297,9 @@ EOF
 # 8. 创建 package.json 脚本
 cat > package.json << 'EOF'
 {
-  "name": "skillshelper-web",
+  "name": "skillhelper-web",
   "version": "1.0.0",
-  "description": "SkillsHelper - 前端应用",
+  "description": "SkillHelper - 前端应用",
   "private": true,
   "scripts": {
     "dev": "next dev",

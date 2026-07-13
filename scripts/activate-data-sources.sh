@@ -1,5 +1,5 @@
 #!/bin/bash
-# SkillsHelper Data Source Diagnostic and Activation Script
+# SkillHelper Data Source Diagnostic and Activation Script
 # Purpose: Diagnose and activate MCP and other data sources
 # Usage: bash scripts/activate-data-sources.sh [--dry-run] [--verbose]
 
@@ -50,7 +50,7 @@ done
 
 echo ""
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║  SkillsHelper 数据源诊断和激活工具                      ║"
+echo "║  SkillHelper 数据源诊断和激活工具                      ║"
 echo "║  Data Source Diagnostic & Activation Tool                  ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
@@ -105,15 +105,15 @@ echo ""
 
 # MCP activation
 echo "┌─ MCP Config 激活"
-if grep -q "~/mcp/dingtalk.mcp.json" ~/.config/skillshelper/sources.yaml 2>/dev/null; then
+if grep -q "~/mcp/dingtalk.mcp.json" ~/.config/skillhelper/sources.yaml 2>/dev/null; then
   log_success "MCP 配置已更新"
 else
   log_warning "MCP 配置需要更新"
   if [ "$DRY_RUN" = "false" ]; then
     log_info "正在更新 sources.yaml..."
     # Backup and update (simplified - real script would use patch tool)
-    if [ -f ~/.config/skillshelper/sources.yaml ]; then
-      cp ~/.config/skillshelper/sources.yaml ~/.config/skillshelper/sources.yaml.bak
+    if [ -f ~/.config/skillhelper/sources.yaml ]; then
+      cp ~/.config/skillhelper/sources.yaml ~/.config/skillhelper/sources.yaml.bak
       log_verbose "已备份到 sources.yaml.bak"
     fi
   fi

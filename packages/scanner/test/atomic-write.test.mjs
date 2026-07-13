@@ -12,7 +12,7 @@ import { atomicWriteText, atomicWriteBytes, atomicWriteJson } from '../src/core/
  */
 
 test('atomicWriteText 写入内容完整且不残留临时文件', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-aw-text-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-aw-text-'));
   const file = path.join(dir, 'out.txt');
   try {
     atomicWriteText(file, 'hello 原子写\n');
@@ -26,7 +26,7 @@ test('atomicWriteText 写入内容完整且不残留临时文件', () => {
 });
 
 test('atomicWriteText 覆盖已存在文件不残留临时文件', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-aw-overwrite-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-aw-overwrite-'));
   const file = path.join(dir, 'out.txt');
   try {
     fs.writeFileSync(file, 'old content');
@@ -40,7 +40,7 @@ test('atomicWriteText 覆盖已存在文件不残留临时文件', () => {
 });
 
 test('atomicWriteJson 输出 pretty 格式与原 writeJson 一致', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-aw-json-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-aw-json-'));
   const file = path.join(dir, 'out.json');
   try {
     atomicWriteJson(file, { version: 1, items: ['a', 'b'] });
@@ -55,7 +55,7 @@ test('atomicWriteJson 输出 pretty 格式与原 writeJson 一致', () => {
 });
 
 test('atomicWriteBytes 写入二进制内容完整', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-aw-bytes-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-aw-bytes-'));
   const file = path.join(dir, 'icon.png');
   try {
     const bytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]); // PNG 签名
@@ -70,7 +70,7 @@ test('atomicWriteBytes 写入二进制内容完整', () => {
 });
 
 test('atomicWriteText 自动创建父目录', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-aw-mkdir-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-aw-mkdir-'));
   const file = path.join(dir, 'nested', 'deep', 'out.txt');
   try {
     atomicWriteText(file, 'nested');

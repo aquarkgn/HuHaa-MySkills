@@ -1,9 +1,9 @@
-# SkillsHelper 推广镜头唯一事实来源。发布前必须复核 evidence，不使用此处以外的数字口径。
+# SkillHelper 抖音推广镜头唯一事实来源。发布前必须复核 evidence，不使用此处以外的数字口径。
 schema_version: 1
-brand: 呼哈哈-技能助手
-campaign: SHL-LAUNCH
+brand: SkillHelper
+campaign: SH-DY-Q3
 default_status: planned
-asset_root: .hermes/plans/skillshelper-promotion/videos
+asset_root: .hermes/plans/skillhelper-promotion/videos
 status_flow:
   - planned
   - recorded
@@ -26,12 +26,12 @@ shots:
     production:
       status: planned
       priority: launch-core
-      platforms: [douyin, zhihu, youtube-shorts, youtube-long]
+      platforms: [douyin]
       asset_paths:
-        capture: .hermes/plans/skillshelper-promotion/videos/01-capture/SH-001_pain-point_9x16_YYYYMMDD_v01.mov
-        selects: .hermes/plans/skillshelper-promotion/videos/02-selects/SH-001_pain-point_select_YYYYMMDD_v01.mov
-        edit: .hermes/plans/skillshelper-promotion/videos/03-edit/SH-001_pain-point_edit_YYYYMMDD_v01.prproj
-        export: .hermes/plans/skillshelper-promotion/videos/04-export/SH-001_pain-point_9x16_YYYYMMDD_v01.mp4
+        capture: .hermes/plans/skillhelper-promotion/videos/01-capture/SH-001_pain-point_9x16_YYYYMMDD_v01.mov
+        selects: .hermes/plans/skillhelper-promotion/videos/02-selects/SH-001_pain-point_select_YYYYMMDD_v01.mov
+        edit: .hermes/plans/skillhelper-promotion/videos/03-edit/SH-001_pain-point_edit_YYYYMMDD_v01.prproj
+        export: .hermes/plans/skillhelper-promotion/videos/04-export/douyin/SH-001_pain-point_9x16_YYYYMMDD_v01.mp4
       gaps:
         - 录制前关闭通知和个人账号露出。
         - 准备 3 个真实工具窗口或目录切换画面，避免使用虚构截图。
@@ -44,29 +44,29 @@ shots:
 
   - id: SH-002
     title: 产品定位
-    objective: 说清 SkillsHelper 是能力工作台，而不是聊天产品。
+    objective: 说清 SkillHelper 是能力工作台，而不是聊天产品。
     duration_seconds: 6
-    claim: SkillsHelper 将本地 AI 工作流能力统一为可搜索、可理解、可维护的工作台。
+    claim: SkillHelper 将本地 AI 工作流能力统一为可搜索、可理解、可维护的工作台。
     format: landing-page-and-dashboard
     evidence:
       - type: source
         source: README.md 与 packages/site/src/sections/Hero.tsx
-    recording_notes: 使用产品新名称；仓库与英文名统一为 SkillsHelper，CLI 写作 skillshelper。
+    recording_notes: 使用产品新名称 SkillHelper；CLI 写作 skillshelper。
     production:
       status: planned
       priority: launch-core
-      platforms: [douyin, zhihu, youtube-shorts, youtube-long]
+      platforms: [douyin]
       asset_paths:
-        capture: .hermes/plans/skillshelper-promotion/videos/01-capture/SH-002_positioning_16x9_YYYYMMDD_v01.mov
-        selects: .hermes/plans/skillshelper-promotion/videos/02-selects/SH-002_positioning_select_YYYYMMDD_v01.mov
-        edit: .hermes/plans/skillshelper-promotion/videos/03-edit/SH-002_positioning_edit_YYYYMMDD_v01.prproj
-        export: .hermes/plans/skillshelper-promotion/videos/04-export/SH-002_positioning_16x9_YYYYMMDD_v01.mp4
+        capture: .hermes/plans/skillhelper-promotion/videos/01-capture/SH-002_positioning_16x9_YYYYMMDD_v01.mov
+        selects: .hermes/plans/skillhelper-promotion/videos/02-selects/SH-002_positioning_select_YYYYMMDD_v01.mov
+        edit: .hermes/plans/skillhelper-promotion/videos/03-edit/SH-002_positioning_edit_YYYYMMDD_v01.prproj
+        export: .hermes/plans/skillhelper-promotion/videos/04-export/douyin/SH-002_positioning_9x16_YYYYMMDD_v01.mp4
       gaps:
         - 本地启动官网，确认 Hero、Logo、favicon 与 manifest 显示正常。
         - 截取工作台首屏，避免只展示官网造成“只是 landing page”的误解。
       acceptance:
         - 同时出现官网定位和工作台界面。
-        - 字幕统一写作 SkillsHelper / skillshelper。
+        - 字幕统一写作 SkillHelper；命令统一写作 skillshelper。
       review_metrics:
         - product_understanding_comments
         - repo_click_rate
@@ -92,12 +92,12 @@ shots:
     production:
       status: planned
       priority: launch-core
-      platforms: [douyin, zhihu, youtube-shorts, youtube-long]
+      platforms: [douyin]
       asset_paths:
-        capture: .hermes/plans/skillshelper-promotion/videos/01-capture/SH-003_install-scan_16x9_YYYYMMDD_v01.mov
-        selects: .hermes/plans/skillshelper-promotion/videos/02-selects/SH-003_install-scan_select_YYYYMMDD_v01.mov
-        edit: .hermes/plans/skillshelper-promotion/videos/03-edit/SH-003_install-scan_edit_YYYYMMDD_v01.prproj
-        export: .hermes/plans/skillshelper-promotion/videos/04-export/SH-003_install-scan_16x9_YYYYMMDD_v01.mp4
+        capture: .hermes/plans/skillhelper-promotion/videos/01-capture/SH-003_install-scan_16x9_YYYYMMDD_v01.mov
+        selects: .hermes/plans/skillhelper-promotion/videos/02-selects/SH-003_install-scan_select_YYYYMMDD_v01.mov
+        edit: .hermes/plans/skillhelper-promotion/videos/03-edit/SH-003_install-scan_edit_YYYYMMDD_v01.prproj
+        export: .hermes/plans/skillhelper-promotion/videos/04-export/douyin/SH-003_install-scan_9x16_YYYYMMDD_v01.mp4
       gaps:
         - 使用干净终端环境录制 npm 安装和版本输出。
         - 录制前确认 `skillshelper@latest` 仍指向目标版本。
@@ -124,12 +124,12 @@ shots:
     production:
       status: planned
       priority: launch-core
-      platforms: [douyin, zhihu, youtube-shorts, youtube-long]
+      platforms: [douyin]
       asset_paths:
-        capture: .hermes/plans/skillshelper-promotion/videos/01-capture/SH-004_sidebar-tiers_16x9_YYYYMMDD_v01.mov
-        selects: .hermes/plans/skillshelper-promotion/videos/02-selects/SH-004_sidebar-tiers_select_YYYYMMDD_v01.mov
-        edit: .hermes/plans/skillshelper-promotion/videos/03-edit/SH-004_sidebar-tiers_edit_YYYYMMDD_v01.prproj
-        export: .hermes/plans/skillshelper-promotion/videos/04-export/SH-004_sidebar-tiers_16x9_YYYYMMDD_v01.mp4
+        capture: .hermes/plans/skillhelper-promotion/videos/01-capture/SH-004_sidebar-tiers_16x9_YYYYMMDD_v01.mov
+        selects: .hermes/plans/skillhelper-promotion/videos/02-selects/SH-004_sidebar-tiers_select_YYYYMMDD_v01.mov
+        edit: .hermes/plans/skillhelper-promotion/videos/03-edit/SH-004_sidebar-tiers_edit_YYYYMMDD_v01.prproj
+        export: .hermes/plans/skillhelper-promotion/videos/04-export/douyin/SH-004_sidebar-tiers_9x16_YYYYMMDD_v01.mp4
       gaps:
         - 准备一个来源足够丰富的本地配置，确保侧边栏层级有内容可展示。
         - 录制前折叠/展开路径，确认不会露出敏感目录。
@@ -153,12 +153,12 @@ shots:
     production:
       status: planned
       priority: launch-core
-      platforms: [douyin, zhihu, youtube-shorts, youtube-long]
+      platforms: [douyin]
       asset_paths:
-        capture: .hermes/plans/skillshelper-promotion/videos/01-capture/SH-005_search-filter_16x9_YYYYMMDD_v01.mov
-        selects: .hermes/plans/skillshelper-promotion/videos/02-selects/SH-005_search-filter_select_YYYYMMDD_v01.mov
-        edit: .hermes/plans/skillshelper-promotion/videos/03-edit/SH-005_search-filter_edit_YYYYMMDD_v01.prproj
-        export: .hermes/plans/skillshelper-promotion/videos/04-export/SH-005_search-filter_16x9_YYYYMMDD_v01.mp4
+        capture: .hermes/plans/skillhelper-promotion/videos/01-capture/SH-005_search-filter_16x9_YYYYMMDD_v01.mov
+        selects: .hermes/plans/skillhelper-promotion/videos/02-selects/SH-005_search-filter_select_YYYYMMDD_v01.mov
+        edit: .hermes/plans/skillhelper-promotion/videos/03-edit/SH-005_search-filter_edit_YYYYMMDD_v01.prproj
+        export: .hermes/plans/skillhelper-promotion/videos/04-export/douyin/SH-005_search-filter_9x16_YYYYMMDD_v01.mp4
       gaps:
         - 预选 2 个稳定关键词：一个返回多结果，一个返回精确结果。
         - 准备放大或光标高亮，避免搜索框和筛选状态在短视频里看不清。
@@ -184,12 +184,12 @@ shots:
     production:
       status: planned
       priority: launch-core
-      platforms: [zhihu, youtube-long]
+      platforms: [douyin]
       asset_paths:
-        capture: .hermes/plans/skillshelper-promotion/videos/01-capture/SH-006_icons_16x9_YYYYMMDD_v01.mov
-        selects: .hermes/plans/skillshelper-promotion/videos/02-selects/SH-006_icons_select_YYYYMMDD_v01.mov
-        edit: .hermes/plans/skillshelper-promotion/videos/03-edit/SH-006_icons_edit_YYYYMMDD_v01.prproj
-        export: .hermes/plans/skillshelper-promotion/videos/04-export/SH-006_icons_16x9_YYYYMMDD_v01.mp4
+        capture: .hermes/plans/skillhelper-promotion/videos/01-capture/SH-006_icons_16x9_YYYYMMDD_v01.mov
+        selects: .hermes/plans/skillhelper-promotion/videos/02-selects/SH-006_icons_select_YYYYMMDD_v01.mov
+        edit: .hermes/plans/skillhelper-promotion/videos/03-edit/SH-006_icons_edit_YYYYMMDD_v01.prproj
+        export: .hermes/plans/skillhelper-promotion/videos/04-export/douyin/SH-006_icons_9x16_YYYYMMDD_v01.mp4
       gaps:
         - 启动服务后以实际端口替换 `<port>`。
         - 同时准备“内置 Hermes 图标”和“应用图标降级”两个画面，按录制机器实际情况取用。
@@ -215,12 +215,12 @@ shots:
     production:
       status: planned
       priority: launch-core
-      platforms: [zhihu, youtube-long]
+      platforms: [douyin]
       asset_paths:
-        capture: .hermes/plans/skillshelper-promotion/videos/01-capture/SH-007_translation-safety_16x9_YYYYMMDD_v01.mov
-        selects: .hermes/plans/skillshelper-promotion/videos/02-selects/SH-007_translation-safety_select_YYYYMMDD_v01.mov
-        edit: .hermes/plans/skillshelper-promotion/videos/03-edit/SH-007_translation-safety_edit_YYYYMMDD_v01.prproj
-        export: .hermes/plans/skillshelper-promotion/videos/04-export/SH-007_translation-safety_16x9_YYYYMMDD_v01.mp4
+        capture: .hermes/plans/skillhelper-promotion/videos/01-capture/SH-007_translation-safety_16x9_YYYYMMDD_v01.mov
+        selects: .hermes/plans/skillhelper-promotion/videos/02-selects/SH-007_translation-safety_select_YYYYMMDD_v01.mov
+        edit: .hermes/plans/skillhelper-promotion/videos/03-edit/SH-007_translation-safety_edit_YYYYMMDD_v01.prproj
+        export: .hermes/plans/skillhelper-promotion/videos/04-export/douyin/SH-007_translation-safety_9x16_YYYYMMDD_v01.mp4
       gaps:
         - 选择一个不含私密信息的 skill 详情页作为翻译样本。
         - 录制前确认 MCP 配置展示已脱敏，不出现 token、key、cookie。
@@ -246,12 +246,12 @@ shots:
     production:
       status: planned
       priority: launch-core
-      platforms: [douyin, zhihu, youtube-shorts, youtube-long]
+      platforms: [douyin]
       asset_paths:
-        capture: .hermes/plans/skillshelper-promotion/videos/01-capture/SH-008_cta_9x16_YYYYMMDD_v01.mov
-        selects: .hermes/plans/skillshelper-promotion/videos/02-selects/SH-008_cta_select_YYYYMMDD_v01.mov
-        edit: .hermes/plans/skillshelper-promotion/videos/03-edit/SH-008_cta_edit_YYYYMMDD_v01.prproj
-        export: .hermes/plans/skillshelper-promotion/videos/04-export/SH-008_cta_9x16_YYYYMMDD_v01.mp4
+        capture: .hermes/plans/skillhelper-promotion/videos/01-capture/SH-008_cta_9x16_YYYYMMDD_v01.mov
+        selects: .hermes/plans/skillhelper-promotion/videos/02-selects/SH-008_cta_select_YYYYMMDD_v01.mov
+        edit: .hermes/plans/skillhelper-promotion/videos/03-edit/SH-008_cta_edit_YYYYMMDD_v01.prproj
+        export: .hermes/plans/skillhelper-promotion/videos/04-export/douyin/SH-008_cta_9x16_YYYYMMDD_v01.mp4
       gaps:
         - 录制当天重新确认 npm latest、GitHub Release 和 README 安装命令。
         - 准备一个主 CTA，不同时要求 star、安装、关注、评论四件事。

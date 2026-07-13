@@ -12,7 +12,7 @@ function writeConfig(file, text) {
 }
 
 test('scanMcpConfigs infers brand from config path and attaches to MCP server items', async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-mcp-brand-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-mcp-brand-'));
   const codexFile = path.join(root, '.codex', 'config.toml');
   writeConfig(codexFile, `[mcp_servers.github]\ncommand = "gh-mcp"\nargs = ["serve"]\n`);
   const claudeFile = path.join(root, '.claude', 'mcp.json');
@@ -32,7 +32,7 @@ test('scanMcpConfigs infers brand from config path and attaches to MCP server it
 });
 
 test('scanMcpConfigs leaves brand undefined for unknown paths', async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-mcp-unknown-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-mcp-unknown-'));
   const misc = path.join(root, 'random', 'config.json');
   writeConfig(misc, JSON.stringify({ mcpServers: { foo: { command: 'foo' } } }));
   const result = await scanMcpConfigs({ files: [misc] });

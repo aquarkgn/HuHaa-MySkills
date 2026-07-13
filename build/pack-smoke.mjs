@@ -9,7 +9,7 @@ import { spawn, spawnSync } from 'node:child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
-const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-pack-smoke-'));
+const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-pack-smoke-'));
 const packDir = path.join(tempRoot, 'pack');
 const installRoot = path.join(tempRoot, 'install');
 const home = path.join(tempRoot, 'home');
@@ -113,9 +113,9 @@ function assertTarballEntries(tarball) {
 async function assertInstalledCli(tarball) {
   run('npm', ['install', '--prefix', installRoot, '--silent', '--omit=dev', tarball]);
 
-  const bin = path.join(installRoot, 'node_modules', '.bin', 'skillshelper');
+  const bin = path.join(installRoot, 'node_modules', '.bin', 'skillhelper');
   const version = run(bin, ['--version'], { capture: true });
-  assert.match(version.stdout, new RegExp(`^skillshelper v${escapeRegExp(pkg.version)}`, 'm'));
+  assert.match(version.stdout, new RegExp(`^skillhelper v${escapeRegExp(pkg.version)}`, 'm'));
 
   write(path.join(home, '.hermes', 'skills', 'pack-smoke', 'SKILL.md'), `---
 name: pack-smoke
@@ -133,8 +133,8 @@ description: Pack smoke skill
   const env = {
     ...process.env,
     HOME: home,
-    SKILLSHELPER_HOME: home,
-    SKILLSHELPER_NO_OPEN: '1',
+    SKILLHELPER_HOME: home,
+    SKILLHELPER_NO_OPEN: '1',
     LOG_LEVEL: 'error',
     PORT: String(port),
   };

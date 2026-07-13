@@ -1,4 +1,4 @@
-# 🎨 SkillsHelper 前端工程完整规范 v2.0
+# 🎨 SkillHelper 前端工程完整规范 v2.0
 
 > **一站式前端文档** — 工程规范、设计系统、框架说明、重构计划、实现指南
 >
@@ -115,7 +115,7 @@ build：构建元数据
 ## I.4 目录结构
 
 ```
-SkillsHelper/
+SkillHelper/
 ├── packages/web/                        # Vite + React 前端 SPA
 │   ├── index.html                       # 入口 (<div id="app"> + 防暗色闪烁脚本)
 │   ├── vite.config.ts                   # React 插件 / @ 别名 / dev 代理 /api→11520
@@ -611,9 +611,9 @@ localStorage.setItem('theme', next)
 Skill 与 Command 模块统一通过 `/api/icons/:brand` 读取官方 icon，前端不再打包自制品牌 SVG，也不使用 emoji / lucide 品牌图标伪装官方 icon：
 
 1. **本机官方 `.app` 图标优先**：后端按 `brand-map.mjs` 中的 Bundle ID / App 名称扫描并提取系统应用图标。
-2. **官方远程 URL 兜底**：本机无图标时，仅从 `brand-map.mjs` 登记的 HTTPS 官方 URL 下载；结果缓存到 `~/.config/skillshelper/icon-cache/`。
+2. **官方远程 URL 兜底**：本机无图标时，仅从 `brand-map.mjs` 登记的 HTTPS 官方 URL 下载；结果缓存到 `~/.config/skillhelper/icon-cache/`。
 3. **中性占位**：没有本机图标且没有可确认官方远程 URL（如 `hermes` / `gstack`）时，前端显示中性占位。
-4. **禁用联网**：`SKILLSHELPER_ICON_REMOTE=0` 时不触发远程下载，但仍可读取已有本地缓存。
+4. **禁用联网**：`SKILLHELPER_ICON_REMOTE=0` 时不触发远程下载，但仍可读取已有本地缓存。
 
 ---
 
@@ -637,7 +637,7 @@ Skill 与 Command 模块统一通过 `/api/icons/:brand` 读取官方 icon，前
 ## III.2 服务与构建模型
 
 ```
-skillshelper start
+skillhelper start
   └─ Fastify(packages/server) :11520
        ├─ /api/*               # skills/stats/events/copy/open/translate/reload
        ├─ /            → packages/web/dist/index.html
@@ -1110,7 +1110,7 @@ npm run verify
 ## VI.6 项目结构一览
 
 ```
-SkillsHelper/
+SkillHelper/
 ├── packages/
 │   ├── web/                          # 前端 Vite + React SPA
 │   │   ├── index.html                # 入口
@@ -1168,7 +1168,7 @@ npm run release          # = npm version patch && git push
 
 ### 凭证配置（NPM_TOKEN，一次性）
 
-发布身份由 GitHub 仓库 Secret `NPM_TOKEN` 提供，对应 npm 账号 `skillshelperonline`（包 owner）。
+发布身份由 GitHub 仓库 Secret `NPM_TOKEN` 提供，对应 npm 账号 `skillhelperonline`（包 owner）。
 
 ```bash
 # token 失效/轮换时，用有 publish 权限的 Automation token 更新 secret：
@@ -1176,18 +1176,18 @@ gh secret set NPM_TOKEN --body '<npm token>'
 
 # 验证 token 有效且身份正确：
 printf '//registry.npmjs.org/:_authToken=%s\n' '<token>' > /tmp/v.npmrc
-npm whoami --userconfig /tmp/v.npmrc      # 应输出 skillshelperonline
+npm whoami --userconfig /tmp/v.npmrc      # 应输出 skillhelperonline
 rm -f /tmp/v.npmrc
 ```
 
-**故障对照**：CI 中 `npm publish` 报 `E404 PUT .../skillshelper` = token 已注入但身份无该包写权限（npm 用 404 伪装 403），即 `NPM_TOKEN` 失效或非 owner，需按上面重配。
+**故障对照**：CI 中 `npm publish` 报 `E404 PUT .../skillhelper` = token 已注入但身份无该包写权限（npm 用 404 伪装 403），即 `NPM_TOKEN` 失效或非 owner，需按上面重配。
 
 ### 发布后验证
 
 ```bash
 gh run watch                                    # CI 全绿
-npm view skillshelper version                 # 应为新版本
-npm install -g skillshelper@latest && skillshelper -v
+npm view skillhelper version                 # 应为新版本
+npm install -g skillhelper@latest && skillhelper -v
 ```
 
 ---

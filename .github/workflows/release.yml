@@ -56,6 +56,12 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: 清理旧 npm 包名
+        if: steps.tag_check.outputs.exists == 'false'
+        run: bash scripts/npm-remote-cleanup.sh
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: 创建并推送 tag
         if: steps.tag_check.outputs.exists == 'false'
         run: |

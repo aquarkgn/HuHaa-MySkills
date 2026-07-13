@@ -20,7 +20,7 @@ description: ${name} description
 }
 
 test('Tier 2 用户技能写入 my-skills editor 并保留稳定 source', async (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-tier2-editor-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-tier2-editor-'));
   const oldGlobalPath = USER_TIER_2_CONFIG.globalPath;
 
   t.after(() => {
@@ -42,7 +42,7 @@ test('Tier 2 用户技能写入 my-skills editor 并保留稳定 source', async 
 });
 
 test('Tier 3 其他技能写入 other-skills editor 并保留稳定 source', async (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-tier3-editor-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-tier3-editor-'));
   const oldConfigs = OTHER_TIER_3_CONFIGS.map(config => ({ ...config }));
 
   t.after(() => {

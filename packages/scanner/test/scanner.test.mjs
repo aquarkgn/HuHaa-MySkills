@@ -11,10 +11,10 @@ import { scan, getWatchTargets, scanLegacy, loadConfig } from '../src/index.mjs'
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 function makeTempHome() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-scanner-test-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-scanner-test-'));
   const home = path.join(root, 'home');
   fs.mkdirSync(home, { recursive: true });
-  process.env.SKILLSHELPER_HOME = home;
+  process.env.SKILLHELPER_HOME = home;
   return { root, home };
 }
 
@@ -197,12 +197,12 @@ test('CLI scan writes machine-readable JSON to stdout and progress logs to stder
   maxFileBytes: 1048576
 `);
 
-  const result = spawnSync(process.execPath, [path.join(REPO_ROOT, 'bin/skillshelper.mjs'), 'scan', '--json'], {
+  const result = spawnSync(process.execPath, [path.join(REPO_ROOT, 'bin/skillhelper.mjs'), 'scan', '--json'], {
     cwd: REPO_ROOT,
     env: {
       ...process.env,
       HOME: userHome,
-      SKILLSHELPER_HOME: home,
+      SKILLHELPER_HOME: home,
     },
     encoding: 'utf8',
   });

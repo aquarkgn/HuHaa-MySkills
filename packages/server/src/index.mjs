@@ -1,4 +1,4 @@
-// @skillshelper/server — Fastify HTTP API + placeholder UI.
+// @skillhelper/server — Fastify HTTP API + placeholder UI.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -307,9 +307,9 @@ export async function startServer({ port = 11520 } = {}) {
       const cached = getCached(result.name);
       if (cached && cached.result !== result.name) zh.name = cached.result;
     }
-    // SKILLSHELPER_TRANSLATE=1 时主动翻译 description（缓存未命中）
+    // SKILLHELPER_TRANSLATE=1 时主动翻译 description（缓存未命中）
     if (
-      process.env.SKILLSHELPER_TRANSLATE === '1' &&
+      process.env.SKILLHELPER_TRANSLATE === '1' &&
       result.description &&
       !zh.description &&
       !isChinese(result.description)

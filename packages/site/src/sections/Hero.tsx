@@ -4,7 +4,7 @@ interface HeroProps {
   repoUrl: string
 }
 
-const INSTALL_CMD = 'npm install -g skillshelper@latest'
+const INSTALL_CMD = 'npm install -g skillhelper@latest'
 const BRAND_LOGO = `${import.meta.env.BASE_URL}brand-logo.png`
 
 /** Hero：品牌主定位、安装命令、CTA 与产品画面占位 */
@@ -26,14 +26,14 @@ export function Hero({ repoUrl }: HeroProps) {
       <div className="section flex flex-col items-center gap-8 py-20 text-center md:py-28">
         <img
           src={BRAND_LOGO}
-          alt="呼哈哈-技能助手"
+          alt="SkillHelper"
           className="h-auto w-full max-w-[300px] object-contain md:max-w-[360px]"
         />
 
         {/* 品牌标识徽章 */}
         <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-caption text-muted-foreground shadow-sm">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
-          呼哈哈-技能助手 · 本地 AI 工作流能力中枢
+          SkillHelper · 本地 AI 工作流能力中枢
         </span>
 
         {/* 标题：多色霓虹效果，问句冷色调、答案暖色调形成层次 */}

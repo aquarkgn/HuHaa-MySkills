@@ -9,7 +9,7 @@ MAX_ATTEMPTS=5
 ATTEMPT=0
 
 # 日志文件
-LOG_FILE="/tmp/skillshelper-dev.log"
+LOG_FILE="/tmp/skillhelper-dev.log"
 
 # 检查端口是否被占用
 check_port() {
@@ -26,7 +26,7 @@ get_process_info() {
 is_our_process() {
   pid=$1
   if [ -z "$pid" ]; then return 1; fi
-  ps -p $pid 2>/dev/null | grep -E "skillshelper|node.*bin" >/dev/null 2>&1
+  ps -p $pid 2>/dev/null | grep -E "skillhelper|node.*bin" >/dev/null 2>&1
   return $?
 }
 

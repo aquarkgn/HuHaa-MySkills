@@ -2,7 +2,7 @@
 // 学习式：img onError 时记录 brand 到 localStorage，后续渲染直接用 emoji。
 // 进程内缓存读取结果，避免每次渲染都 parse localStorage。
 
-const STORAGE_KEY = 'skillshelper_no_icon_brands'
+const STORAGE_KEY = 'skillhelper_no_icon_brands'
 let cache: Set<string> | null = null
 
 function load(): Set<string> {

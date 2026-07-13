@@ -1,8 +1,8 @@
 {
-  "name": "skillshelper",
-  "version": "0.4.1",
+  "name": "skillhelper",
+  "version": "0.4.2",
   "private": false,
-  "description": "呼哈哈-技能助手：本地技能 / 插件 / MCP 聚合中心。",
+  "description": "SkillHelper：本地技能 / 插件 / MCP 聚合中心。",
   "license": "MIT",
   "homepage": "https://github.com/aquarkgn/SkillsHelper#readme",
   "repository": {
@@ -17,7 +17,7 @@
     "node": ">=20.0.0"
   },
   "bin": {
-    "skillshelper": "bin/skillshelper.mjs"
+    "skillhelper": "bin/skillhelper.mjs"
   },
   "files": [
     "bin/",
@@ -36,18 +36,18 @@
     "LICENSE"
   ],
   "scripts": {
-    "start": "node bin/skillshelper.mjs start",
-    "stop": "node bin/skillshelper.mjs stop",
-    "restart": "node bin/skillshelper.mjs restart",
-    "scan": "node bin/skillshelper.mjs scan",
-    "stats": "node bin/skillshelper.mjs stats",
-    "duplicates": "node bin/skillshelper.mjs duplicates",
-    "init": "node bin/skillshelper.mjs init",
-    "purge": "node bin/skillshelper.mjs purge",
-    "uninstall": "node bin/skillshelper.mjs uninstall",
-    "dev": "node bin/skillshelper.mjs restart && cd packages/web && npm run dev",
+    "start": "node bin/skillhelper.mjs start",
+    "stop": "node bin/skillhelper.mjs stop",
+    "restart": "node bin/skillhelper.mjs restart",
+    "scan": "node bin/skillhelper.mjs scan",
+    "stats": "node bin/skillhelper.mjs stats",
+    "duplicates": "node bin/skillhelper.mjs duplicates",
+    "init": "node bin/skillhelper.mjs init",
+    "purge": "node bin/skillhelper.mjs purge",
+    "uninstall": "node bin/skillhelper.mjs uninstall",
+    "dev": "node bin/skillhelper.mjs restart && cd packages/web && npm run dev",
     "dev-bg": "bash scripts/start-dev.sh",
-    "sync": "node bin/skillshelper.mjs sync",
+    "sync": "node bin/skillhelper.mjs sync",
     "build:web": "node build/build-web.mjs",
     "build:site": "node build/build-site.mjs",
     "dev:site": "node build/build-site.mjs --dev",

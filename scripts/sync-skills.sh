@@ -1,5 +1,5 @@
 #!/bin/bash
-# SkillsHelper 编辑器技能同步脚本 v0.1.5
+# SkillHelper 编辑器技能同步脚本 v0.1.5
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -167,9 +167,9 @@ show_editors() {
   echo
 }
 
-find_skillshelper_root() {
-  if [[ -n "${SKILLSHELPER_LOCAL_PATH:-}" ]]; then
-    echo "$SKILLSHELPER_LOCAL_PATH"
+find_skillhelper_root() {
+  if [[ -n "${SKILLHELPER_LOCAL_PATH:-}" ]]; then
+    echo "$SKILLHELPER_LOCAL_PATH"
     return 0
   fi
 
@@ -181,7 +181,7 @@ find_skillshelper_root() {
     return 0
   fi
 
-  log_error "未找到 SkillsHelper 项目"
+  log_error "未找到 SkillHelper 项目"
   return 1
 }
 
@@ -256,7 +256,7 @@ sync_to_neovim() {
 
   # 创建基础配置加载文件
   if [[ -f "$root/.cursorrules" ]]; then
-    cp "$root/.cursorrules" "$editor_path/skillshelper_rules.md" 2>/dev/null || log_warn "Neovim: rules 复制失败"
+    cp "$root/.cursorrules" "$editor_path/skillhelper_rules.md" 2>/dev/null || log_warn "Neovim: rules 复制失败"
   fi
 
   log_success "Neovim: 已同步"
@@ -268,7 +268,7 @@ sync_to_vim() {
 
   # 创建基础配置加载文件
   if [[ -f "$root/.cursorrules" ]]; then
-    cp "$root/.cursorrules" "$editor_path/skillshelper_rules.md" 2>/dev/null || log_warn "Vim: rules 复制失败"
+    cp "$root/.cursorrules" "$editor_path/skillhelper_rules.md" 2>/dev/null || log_warn "Vim: rules 复制失败"
   fi
 
   log_success "Vim: 已同步"
@@ -280,7 +280,7 @@ sync_to_emacs() {
 
   # Emacs 用户可以加载规则文件
   if [[ -f "$root/.cursorrules" ]]; then
-    cp "$root/.cursorrules" "$editor_path/skillshelper-rules.md" 2>/dev/null || log_warn "Emacs: rules 复制失败"
+    cp "$root/.cursorrules" "$editor_path/skillhelper-rules.md" 2>/dev/null || log_warn "Emacs: rules 复制失败"
   fi
 
   log_success "Emacs: 已同步"
@@ -292,7 +292,7 @@ sync_to_sublime() {
 
   # 同步规则到 Sublime 用户目录
   if [[ -f "$root/.cursorrules" ]]; then
-    cp "$root/.cursorrules" "$editor_path/Packages/User/skillshelper_rules.md" 2>/dev/null || log_warn "Sublime Text: rules 复制失败"
+    cp "$root/.cursorrules" "$editor_path/Packages/User/skillhelper_rules.md" 2>/dev/null || log_warn "Sublime Text: rules 复制失败"
   fi
 
   log_success "Sublime Text: 已同步"
@@ -304,7 +304,7 @@ sync_to_sublime4() {
 
   # 同步规则到 Sublime 用户目录
   if [[ -f "$root/.cursorrules" ]]; then
-    cp "$root/.cursorrules" "$editor_path/Packages/User/skillshelper_rules.md" 2>/dev/null || log_warn "Sublime Text 4: rules 复制失败"
+    cp "$root/.cursorrules" "$editor_path/Packages/User/skillhelper_rules.md" 2>/dev/null || log_warn "Sublime Text 4: rules 复制失败"
   fi
 
   log_success "Sublime Text 4: 已同步"
@@ -315,7 +315,7 @@ sync_to_textmate() {
   mkdir -p "$editor_path"
 
   if [[ -f "$root/.cursorrules" ]]; then
-    cp "$root/.cursorrules" "$editor_path/skillshelper_rules.md" 2>/dev/null || log_warn "TextMate: rules 复制失败"
+    cp "$root/.cursorrules" "$editor_path/skillhelper_rules.md" 2>/dev/null || log_warn "TextMate: rules 复制失败"
   fi
 
   log_success "TextMate: 已同步"
@@ -326,7 +326,7 @@ sync_to_bbedit() {
   mkdir -p "$editor_path"
 
   if [[ -f "$root/.cursorrules" ]]; then
-    cp "$root/.cursorrules" "$editor_path/skillshelper_rules.md" 2>/dev/null || log_warn "BBEdit: rules 复制失败"
+    cp "$root/.cursorrules" "$editor_path/skillhelper_rules.md" 2>/dev/null || log_warn "BBEdit: rules 复制失败"
   fi
 
   log_success "BBEdit: 已同步"
@@ -337,7 +337,7 @@ sync_to_atom() {
   mkdir -p "$editor_path/packages"
 
   if [[ -f "$root/.cursorrules" ]]; then
-    cp "$root/.cursorrules" "$editor_path/skillshelper_rules.md" 2>/dev/null || log_warn "Atom: rules 复制失败"
+    cp "$root/.cursorrules" "$editor_path/skillhelper_rules.md" 2>/dev/null || log_warn "Atom: rules 复制失败"
   fi
 
   log_success "Atom: 已同步"
@@ -348,7 +348,7 @@ sync_to_kate() {
   mkdir -p "$editor_path"
 
   if [[ -f "$root/.cursorrules" ]]; then
-    cp "$root/.cursorrules" "$editor_path/skillshelper_rules.md" 2>/dev/null || log_warn "Kate: rules 复制失败"
+    cp "$root/.cursorrules" "$editor_path/skillhelper_rules.md" 2>/dev/null || log_warn "Kate: rules 复制失败"
   fi
 
   log_success "Kate: 已同步"
@@ -359,7 +359,7 @@ sync_to_gedit() {
   mkdir -p "$editor_path"
 
   if [[ -f "$root/.cursorrules" ]]; then
-    cp "$root/.cursorrules" "$editor_path/skillshelper_rules.md" 2>/dev/null || log_warn "Gedit: rules 复制失败"
+    cp "$root/.cursorrules" "$editor_path/skillhelper_rules.md" 2>/dev/null || log_warn "Gedit: rules 复制失败"
   fi
 
   log_success "Gedit: 已同步"
@@ -370,7 +370,7 @@ sync_to_jetbrains() {
   mkdir -p "$editor_path"
 
   if [[ -f "$root/.cursorrules" ]]; then
-    cp "$root/.cursorrules" "$editor_path/skillshelper_rules.md" 2>/dev/null || log_warn "JetBrains IDEs: rules 复制失败"
+    cp "$root/.cursorrules" "$editor_path/skillhelper_rules.md" 2>/dev/null || log_warn "JetBrains IDEs: rules 复制失败"
   fi
 
   log_success "JetBrains IDEs: 已同步"
@@ -440,8 +440,8 @@ main() {
     selection="$editor_name"
     is_auto_mode=true
   # 如果通过环境变量指定编辑器
-  elif [[ -n "${SKILLSHELPER_EDITOR:-}" ]]; then
-    selection="$SKILLSHELPER_EDITOR"
+  elif [[ -n "${SKILLHELPER_EDITOR:-}" ]]; then
+    selection="$SKILLHELPER_EDITOR"
     is_auto_mode=true
   # 如果通过参数指定了选择，进入自动模式
   elif [[ -n "$selection" && "$selection" != "" && "$selection" != "0" ]]; then
@@ -450,7 +450,7 @@ main() {
 
   if [[ "$is_auto_mode" == false ]]; then
     echo -e "\n${CYAN}╔════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║          SkillsHelper 编辑器技能同步 v0.1.5         ║${NC}"
+    echo -e "${CYAN}║          SkillHelper 编辑器技能同步 v0.1.5         ║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════════════╝${NC}\n"
 
     log_info "扫描已安装的编辑器...\n"
@@ -471,10 +471,10 @@ main() {
     [[ "$selection" == "q" ]] && exit 0
   fi
 
-  skillshelper_root=$(find_skillshelper_root) || exit 1
+  skillhelper_root=$(find_skillhelper_root) || exit 1
 
   if [[ "$is_auto_mode" == false ]]; then
-    log_info "同步根目录: $skillshelper_root\n"
+    log_info "同步根目录: $skillhelper_root\n"
 
     echo -e "${CYAN}╔════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║             开始同步编辑器技能              ║${NC}"
@@ -494,29 +494,29 @@ main() {
 
     if [[ -n "$editor_path" ]]; then
       case "$editor_name" in
-        cursor) sync_to_cursor "$editor_path" "$skillshelper_root" ;;
-        vscode) sync_to_vscode "$editor_path" "$skillshelper_root" ;;
-        vscode-insiders) sync_to_vscode_insiders "$editor_path" "$skillshelper_root" ;;
-        windsurf) sync_to_windsurf "$editor_path" "$skillshelper_root" ;;
-        zed) sync_to_zed "$editor_path" "$skillshelper_root" ;;
-        helix) sync_to_helix "$editor_path" "$skillshelper_root" ;;
-        neovim) sync_to_neovim "$editor_path" "$skillshelper_root" ;;
-        vim) sync_to_vim "$editor_path" "$skillshelper_root" ;;
-        emacs) sync_to_emacs "$editor_path" "$skillshelper_root" ;;
-        sublime) sync_to_sublime "$editor_path" "$skillshelper_root" ;;
-        sublime4) sync_to_sublime4 "$editor_path" "$skillshelper_root" ;;
-        textmate) sync_to_textmate "$editor_path" "$skillshelper_root" ;;
-        bbedit) sync_to_bbedit "$editor_path" "$skillshelper_root" ;;
-        atom) sync_to_atom "$editor_path" "$skillshelper_root" ;;
-        kate) sync_to_kate "$editor_path" "$skillshelper_root" ;;
-        gedit) sync_to_gedit "$editor_path" "$skillshelper_root" ;;
-        jetbrains) sync_to_jetbrains "$editor_path" "$skillshelper_root" ;;
-        openclaw) sync_to_openclaw "$editor_path" "$skillshelper_root" ;;
-        herems) sync_to_herems "$editor_path" "$skillshelper_root" ;;
-        trae) sync_to_trae "$editor_path" "$skillshelper_root" ;;
-        trae-cn) sync_to_trae_cn "$editor_path" "$skillshelper_root" ;;
-        codex) sync_to_codex "$editor_path" "$skillshelper_root" ;;
-        claude) sync_to_claude "$editor_path" "$skillshelper_root" ;;
+        cursor) sync_to_cursor "$editor_path" "$skillhelper_root" ;;
+        vscode) sync_to_vscode "$editor_path" "$skillhelper_root" ;;
+        vscode-insiders) sync_to_vscode_insiders "$editor_path" "$skillhelper_root" ;;
+        windsurf) sync_to_windsurf "$editor_path" "$skillhelper_root" ;;
+        zed) sync_to_zed "$editor_path" "$skillhelper_root" ;;
+        helix) sync_to_helix "$editor_path" "$skillhelper_root" ;;
+        neovim) sync_to_neovim "$editor_path" "$skillhelper_root" ;;
+        vim) sync_to_vim "$editor_path" "$skillhelper_root" ;;
+        emacs) sync_to_emacs "$editor_path" "$skillhelper_root" ;;
+        sublime) sync_to_sublime "$editor_path" "$skillhelper_root" ;;
+        sublime4) sync_to_sublime4 "$editor_path" "$skillhelper_root" ;;
+        textmate) sync_to_textmate "$editor_path" "$skillhelper_root" ;;
+        bbedit) sync_to_bbedit "$editor_path" "$skillhelper_root" ;;
+        atom) sync_to_atom "$editor_path" "$skillhelper_root" ;;
+        kate) sync_to_kate "$editor_path" "$skillhelper_root" ;;
+        gedit) sync_to_gedit "$editor_path" "$skillhelper_root" ;;
+        jetbrains) sync_to_jetbrains "$editor_path" "$skillhelper_root" ;;
+        openclaw) sync_to_openclaw "$editor_path" "$skillhelper_root" ;;
+        herems) sync_to_herems "$editor_path" "$skillhelper_root" ;;
+        trae) sync_to_trae "$editor_path" "$skillhelper_root" ;;
+        trae-cn) sync_to_trae_cn "$editor_path" "$skillhelper_root" ;;
+        codex) sync_to_codex "$editor_path" "$skillhelper_root" ;;
+        claude) sync_to_claude "$editor_path" "$skillhelper_root" ;;
       esac
       echo
       echo -e "${GREEN}✨ 技能同步完成！${NC}\n"
@@ -530,29 +530,29 @@ main() {
   if [[ "$selection" == "0" ]]; then
     echo "$editors" | while IFS='|' read -r idx name path; do
       case "$name" in
-        cursor) sync_to_cursor "$path" "$skillshelper_root" ;;
-        vscode) sync_to_vscode "$path" "$skillshelper_root" ;;
-        vscode-insiders) sync_to_vscode_insiders "$path" "$skillshelper_root" ;;
-        windsurf) sync_to_windsurf "$path" "$skillshelper_root" ;;
-        zed) sync_to_zed "$path" "$skillshelper_root" ;;
-        helix) sync_to_helix "$path" "$skillshelper_root" ;;
-        neovim) sync_to_neovim "$path" "$skillshelper_root" ;;
-        vim) sync_to_vim "$path" "$skillshelper_root" ;;
-        emacs) sync_to_emacs "$path" "$skillshelper_root" ;;
-        sublime) sync_to_sublime "$path" "$skillshelper_root" ;;
-        sublime4) sync_to_sublime4 "$path" "$skillshelper_root" ;;
-        textmate) sync_to_textmate "$path" "$skillshelper_root" ;;
-        bbedit) sync_to_bbedit "$path" "$skillshelper_root" ;;
-        atom) sync_to_atom "$path" "$skillshelper_root" ;;
-        kate) sync_to_kate "$path" "$skillshelper_root" ;;
-        gedit) sync_to_gedit "$path" "$skillshelper_root" ;;
-        jetbrains) sync_to_jetbrains "$path" "$skillshelper_root" ;;
-        openclaw) sync_to_openclaw "$path" "$skillshelper_root" ;;
-        herems) sync_to_herems "$path" "$skillshelper_root" ;;
-        trae) sync_to_trae "$path" "$skillshelper_root" ;;
-        trae-cn) sync_to_trae_cn "$path" "$skillshelper_root" ;;
-        codex) sync_to_codex "$path" "$skillshelper_root" ;;
-        claude) sync_to_claude "$path" "$skillshelper_root" ;;
+        cursor) sync_to_cursor "$path" "$skillhelper_root" ;;
+        vscode) sync_to_vscode "$path" "$skillhelper_root" ;;
+        vscode-insiders) sync_to_vscode_insiders "$path" "$skillhelper_root" ;;
+        windsurf) sync_to_windsurf "$path" "$skillhelper_root" ;;
+        zed) sync_to_zed "$path" "$skillhelper_root" ;;
+        helix) sync_to_helix "$path" "$skillhelper_root" ;;
+        neovim) sync_to_neovim "$path" "$skillhelper_root" ;;
+        vim) sync_to_vim "$path" "$skillhelper_root" ;;
+        emacs) sync_to_emacs "$path" "$skillhelper_root" ;;
+        sublime) sync_to_sublime "$path" "$skillhelper_root" ;;
+        sublime4) sync_to_sublime4 "$path" "$skillhelper_root" ;;
+        textmate) sync_to_textmate "$path" "$skillhelper_root" ;;
+        bbedit) sync_to_bbedit "$path" "$skillhelper_root" ;;
+        atom) sync_to_atom "$path" "$skillhelper_root" ;;
+        kate) sync_to_kate "$path" "$skillhelper_root" ;;
+        gedit) sync_to_gedit "$path" "$skillhelper_root" ;;
+        jetbrains) sync_to_jetbrains "$path" "$skillhelper_root" ;;
+        openclaw) sync_to_openclaw "$path" "$skillhelper_root" ;;
+        herems) sync_to_herems "$path" "$skillhelper_root" ;;
+        trae) sync_to_trae "$path" "$skillhelper_root" ;;
+        trae-cn) sync_to_trae_cn "$path" "$skillhelper_root" ;;
+        codex) sync_to_codex "$path" "$skillhelper_root" ;;
+        claude) sync_to_claude "$path" "$skillhelper_root" ;;
       esac
     done
   else
@@ -569,29 +569,29 @@ main() {
       path=$(echo "$editor" | cut -d'|' -f3)
 
       case "$name" in
-        cursor) sync_to_cursor "$path" "$skillshelper_root" ;;
-        vscode) sync_to_vscode "$path" "$skillshelper_root" ;;
-        vscode-insiders) sync_to_vscode_insiders "$path" "$skillshelper_root" ;;
-        windsurf) sync_to_windsurf "$path" "$skillshelper_root" ;;
-        zed) sync_to_zed "$path" "$skillshelper_root" ;;
-        helix) sync_to_helix "$path" "$skillshelper_root" ;;
-        neovim) sync_to_neovim "$path" "$skillshelper_root" ;;
-        vim) sync_to_vim "$path" "$skillshelper_root" ;;
-        emacs) sync_to_emacs "$path" "$skillshelper_root" ;;
-        sublime) sync_to_sublime "$path" "$skillshelper_root" ;;
-        sublime4) sync_to_sublime4 "$path" "$skillshelper_root" ;;
-        textmate) sync_to_textmate "$path" "$skillshelper_root" ;;
-        bbedit) sync_to_bbedit "$path" "$skillshelper_root" ;;
-        atom) sync_to_atom "$path" "$skillshelper_root" ;;
-        kate) sync_to_kate "$path" "$skillshelper_root" ;;
-        gedit) sync_to_gedit "$path" "$skillshelper_root" ;;
-        jetbrains) sync_to_jetbrains "$path" "$skillshelper_root" ;;
-        openclaw) sync_to_openclaw "$path" "$skillshelper_root" ;;
-        herems) sync_to_herems "$path" "$skillshelper_root" ;;
-        trae) sync_to_trae "$path" "$skillshelper_root" ;;
-        trae-cn) sync_to_trae_cn "$path" "$skillshelper_root" ;;
-        codex) sync_to_codex "$path" "$skillshelper_root" ;;
-        claude) sync_to_claude "$path" "$skillshelper_root" ;;
+        cursor) sync_to_cursor "$path" "$skillhelper_root" ;;
+        vscode) sync_to_vscode "$path" "$skillhelper_root" ;;
+        vscode-insiders) sync_to_vscode_insiders "$path" "$skillhelper_root" ;;
+        windsurf) sync_to_windsurf "$path" "$skillhelper_root" ;;
+        zed) sync_to_zed "$path" "$skillhelper_root" ;;
+        helix) sync_to_helix "$path" "$skillhelper_root" ;;
+        neovim) sync_to_neovim "$path" "$skillhelper_root" ;;
+        vim) sync_to_vim "$path" "$skillhelper_root" ;;
+        emacs) sync_to_emacs "$path" "$skillhelper_root" ;;
+        sublime) sync_to_sublime "$path" "$skillhelper_root" ;;
+        sublime4) sync_to_sublime4 "$path" "$skillhelper_root" ;;
+        textmate) sync_to_textmate "$path" "$skillhelper_root" ;;
+        bbedit) sync_to_bbedit "$path" "$skillhelper_root" ;;
+        atom) sync_to_atom "$path" "$skillhelper_root" ;;
+        kate) sync_to_kate "$path" "$skillhelper_root" ;;
+        gedit) sync_to_gedit "$path" "$skillhelper_root" ;;
+        jetbrains) sync_to_jetbrains "$path" "$skillhelper_root" ;;
+        openclaw) sync_to_openclaw "$path" "$skillhelper_root" ;;
+        herems) sync_to_herems "$path" "$skillhelper_root" ;;
+        trae) sync_to_trae "$path" "$skillhelper_root" ;;
+        trae-cn) sync_to_trae_cn "$path" "$skillhelper_root" ;;
+        codex) sync_to_codex "$path" "$skillhelper_root" ;;
+        claude) sync_to_claude "$path" "$skillhelper_root" ;;
       esac
     done
   fi

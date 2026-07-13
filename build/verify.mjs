@@ -8,11 +8,11 @@ import { spawnSync } from 'node:child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
-const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-verify-'));
-const oldHome = process.env.SKILLSHELPER_HOME;
+const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-verify-'));
+const oldHome = process.env.SKILLHELPER_HOME;
 const oldUserHome = process.env.HOME;
-process.env.SKILLSHELPER_HOME = path.join(tempRoot, 'home');
-process.env.HOME = process.env.SKILLSHELPER_HOME;
+process.env.SKILLHELPER_HOME = path.join(tempRoot, 'home');
+process.env.HOME = process.env.SKILLHELPER_HOME;
 
 const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
 const testFiles = [
@@ -52,7 +52,7 @@ triggers:
 # Verify smoke skill
 Use this item to prove the local server works.
 `);
-    write(path.join(process.env.SKILLSHELPER_HOME, 'sources.yaml'), `sources:
+    write(path.join(process.env.SKILLHELPER_HOME, 'sources.yaml'), `sources:
   hermes:
     enabled: true
     roots:
@@ -121,8 +121,8 @@ limits:
     run('node', ['build/pack-smoke.mjs']);
     console.log('\n[verify] PASS build + tests + HTTP/API/static/package smoke checks');
   } finally {
-    if (oldHome == null) delete process.env.SKILLSHELPER_HOME;
-    else process.env.SKILLSHELPER_HOME = oldHome;
+    if (oldHome == null) delete process.env.SKILLHELPER_HOME;
+    else process.env.SKILLHELPER_HOME = oldHome;
     if (oldUserHome == null) delete process.env.HOME;
     else process.env.HOME = oldUserHome;
     fs.rmSync(tempRoot, { recursive: true, force: true });

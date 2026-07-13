@@ -25,7 +25,7 @@ export function PainPoints() {
         <div className="mb-10 text-center">
           <h2 className="text-h2 font-bold">AI 工作流失控，往往从“散”开始</h2>
           <p className="mt-2 text-body text-muted-foreground">
-            SkillsHelper 先让能力资产可见，再让它们变得可用。
+            SkillHelper 先让能力资产可见，再让它们变得可用。
           </p>
         </div>
 

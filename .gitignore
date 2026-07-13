@@ -10,26 +10,27 @@ packages/site/dist/
 .hermes/*
 !.hermes/plans/
 .hermes/plans/*
-!.hermes/plans/skillshelper-promotion/
-!.hermes/plans/skillshelper-promotion/**
+!.hermes/plans/README.md
+!.hermes/plans/skillhelper-promotion/
+!.hermes/plans/skillhelper-promotion/**
 
-# 呼哈哈-技能助手推广视频在本工作区管理，但大文件默认不提交。
-.hermes/plans/skillshelper-promotion/videos/**/*.mp4
-.hermes/plans/skillshelper-promotion/videos/**/*.mov
-.hermes/plans/skillshelper-promotion/videos/**/*.m4v
-.hermes/plans/skillshelper-promotion/videos/**/*.avi
-.hermes/plans/skillshelper-promotion/videos/**/*.mkv
-.hermes/plans/skillshelper-promotion/videos/**/*.webm
-.hermes/plans/skillshelper-promotion/videos/**/*.wav
-.hermes/plans/skillshelper-promotion/videos/**/*.mp3
-.hermes/plans/skillshelper-promotion/videos/**/*.aac
-.hermes/plans/skillshelper-promotion/videos/**/*.flac
-.hermes/plans/skillshelper-promotion/videos/**/*.prproj
-.hermes/plans/skillshelper-promotion/videos/**/*.drp
-.hermes/plans/skillshelper-promotion/videos/**/*.fcpxml
-.hermes/plans/skillshelper-promotion/videos/**/.scratch/
-!.hermes/plans/skillshelper-promotion/videos/**/README.md
-!.hermes/plans/skillshelper-promotion/videos/**/.gitkeep
+# SkillHelper 推广视频在本工作区管理，但大文件默认不提交。
+.hermes/plans/skillhelper-promotion/videos/**/*.mp4
+.hermes/plans/skillhelper-promotion/videos/**/*.mov
+.hermes/plans/skillhelper-promotion/videos/**/*.m4v
+.hermes/plans/skillhelper-promotion/videos/**/*.avi
+.hermes/plans/skillhelper-promotion/videos/**/*.mkv
+.hermes/plans/skillhelper-promotion/videos/**/*.webm
+.hermes/plans/skillhelper-promotion/videos/**/*.wav
+.hermes/plans/skillhelper-promotion/videos/**/*.mp3
+.hermes/plans/skillhelper-promotion/videos/**/*.aac
+.hermes/plans/skillhelper-promotion/videos/**/*.flac
+.hermes/plans/skillhelper-promotion/videos/**/*.prproj
+.hermes/plans/skillhelper-promotion/videos/**/*.drp
+.hermes/plans/skillhelper-promotion/videos/**/*.fcpxml
+.hermes/plans/skillhelper-promotion/videos/**/.scratch/
+!.hermes/plans/skillhelper-promotion/videos/**/README.md
+!.hermes/plans/skillhelper-promotion/videos/**/.gitkeep
 
 # 用户运行时数据现在落 ~/.config/skillshelper/，仓内不再有 data/ 目录。
 # 留这一条防有人手动放：

@@ -68,7 +68,7 @@ get_temp_dir() {
   if command -v mktemp &>/dev/null; then
     mktemp -d
   else
-    local tmpdir="/tmp/skillshelper-$$"
+    local tmpdir="/tmp/skillhelper-$$"
     mkdir -p "$tmpdir"
     echo "$tmpdir"
   fi
@@ -103,7 +103,7 @@ download_and_sync() {
   fi
 
   if [[ -n "$LOCAL_PATH" ]]; then
-    export SKILLSHELPER_LOCAL_PATH="$LOCAL_PATH"
+    export SKILLHELPER_LOCAL_PATH="$LOCAL_PATH"
   fi
 
   log_success "同步脚本已下载"
@@ -129,7 +129,7 @@ local_install() {
   log_success "项目已克隆到临时目录"
 
   # 执行同步
-  export SKILLSHELPER_LOCAL_PATH="$local_path"
+  export SKILLHELPER_LOCAL_PATH="$local_path"
   download_and_sync
 }
 
@@ -148,7 +148,7 @@ npm_install() {
     # 获取安装位置
     local npm_prefix
     npm_prefix=$(npm prefix -g)
-    export SKILLSHELPER_LOCAL_PATH="$npm_prefix/node_modules/skillshelper"
+    export SKILLHELPER_LOCAL_PATH="$npm_prefix/node_modules/skillhelper"
 
     return 0
   else
@@ -177,7 +177,7 @@ main() {
         log_error "本地路径不存在: $LOCAL_PATH"
         exit 1
       fi
-      export SKILLSHELPER_LOCAL_PATH="$LOCAL_PATH"
+      export SKILLHELPER_LOCAL_PATH="$LOCAL_PATH"
       download_and_sync
     fi
   else
@@ -199,7 +199,7 @@ main() {
   echo -e "${GREEN}╚════════════════════════════════════════════════════════╝${NC}\n"
 
   log_info "后续步骤："
-  echo "  1. 启动 SkillsHelper: npm start"
+  echo "  1. 启动 SkillHelper: npm start"
   echo "  2. 查看技能中心: http://localhost:11520"
   echo "  3. 在编辑器中使用你的技能"
   echo -e "\n更多信息: https://github.com/aquarkgn/SkillsHelper\n"

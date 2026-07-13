@@ -7,7 +7,7 @@ import test from 'node:test';
 import { scanCodexPlugins } from '../src/adapters/codex-plugin.mjs';
 
 function makeRoot() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'skillshelper-codex-plugin-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'skillhelper-codex-plugin-'));
 }
 
 function write(file, content) {

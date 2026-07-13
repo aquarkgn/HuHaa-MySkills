@@ -128,7 +128,7 @@ export interface SkillItem {
 
   /**
    * i18n translation metadata (optional)
-   * Only populated if SKILLSHELPER_TRANSLATE=1
+   * Only populated if SKILLHELPER_TRANSLATE=1
    */
   i18n?: {
     zh?: {

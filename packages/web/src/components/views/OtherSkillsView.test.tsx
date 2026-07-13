@@ -69,7 +69,7 @@ beforeEach(() => {
       return storage.size
     },
   })
-  localStorage.setItem('skillshelper_translate_display', '0')
+  localStorage.setItem('skillhelper_translate_display', '0')
   mockOtherSkills([])
 })
 
