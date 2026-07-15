@@ -1,6 +1,6 @@
 {
   "name": "skillhelper",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "private": false,
   "description": "SkillHelper：本地技能 / 插件 / MCP 聚合中心。",
   "license": "MIT",
